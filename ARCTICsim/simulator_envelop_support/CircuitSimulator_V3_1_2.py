@@ -209,6 +209,11 @@ def initialiseSimulator(structureContent, gateLib, maxNumberOfParticles):
                 responseFunctions[gate["identifier"]]["library_parameters"] = dict.copy(
                     gate["biorep"]["response_function"]["parameters"])
 
+                if ("group" in gate):
+                    responseFunctions[gate["identifier"]]["group"] = gate["group"]
+                if ("alternative_identifier" in gate):
+                    responseFunctions[gate["identifier"]]["alternative_identifier"] = gate["alternative_identifier"]
+
                 if ("particles" in gate["biorep"]):
                     responseFunctions[gate["identifier"]]["particle_parameters"] = list(
                         gate["biorep"]["particles"].keys())
@@ -1222,8 +1227,11 @@ def startSimulation(assignment, simData, simSpec):
         if (simContext["particles"] == True):
             sve.plotCompleteCircuitValsHistogramms(completeCircuitVals)
         else:
-            sve.visualiseCircuitWithValues(circuit=circuit, assignment=assignment, responseFunctions=responseFunctions,
-                                           circuitValues=completeCircuitVals)
+            # sve.visualiseCircuitWithValues(circuit=circuit, assignment=assignment, responseFunctions=responseFunctions,
+            #                               circuitValues=completeCircuitVals)
+            # sve.plotCircuitWithValueSummary(circuit=circuit, assignment=assignment, responseFunctions=responseFunctions, circuitVals=completeCircuitVals)
+            sve.visualiseCircuit(circuit=circuit, assignment=assignment, responseFunctions=responseFunctions,
+                                 circuitValues=completeCircuitVals, simContext=simContext)
 
         # print("Visualise Circuit does only work partly in this version. The data is collected but not plotted.")
 
@@ -1288,7 +1296,11 @@ def parseInput(inputText):
             elif (field == "visualise"):
                 specDict[field] = bool(parseBool(val))
             elif (field == "visualise_circuit" or field == "vc"):
-                specDict["visualise_circuit"] = bool(parseBool(val))
+                visMode = int(val)
+                specDict["visualise_circuit"] = (visMode > 0)
+                specDict["visualise_circuit_visualisation_mode"] = visMode
+            elif (field == "visualise_circuit_target_directory"):
+                specDict[sve.VISUALISATION_TARGET_DIRECTORY_KEY] = val
             elif (field == "whitelist" or field == "wh"):
                 specDict["whitelist"] = bool(parseBool(val))
             elif (field == "substitute"):
@@ -1343,8 +1355,8 @@ def debugPrint(text):
 # A method updating the simulation context based on the command args
 def updateSimContext(specDict):
     for key in specDict:
-        if (key in simContext):
-            simContext[key] = specDict[key]
+        # if (key in simContext):
+        simContext[key] = specDict[key]
 
 
 print("Start Simulator Initialisation")
@@ -1356,6 +1368,8 @@ simContext["numberOfParticles"] = 5000;  # Changeable at each simulation
 simContext["maxNumberOfParticles"] = 5000;  # Can only be set at the initialisation of the simulator
 simContext["visualise"] = False;
 simContext["visualise_circuit"] = False
+simContext["visualise_circuit_visualisation_mode"] = 0
+simContext[sve.VISUALISATION_TARGET_DIRECTORY_KEY] = "visualisation/"
 simContext["whitelist"] = False  # Can only be set at the initialisation of the simulator
 simContext["substitute"] = False
 simContext["substitutionMode"] = 0  # 0: no substitution, 1: correct substitution, 2: Incorrect iterative substitution

@@ -26,6 +26,8 @@ public class CompatibilityChecker {
 
     final GateLibrary library;
     final List<String> repressors;
+    final Map<String, Set<String>> groups;
+
     final CompatibilityMatrix<String> matrix;
 
     private Formula constantTrue;
@@ -34,6 +36,13 @@ public class CompatibilityChecker {
         this.library = library;
         this.repressors = extractRepressors(library);
 
+        this.groups = new HashMap<>();
+        for (String repressor : repressors) {
+            groups.putIfAbsent(getGroup(repressor), new HashSet<>());
+            groups.get(getGroup(repressor)).add(repressor);
+        }
+
+        // dummy matrix
         this.matrix = new CompatibilityMatrix<>();
 
         Random rand = new Random();
@@ -71,7 +80,7 @@ public class CompatibilityChecker {
 
         if (incompleteAssigment != null) {
             for (LogicGate gate : incompleteAssigment.keySet()) {
-                constants.add(f.variable(gate.getIdentifier() + "_" + getRepressorString(incompleteAssigment.get(gate).getAltIdenfifier())));
+                constants.add(f.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getAltIdenfifier()));
             }
         }
 
@@ -107,7 +116,7 @@ public class CompatibilityChecker {
 
         }
 
-        /* Clause 2: Every repressor must be assigned maximally once */
+        /* Clause 2: Every repressor and its group members must be assigned maximally once */
 
         for (String repressor : repressors) {
 
@@ -121,7 +130,9 @@ public class CompatibilityChecker {
                     if (gate2.equals(gate))
                         continue;
 
-                    builder.append(gate2 + "_" + repressor + "|");
+                    for (String groupMember : groups.get(getGroup(repressor))) {
+                        builder.append(gate2 + "_" + groupMember + "|");
+                    }
                 }
 
                 builder.deleteCharAt(builder.length() - 1);
@@ -130,11 +141,15 @@ public class CompatibilityChecker {
 
             builder.append("(");
             for (String gate : gates) {
-                builder.append("~" + gate + "_" + repressor + "&");
+                for (String groupMember : groups.get(getGroup(repressor))) {
+                    builder.append("~" + gate + "_" + groupMember + "&");
+                }
             }
 
             builder.deleteCharAt(builder.length() - 1);
             builder.append(")");
+
+            String test = builder.toString();
 
             try {
                 Formula formula = p.parse(builder.toString());
@@ -183,7 +198,7 @@ public class CompatibilityChecker {
         }
 
         Tristate result = miniSat.sat();
-        //org.logicng.datastructures.Assignment ass = miniSat.model();
+        org.logicng.datastructures.Assignment ass = miniSat.model();
 
         return result == Tristate.TRUE;
     }
@@ -196,7 +211,7 @@ public class CompatibilityChecker {
             for(GateRealization realization : realizations) {
                 if (realization.isCharacterized()) {
 
-                    String repressor = getRepressorString(realization.getAltIdenfifier());
+                    String repressor = realization.getAltIdenfifier();
 
                     if (!extractedRepressors.contains(repressor))
                         extractedRepressors.add(repressor);
@@ -206,7 +221,7 @@ public class CompatibilityChecker {
         return extractedRepressors;
     }
 
-    private String getRepressorString(String altIdentifier) {
+    private String getGroup(String altIdentifier) {
         String[] repressorString = altIdentifier.split("_");
         return repressorString[repressorString.length - 1];
     }

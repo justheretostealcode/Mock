@@ -24,16 +24,29 @@ public class CompatibilityChecker {
 
     private static final Logger logger = LoggerFactory.getLogger(CompatibilityChecker.class);
 
+    /* library information */
+
     final GateLibrary library;
     final List<String> repressors;
     final Map<String, Set<String>> groups;
 
+    /* compatibility matrix */
+
     final CompatibilityMatrix<String> matrix;
 
-    private Formula constantTrue;
+    /* SAT utilities */
+
+    final FormulaFactory factory;
+    final PropositionalParser parser;
+    final Formula constantTrue;
+    final SATSolver miniSat;
 
     public CompatibilityChecker(GateLibrary library) {
+
         this.library = library;
+
+        /* extract repressors and groups from library */
+
         this.repressors = extractRepressors(library);
 
         this.groups = new HashMap<>();
@@ -41,6 +54,13 @@ public class CompatibilityChecker {
             groups.putIfAbsent(getGroup(repressor), new HashSet<>());
             groups.get(getGroup(repressor)).add(repressor);
         }
+
+        /* initialize formula factory and MiniSAT */
+
+        this.factory = new FormulaFactory();
+        this.parser =  new PropositionalParser(factory);
+        this.constantTrue = factory.constant(true);
+        this.miniSat = MiniSat.miniSat(factory);
 
         // dummy matrix
         this.matrix = new CompatibilityMatrix<>();
@@ -63,24 +83,24 @@ public class CompatibilityChecker {
 
     public boolean isCompatible(Circuit structure, Assignment incompleteAssigment) {
 
-        List<String> gates = extractGates(structure);
-        FormulaFactory f = new FormulaFactory();
-        PropositionalParser p = new PropositionalParser(f);
-        SATSolver miniSat = MiniSat.miniSat(f);
+        factory.clear();
+        miniSat.reset();
 
-        /* compute pairs of gates */
+        /* extract gates from the circuit */
+
+        List<String> gates = extractGates(structure);
+
+        /* compute pairs of gates from the circuit topology */
 
         Map<String, Set<String>> pairs = extractPairs(structure);
 
         /* determine vars to substitute with constant TRUE to account for incomplete assignment */
 
-        constantTrue = f.constant(true);
-
         List<Variable> constants = new ArrayList<>();
 
         if (incompleteAssigment != null) {
             for (LogicGate gate : incompleteAssigment.keySet()) {
-                constants.add(f.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getAltIdenfifier()));
+                constants.add(factory.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getAltIdenfifier()));
             }
         }
 
@@ -108,7 +128,7 @@ public class CompatibilityChecker {
             builder.deleteCharAt(builder.length() - 1);
 
             try {
-                Formula formula = p.parse(builder.toString());
+                Formula formula = parser.parse(builder.toString());
                 miniSat.add(substituteVars(formula, constants));
             } catch (Exception e) {
                 logger.error(e.getMessage());
@@ -149,10 +169,8 @@ public class CompatibilityChecker {
             builder.deleteCharAt(builder.length() - 1);
             builder.append(")");
 
-            String test = builder.toString();
-
             try {
-                Formula formula = p.parse(builder.toString());
+                Formula formula = parser.parse(builder.toString());
                 miniSat.add(substituteVars(formula, constants));
             } catch (Exception e) {
                 logger.error(e.getMessage());
@@ -190,7 +208,7 @@ public class CompatibilityChecker {
             builder.deleteCharAt(builder.length() - 1);
 
             try {
-                Formula formula = p.parse(builder.toString());
+                Formula formula = parser.parse(builder.toString());
                 miniSat.add(substituteVars(formula, constants));
             } catch (Exception e) {
                 logger.error(e.getMessage());
@@ -200,8 +218,22 @@ public class CompatibilityChecker {
         Tristate result = miniSat.sat();
         org.logicng.datastructures.Assignment ass = miniSat.model();
 
+        if (ass != null) {
+            logger.info("SAT model:");
+            for (Variable pos : ass.positiveLiterals()) {
+                if (!pos.name().startsWith("@"))
+                    logger.info(pos.name());
+            }
+        }
+
         return result == Tristate.TRUE;
     }
+
+    public boolean isCompatible(Circuit structure) {
+        return isCompatible(structure, null);
+    }
+
+    /* private helper functions */
 
     private List<String> extractRepressors(GateLibrary library) {
 

@@ -21,12 +21,10 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
     private static final Logger logger = LoggerFactory.getLogger(ExhaustiveSearch.class);
 
     private final ExhaustiveAssigner assigner;
-    private final ExhaustiveLogger exhaustiveLogger;
 
     public ExhaustiveSearch(Circuit structure, GateLibrary lib, MappingConfiguration mapConfig, SimulationConfiguration simConfig) {
         super(structure, lib, mapConfig, simConfig);
         assigner = new ExhaustiveAssigner(lib, structure);
-        exhaustiveLogger = new ExhaustiveLogger();
     }
 
     public SimulationResult assign() {
@@ -38,7 +36,7 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
         logger.info("Simulating \"" + structure.getIdentifier() + "\" (up to " + assigner.getNumTotalPermutations() + " assignments) with " + availableProcessors + " threads");
 
         for (int i = 0; i < availableProcessors; i ++) {
-            workers.add(new ExhaustiveSearchWorker(exhaustiveLogger, assigner, structure, mapConfig, simConfig, gateLib));
+            workers.add(new ExhaustiveSearchWorker(assigner, structure, mapConfig, simConfig, gateLib));
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(availableProcessors);
@@ -67,38 +65,8 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
             }
         }
 
-        exhaustiveLogger.write(new File("exhaustiveLog_" + System.currentTimeMillis() + ".txt"));
-
         logger.info("Finished simulating " + structure.getIdentifier() + ", score: " + (bestRes != null ? bestRes.getScore() : 0));
 
         return bestRes;
-    }
-
-    static class ExhaustiveLogger {
-
-        private final List<String> log = new ArrayList<>();
-        private File logFile;
-
-        public ExhaustiveLogger() {}
-
-        public synchronized void append(String entry) {
-            log.add(entry);
-        }
-
-        public void write(File logFile) {
-
-            PrintWriter out;
-
-            try {
-                out = new PrintWriter(logFile);
-
-                for (String entry : log) {
-                    out.println(entry);
-                }
-                out.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 }

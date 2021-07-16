@@ -20,18 +20,14 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
     private final SimulatorInterface simulator;
     private final ExhaustiveAssigner assigner;
     private final Circuit structure;
-    private final SimulationConfiguration simConfig;
     private final MappingConfiguration mapConfig;
-    private final ExhaustiveSearch.ExhaustiveLogger exhaustiveLogger;
 
-    public ExhaustiveSearchWorker(ExhaustiveSearch.ExhaustiveLogger exhaustiveLogger, ExhaustiveAssigner assigner, Circuit structure, MappingConfiguration mapConfig,
+    public ExhaustiveSearchWorker(ExhaustiveAssigner assigner, Circuit structure, MappingConfiguration mapConfig,
                                   SimulationConfiguration simConfig, GateLibrary gateLibrary) {
         this.mapConfig = mapConfig;
-        this.simConfig = simConfig;
         this.simulator = new SimulatorInterface(simConfig, gateLibrary.getSourceFile());
         this.assigner = assigner;
         this.structure = structure;
-        this.exhaustiveLogger = exhaustiveLogger;
     }
 
     @Override
@@ -44,8 +40,6 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
 
         while (assignment != null && !Thread.interrupted()) {
             SimulationResult result = new SimulationResult(structure, assignment, simulator.simulate(assignment));
-
-            exhaustiveLogger.append("" + result.getScore());
 
             if (bestRes == null || (mapConfig.getOptimizationType().compare(bestRes.getScore(), result.getScore()))) {
                 bestRes = result;

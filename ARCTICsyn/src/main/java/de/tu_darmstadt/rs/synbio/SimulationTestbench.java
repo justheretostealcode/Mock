@@ -2,7 +2,11 @@ package de.tu_darmstadt.rs.synbio;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
+import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
+import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityChecker;
 import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.CircuitDeserializer;
@@ -69,6 +73,8 @@ public class SimulationTestbench {
 
         GateLibrary gateLib = new GateLibrary(new File(cmd.getOptionValue("library")), proxWeights);
 
+        CompatibilityChecker checker = new CompatibilityChecker(gateLib);
+
         File inputPath = new File(cmd.getOptionValue("inputPath"));
 
         File[] directoryListing;
@@ -124,6 +130,13 @@ public class SimulationTestbench {
 
             if (structure != null) {
 
+                /*Assignment ass = new Assignment();
+
+                LogicGate k = (LogicGate) structure.vertexSet().stream().filter(g -> g instanceof LogicGate).findAny().get();
+                GateRealization l = gateLib.getRealizations().get(k.getLogicType()).get(0);
+                ass.put(k,l);
+                checker.isCompatible(structure, ass);*/
+                
                 try {
                     out.print(child.getName());
                 } catch (Exception e) {

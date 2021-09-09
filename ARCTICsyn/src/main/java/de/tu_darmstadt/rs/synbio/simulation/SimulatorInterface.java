@@ -91,11 +91,8 @@ public class SimulatorInterface {
 
         try {
             String assignmentStr = mapper.writeValueAsString(assignmentIdentifiers);
-            String argStr = simArgs + additionalArgs;
 
-            writer.write("start " + argStr + " assignment=" + assignmentStr);
-
-            writer.write("start " + simArgs + " assignment=" + assignmentStr);
+            writer.write("start " + simArgs + additionalArgs + " assignment=" + assignmentStr);
             writer.newLine();
             writer.flush();
 

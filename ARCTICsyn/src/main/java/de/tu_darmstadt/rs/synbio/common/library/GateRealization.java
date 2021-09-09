@@ -113,6 +113,10 @@ public class GateRealization {
         public double getEuclidean(GateRealization.GateCharacterization cmp, Double[] normalization, Double[] proxWeights) {
             return Math.sqrt(proxWeights[0] * Math.pow((this.xm - cmp.getXm()) / normalization[0], 2) + proxWeights[1] * Math.pow((this.ym - cmp.getYm()) / normalization[1], 2) + proxWeights[2] * Math.pow((this.grad - cmp.getGrad()) / normalization[2], 2));
         }
+
+        public double getMaxCelloScore()    {
+            return ymax / ymin;
+        }
     }
 
 }

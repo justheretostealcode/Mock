@@ -8,6 +8,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Map;
+import java.util.Random;
+
+import static java.lang.Math.random;
 
 public class SimulatorInterface {
 
@@ -24,6 +27,8 @@ public class SimulatorInterface {
     private BufferedReader reader;
     private BufferedWriter writer;
     private final ObjectMapper mapper = new ObjectMapper();
+
+    private Circuit circuit;
 
     public SimulatorInterface(SimulationConfiguration config, File gateLibrary) {
         pythonBinary = config.getPythonBinary();
@@ -48,9 +53,15 @@ public class SimulatorInterface {
         if (simProcess!= null && simProcess.isAlive())
             simProcess.destroy();
 
+        this.circuit = circuit;
+
         try {
-            String structureFileName = "structure_tid" + Thread.currentThread().getId() + "_" + System.nanoTime() + ".json";
+            String structureFileName = "structure_" + circuit.getIdentifier() + "_tid" + Thread.currentThread().getId() + "_" + System.nanoTime() + ".json";
+            String dotFileName = structureFileName.replace(".json", ".dot");
+
             File structureFile = new File(simulatorPath, structureFileName);
+            //File dotFile = new File(simulatorPath, dotFileName);
+            //circuit.print(dotFile);
             circuit.save(structureFile);
 
             ProcessBuilder pb = new ProcessBuilder(pythonBinary, simScript, "s_path=" + structureFileName + " lib_path=" + library.getAbsolutePath() + " " + simInitArgs);
@@ -62,6 +73,7 @@ public class SimulatorInterface {
 
             while (!reader.readLine().startsWith("ready:"));
 
+            //dotFile.delete();
             structureFile.delete();
 
         } catch (Exception e) {
@@ -69,8 +81,7 @@ public class SimulatorInterface {
         }
     }
 
-    public Double simulate(Assignment assignment) {
-
+    public Double simulate(Assignment assignment, String additionalArgs) {
         Map<String, String> assignmentIdentifiers = assignment.getIdentifierMap();
 
         double score = 0.0;
@@ -80,6 +91,9 @@ public class SimulatorInterface {
 
         try {
             String assignmentStr = mapper.writeValueAsString(assignmentIdentifiers);
+            String argStr = simArgs + additionalArgs;
+
+            writer.write("start " + argStr + " assignment=" + assignmentStr);
 
             writer.write("start " + simArgs + " assignment=" + assignmentStr);
             writer.newLine();
@@ -90,13 +104,17 @@ public class SimulatorInterface {
                 scoreStr = scoreStr.substring(2);
             }
 
-            score = Double.parseDouble(scoreStr);
+            score = scoreStr.equals("inf") ? Double.POSITIVE_INFINITY : Double.parseDouble(scoreStr);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return score;
+    }
+
+    public Double simulate(Assignment assignment) {
+        return simulate(assignment, "");
     }
 
     public void shutdown() {

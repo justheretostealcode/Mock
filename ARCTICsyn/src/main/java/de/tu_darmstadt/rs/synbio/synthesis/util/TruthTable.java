@@ -25,6 +25,14 @@ public class TruthTable {
         }
     }
 
+    public TruthTable(Formula f, List<Assignment> assignments)  {
+        this.truthTable = 0;
+        this.firstUnusedBit = 0;
+        for (Assignment assignment : assignments)   {
+            this.insert(f.evaluate(assignment));
+        }
+    }
+
     public Integer getTruthTable() {
         return truthTable;
     }
@@ -68,7 +76,7 @@ public class TruthTable {
         firstUnusedBit++;
     }
 
-    private LinkedList<Assignment> getAllAssignments(SortedSet<Variable> variables) {
+    public static LinkedList<Assignment> getAllAssignments(SortedSet<Variable> variables) {
 
         LinkedList<Assignment> assignments = new LinkedList<>();
         NavigableSet<Variable> variableSet = new TreeSet<>(variables);

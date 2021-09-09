@@ -17,9 +17,9 @@ public class Main {
     private static final CommandLineParser parser = new DefaultParser();
     private static final HelpFormatter formatter = new HelpFormatter();
 
-    private static final String synthesisConfigFile = "syn.config";
-    private static final String mappingConfigFile = "map.config";
-    private static final String simulationConfigFile = "sim.config";
+    private static String synthesisConfigFile = "syn.config";
+    private static String mappingConfigFile = "map.config";
+    private static String simulationConfigFile = "sim.config";
 
     public static void main(String[] args) throws Exception {
 
@@ -38,6 +38,14 @@ public class Main {
         Option gateLibraryFile = new Option("l", "library", true, "path of the gate library file");
         options.addOption(gateLibraryFile);
 
+
+        Option mappingConfigString = new Option("mc", "mappingConfig", true, "path to the mapping configuration");
+        options.addOption(mappingConfigString);
+        Option simulationConfigString = new Option("sc", "simulationConfig", true, "path to the simulation configuration");
+        options.addOption(simulationConfigString);
+        Option synthesisConfigString = new Option("synconf", "synthesisConfig", true, "path to the synthesis configuration");
+        options.addOption(synthesisConfigString);
+
         CommandLine cmd;
 
         try {
@@ -55,6 +63,22 @@ public class Main {
 
         if (cmd.hasOption("function")  && cmd.hasOption("truthtable")) {
             exit("Input function and truth table given!");
+        }
+
+        // Override mapping config file if provided
+        if (cmd.hasOption("mappingConfig")) {
+            mappingConfigFile = cmd.getOptionValue("mappingConfig");
+        }
+
+        // Override simulation config file if provided
+        if (cmd.hasOption("simulationConfig")) {
+            simulationConfigFile = cmd.getOptionValue("simulationConfig");
+        }
+
+        // Override synthesis config file if provided
+        // Override simulation config file if provided
+        if (cmd.hasOption("synthesisConfig")) {
+            synthesisConfigFile = cmd.getOptionValue("synthesisConfig");
         }
 
         SynthesisConfiguration synConfig = new SynthesisConfiguration(synthesisConfigFile);

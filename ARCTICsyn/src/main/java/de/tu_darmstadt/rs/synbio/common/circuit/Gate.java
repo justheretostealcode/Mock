@@ -41,6 +41,11 @@ public abstract class Gate {
         return type;
     }
 
+    @Override
+    public String toString() {
+        return identifier;
+    }
+
     static class GateProvider implements VertexProvider<Gate> {
 
         @Override

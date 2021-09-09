@@ -33,6 +33,10 @@ public class Assignment {
         return map.values();
     }
 
+    public int size() {
+        return map.size();
+    }
+
     @Override
     public boolean equals(Object o) {
 
@@ -83,5 +87,20 @@ public class Assignment {
         }
 
         return true;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{");
+        map.entrySet().stream().forEach(logicGateGateRealizationEntry -> {
+            builder.append("\"");
+            builder.append(logicGateGateRealizationEntry.getKey().getIdentifier());
+            builder.append(" : ");
+            builder.append(logicGateGateRealizationEntry.getValue().getIdentifier());
+            builder.append("\", ");
+        });
+        builder.append("}");
+        return builder.toString().replace(", }", "}");
     }
 }

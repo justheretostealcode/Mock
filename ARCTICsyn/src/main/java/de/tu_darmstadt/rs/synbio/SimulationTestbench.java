@@ -12,6 +12,11 @@ import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.CircuitDeserializer;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
+import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
+import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
+import de.tu_darmstadt.rs.synbio.mapping.search.BranchAndBoundSearch;
+import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.SearchStatsLogger;
+import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
@@ -25,10 +30,10 @@ public class SimulationTestbench {
 
     private static final Logger logger = LoggerFactory.getLogger(SimulationTestbench.class);
 
-    private static final String mappingConfigFile = "map.config";
-    private static final String simulationConfigFile = "sim.config";
+    private static String mappingConfigFile = "map.config";
+    private static String simulationConfigFile = "sim.config";
 
-    private static final int numRepetitions = 1;
+    private static int numRepetitions = 1;
 
     public static void main(String[] args) throws Exception {
 
@@ -40,6 +45,12 @@ public class SimulationTestbench {
         options.addOption(gateLibraryFile);
         Option proxWeightsOpt = new Option("w", "proxWeights", true, "weights for the gate proximity measure");
         options.addOption(proxWeightsOpt);
+
+
+        Option mappingConfigString = new Option("mc", "mappingConfig", true, "path to the mapping configuration");
+        options.addOption(mappingConfigString);
+        Option simulationConfigString = new Option("sc", "simulationConfig", true, "path to the simulation configuration");
+        options.addOption(simulationConfigString);
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -61,15 +72,31 @@ public class SimulationTestbench {
             return;
         }
 
-        Double[] proxWeights = {1.0, 1.0, 1.0};
+        Double[] proxWeights = {0.9, 0.1, 0.0};
 
         if (cmd.hasOption("proxWeights")) {
             String[] pw = cmd.getOptionValue("proxWeights").split(",");
             proxWeights = Arrays.stream(pw).map(Double::valueOf).toArray(Double[]::new);
         }
 
+
+        // Override mapping config file if provided
+        if (cmd.hasOption("mappingConfig")) {
+            mappingConfigFile = cmd.getOptionValue("mappingConfig");
+        }
+
+        // Override simulation config file if provided
+        if (cmd.hasOption("simulationConfig")) {
+            simulationConfigFile = cmd.getOptionValue("simulationConfig");
+        }
+
+
         MappingConfiguration mapConfig = new MappingConfiguration(mappingConfigFile);
         SimulationConfiguration simConfig = new SimulationConfiguration(simulationConfigFile);
+
+        if (mapConfig.getNumRepetitions() > 0)
+            // TODO Dirty coding since mapping config ideally should not change the simulation testbench
+            numRepetitions = mapConfig.getNumRepetitions();
 
         GateLibrary gateLib = new GateLibrary(new File(cmd.getOptionValue("library")), proxWeights);
 
@@ -122,6 +149,7 @@ public class SimulationTestbench {
 
                 if (node.has("graph")) {
                     structure = circuitDeserializer.deserializeString(node.get("graph").toString());
+                    structure.setIdentifier(child.getName().replace(".json", ""));
                 }
 
             } catch (Exception e) {
@@ -147,7 +175,12 @@ public class SimulationTestbench {
 
                 for (int i = 0; i < numRepetitions; i ++) {
                     AssignmentSearchAlgorithm search = mapConfig.getSearchAlgorithm(structure, gateLib, simConfig);
+                    long start = System.nanoTime(); // Added for measuring the execution time.
+
                     SimulationResult result = search.assign();
+
+                    long stop = System.nanoTime();
+                    long duration = stop - start;
 
                     neededSims += result.getNeededSimulations();
 
@@ -164,6 +197,13 @@ public class SimulationTestbench {
                         out.flush();
                     } catch (Exception e) {
                         e.printStackTrace();
+                    }
+
+                    if (mapConfig.getStatistics()) {
+                        SearchStatsLogger logger = new SearchStatsLogger(structure, mapConfig, simConfig);
+                        logger.setResult(result);
+                        logger.setDuration(duration);
+                        logger.save("testbench_statistics/statistics_" + structure.getIdentifier() + "_" + mapConfig.toString().hashCode() + "_" + i + "_" + System.currentTimeMillis() + ".json");
                     }
                 }
 

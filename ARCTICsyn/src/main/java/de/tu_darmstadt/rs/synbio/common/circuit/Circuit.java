@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
+import de.tu_darmstadt.rs.synbio.mapping.util.BranchAndBoundUtil;
 import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
 import de.tu_darmstadt.rs.synbio.synthesis.util.TruthTable;
 import org.jgrapht.GraphPath;
+import org.jgrapht.Graphs;
 import org.jgrapht.alg.isomorphism.VF2GraphIsomorphismInspector;
 import org.jgrapht.alg.shortestpath.AllDirectedPaths;
 import org.jgrapht.graph.DirectedAcyclicGraph;
@@ -31,6 +33,10 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
     private String identifier;
 
+    private String whitelist;
+    private List<Map<Gate, List<Gate>>> substitutionsList;
+    private Map<Gate, String> substitutionTruthTables;
+
     public Circuit() {
         super(Wire.class);
     }
@@ -38,11 +44,17 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
     public Circuit(String identifier) {
         super(Wire.class);
         this.identifier = identifier;
+        this.whitelist = null;
+        this.substitutionsList = null;
+        this.substitutionTruthTables = null;
     }
 
     public Circuit(GateRealization realization, String identifier) {
         super(Wire.class);
         this.identifier = identifier;
+        this.whitelist = null;
+        this.substitutionsList = null;
+        this.substitutionTruthTables = null;
 
         Gate gate = new LogicGate(realization.getIdentifier(), realization.getLogicType());
 
@@ -53,7 +65,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
         Gate inputBuffer;
 
-        for(Variable inputVar : gate.getExpression().variables()) {
+        for (Variable inputVar : gate.getExpression().variables()) {
             inputBuffer = new InputGate(ExpressionParser.parse(inputVar.name()), inputVar.name());
             this.addVertex(inputBuffer);
             this.addEdge(inputBuffer, gate, new Wire(inputVar));
@@ -72,13 +84,17 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         return vertexSet().stream().filter(gate -> (gate.getType() == Gate.Type.INPUT && gate.getExpression().containsVariable(variable))).findFirst().get();
     }
 
+    public List<LogicGate> getLogicGates() {
+        return vertexSet().stream().filter(gate -> (gate.getType() == Gate.Type.LOGIC)).map(gate -> (LogicGate) gate).collect(Collectors.toList());
+    }
+
     public Formula getExpression() {
         return getExpression(getOutputBuffer());
     }
 
-    private Formula getExpression(Gate startNode) {
+    public Formula getExpression(Gate startNode) {
 
-        if(startNode.getType() == Gate.Type.INPUT)
+        if (startNode.getType() == Gate.Type.INPUT)
             return startNode.getExpression();
 
         Formula expression = startNode.getExpression();
@@ -104,16 +120,32 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         return vertexSet().stream().mapToInt(Gate::getWeight).sum();
     }
 
-    public int getNumberLogicGates() { return (int) vertexSet().stream().filter(g -> g.getType().equals(Gate.Type.LOGIC)).count(); }
+    public int getNumberLogicGates() {
+        return (int) vertexSet().stream().filter(g -> g.getType().equals(Gate.Type.LOGIC)).count();
+    }
 
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
     }
 
+    public void setWhitelist(String whitelist) {
+        this.whitelist = whitelist;
+    }
+
+    public void setSubstitutionsList(List<Map<Gate, List<Gate>>> substitutionsList) {
+        this.substitutionsList = substitutionsList;
+    }
+
+    public void setSubstitutionTruthTables(Map<Gate, String> substitutionTruthTables) {
+        this.substitutionTruthTables = substitutionTruthTables;
+    }
+
     public void replaceGate(Gate node, Gate replacement) {
         this.addVertex(replacement);
-        for (Wire wire : this.outgoingEdgesOf(node)) this.addEdge(replacement, this.getEdgeTarget(wire), new Wire(wire.getVariable()));
-        for (Wire wire : this.incomingEdgesOf(node)) this.addEdge(this.getEdgeSource(wire), replacement, new Wire(wire.getVariable()));
+        for (Wire wire : this.outgoingEdgesOf(node))
+            this.addEdge(replacement, this.getEdgeTarget(wire), new Wire(wire.getVariable()));
+        for (Wire wire : this.incomingEdgesOf(node))
+            this.addEdge(this.getEdgeSource(wire), replacement, new Wire(wire.getVariable()));
         this.removeVertex(node);
     }
 
@@ -156,7 +188,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
         Iterator<Gate> iterator = new TopologicalOrderIterator<>(this);
 
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
 
             Gate gate = iterator.next();
 
@@ -178,7 +210,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
                 Gate keeper = gateClass.get(0);
 
-                for (int i = 1; i < gateClass.size(); i ++) {
+                for (int i = 1; i < gateClass.size(); i++) {
 
                     // collect information on redundant gate
                     Gate redGate = gateClass.get(i);
@@ -299,6 +331,63 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         return depth - 1;
     }
 
+    /**
+     * Estimates the circuit complexity based on the size and the used gates.
+     * Gates with n inputs are weighted with n.
+     *
+     * @return
+     */
+    public double estimateCircuitComplexity() {
+        double circuitComplexity = 0;
+
+        Iterator<Gate> iterator = new TopologicalOrderIterator<Gate, Wire>(this);
+
+        double complexity;
+
+        int iX = 1;
+        while (iterator.hasNext()) {
+            Gate g = iterator.next();
+            if (g.getType() == Gate.Type.LOGIC) {
+                complexity = this.getAncestors(g).stream().filter(g2 -> this.getEdge(g2, g) != null).count();
+                circuitComplexity += complexity * iX;
+
+                iX++;
+            }
+        }
+        return circuitComplexity;
+    }
+
+    /**
+     * @return A copy of the circuit on which this method was invoked
+     */
+    public Circuit copy() {
+        return copy(this.getIdentifier());
+    }
+
+    /**
+     * @param identifier The identifier chosen for the copied circuit
+     * @return A copy of the circuit on which this method was invoked
+     */
+    public Circuit copy(String identifier) {
+        Circuit newCircuit = new Circuit(identifier);
+        Graphs.addGraph(newCircuit, this);
+        newCircuit.setWhitelist(this.whitelist);
+        if (substitutionsList != null)
+            newCircuit.setSubstitutionsList(substitutionsList.stream().map(map -> {
+                Map<Gate, List<Gate>> newMap = new HashMap<Gate, List<Gate>>();
+                map.entrySet().stream().forEach(gateListEntry -> {
+                    newMap.put(gateListEntry.getKey(), new ArrayList<>(gateListEntry.getValue()));
+                });
+                return newMap;
+            }).collect(Collectors.toList()));  // Copy list and maps. Gates are equal in the maps.
+
+        if (substitutionTruthTables != null)
+            newCircuit.setSubstitutionTruthTables(new HashMap<>(substitutionTruthTables));
+        return newCircuit;
+    }
+
+    /* comparators */
+
     private static class GateComparator implements Comparator<Gate> {
         @Override
         public int compare(Gate first, Gate second) {
@@ -329,6 +418,8 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
     public int compareTo(Circuit cmp) {
         return cmp.getWeight() - getWeight();
     }
+
+    /* IO */
 
     public void saveGml(File outputFile, Assignment assignment) {
 
@@ -382,6 +473,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         try {
             Writer writer = new FileWriter(outputFile);
             exporter.exportGraph(this, writer);
+            writer.close();
         } catch(Exception e) {
             logger.error(e.getMessage());
         }
@@ -425,6 +517,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         try {
             Writer writer = new FileWriter(outputFile);
             exporter.exportGraph(this, writer);
+            writer.close();
         } catch(Exception e) {
             logger.error(e.getMessage());
         }
@@ -442,6 +535,15 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
             Map<String, Object> jsonMap = new HashMap<>();
             jsonMap.put("graph", this);
             jsonMap.put("truthtable", this.getTruthTable().toString());
+            if (whitelist != null) {
+                jsonMap.put("whitelist", this.whitelist);
+            }
+            if (substitutionsList != null) {
+                jsonMap.put("substitutions_list", BranchAndBoundUtil.substitutionListToString(this.substitutionsList));
+            }
+            if (substitutionTruthTables != null) {
+                jsonMap.put("substitution_truthtables", BranchAndBoundUtil.substitutionTruthtablesToString(this.substitutionTruthTables));
+            }
             mapper.writerWithDefaultPrettyPrinter().writeValue(file, jsonMap);
 
         } catch (Exception e) {

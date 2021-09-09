@@ -10,6 +10,7 @@ public class SimulationResult implements Comparable<SimulationResult> {
     private final double score;
 
     private long neededSimulations = 0;
+    private long minimumBranchAndBoundSimulations = -1;
 
     public SimulationResult(Circuit structure, Assignment assignment, double score) {
         this.structure = structure;
@@ -32,10 +33,13 @@ public class SimulationResult implements Comparable<SimulationResult> {
     public void setNeededSimulations(long sims) {
         this.neededSimulations = sims;
     }
+    public void setMinimumBranchAndBoundSimulations(long minimumBranchAndBoundSimulations)  {this.minimumBranchAndBoundSimulations = minimumBranchAndBoundSimulations;}
 
     public long getNeededSimulations() {
         return neededSimulations;
     }
+
+    public long getMinimumBranchAndBoundSimulations() {return minimumBranchAndBoundSimulations;}
 
     @Override
     public int compareTo(SimulationResult cmp) {

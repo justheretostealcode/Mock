@@ -2,6 +2,8 @@ package de.tu_darmstadt.rs.synbio.common.library;
 
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 
+import java.util.List;
+
 public class GateRealization {
 
     private final String identifier;
@@ -61,17 +63,21 @@ public class GateRealization {
         private final double k;
         private final double n;
 
+        private final Particles particles;
+
         /* derived values */
         private final double xm;
         private final double ym;
         private final double grad;
 
-        public GateCharacterization(double ymax, double ymin, double k, double n) {
+        public GateCharacterization(double ymax, double ymin, double k, double n, Particles particles) {
 
             this.ymax = ymax;
             this.ymin = ymin;
             this.k = k;
             this.n = n;
+
+            this.particles = particles;
 
             this.ym = ((ymax - ymin) / 2 ) + ymin;
             this.xm = Math.pow(((ymax-ymin)/(ym-ymin) - 1), 1/n) * k;
@@ -96,6 +102,10 @@ public class GateRealization {
             return n;
         }
 
+        public Particles getParticles() {
+            return particles;
+        }
+
         /* getters for derived values */
 
         public double getXm() {
@@ -116,6 +126,31 @@ public class GateRealization {
 
         public double getMaxCelloScore()    {
             return ymax / ymin;
+        }
+    }
+
+    public static class Particles {
+
+        final List<Double> ymax;
+        final List<Double> ymin;
+        final int num;
+
+        public Particles(List<Double> ymax, List<Double> ymin) {
+            this.ymax = ymax;
+            this.ymin = ymin;
+            this.num = ymax.size();
+        }
+
+        public int getNum() {
+            return num;
+        }
+
+        public Double getYmax(int n) {
+            return ymax.get(n);
+        }
+
+        public Double getYmin(int n) {
+            return ymin.get(n);
         }
     }
 

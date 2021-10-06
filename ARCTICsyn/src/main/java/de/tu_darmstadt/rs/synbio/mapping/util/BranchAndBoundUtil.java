@@ -421,4 +421,21 @@ public class BranchAndBoundUtil {
         cis.append("}");
         return cis.toString();
     }
+
+    public static String createCustomInputSpecificationParticles(Set<String> missingInputBufferIDs, List<Double> minVals, List<Double> maxVals) {
+        StringBuilder cis = new StringBuilder();
+        cis.append("{");
+
+        CELLO_INPUT_SPECIFICATION.entrySet().stream().filter(stringMapEntry -> !missingInputBufferIDs.contains(stringMapEntry.getKey())).forEach(entry -> {
+            Map<Boolean, Double> value = entry.getValue();
+            cis.append(String.format(DEFAULT_INPUT_SPECIFICATION_ENTRY_FORMAT_STRING, entry.getKey(), value.get(Boolean.FALSE), value.get(Boolean.TRUE)));
+        });
+
+        missingInputBufferIDs.stream().forEach(entry -> {
+            cis.append(String.format(DEFAULT_INPUT_SPECIFICATION_ENTRY_FORMAT_STRING, entry, minVal, maxVal));
+        });
+
+        cis.append("}");
+        return cis.toString();
+    }
 }

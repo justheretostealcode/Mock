@@ -59,30 +59,36 @@ public class GateLibrary {
         for (HashMap<String, Object> realization : parsedRealizations) {
 
             String primitiveIdentifier = (String) Optional.ofNullable(realization.get("primitiveIdentifier"))
-                    .orElseThrow(() -> new RuntimeException("Invalid primitive gate library: Key \"primitiveIdentifier\" not found!"));
+                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"primitiveIdentifier\" not found!"));
 
             String identifier = (String) Optional.ofNullable(realization.get("identifier"))
-                    .orElseThrow(() -> new RuntimeException("Invalid primitive gate library: Key \"identifier\" not found!"));
+                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"identifier\" not found!"));
 
             String altIdentifier = (String) Optional.ofNullable(realization.get("alternative_identifier"))
                     .orElse("");
 
             String group = (String) Optional.ofNullable(realization.get("group"))
-                    .orElseThrow(() -> new RuntimeException("Invalid primitive gate library: Key \"group\" not found!"));
+                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"group\" not found!"));
 
             LinkedHashMap biorep = (LinkedHashMap) Optional.ofNullable(realization.get("biorep"))
-                    .orElseThrow(() -> new RuntimeException("Invalid primitive gate library: Key \"biorep\" not found!"));
+                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"biorep\" not found!"));
 
             LinkedHashMap responseFunction = (LinkedHashMap) Optional.ofNullable(biorep.get("response_function"))
-                    .orElseThrow(() -> new RuntimeException("Invalid primitive gate library: Key \"response_function\" not found!"));
+                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"response_function\" not found!"));
 
             LinkedHashMap parameters = (LinkedHashMap) Optional.ofNullable(responseFunction.get("parameters"))
-                    .orElseThrow(() -> new RuntimeException("Invalid primitive gate library: Key \"parameters\" not found!"));
+                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"parameters\" not found!"));
 
             Optional ymaxOpt = Optional.ofNullable(parameters.get("ymax"));
             Optional yminOpt = Optional.ofNullable(parameters.get("ymin"));
             Optional kOpt = Optional.ofNullable(parameters.get("K"));
             Optional nOpt = Optional.ofNullable(parameters.get("n"));
+
+            LinkedHashMap particles = (LinkedHashMap) Optional.ofNullable(biorep.get("particles"))
+                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"particles\" not found!"));
+
+            Optional ymaxParticles = Optional.ofNullable(particles.get("ymax"));
+            Optional yminParticles = Optional.ofNullable(particles.get("ymin"));
 
             GateRealization newRealization;
 
@@ -93,8 +99,16 @@ public class GateLibrary {
                 double k = (double) kOpt.get();
                 double n = (double) nOpt.get();
 
+                GateRealization.Particles gateParticles = null;
+
+                if (ymaxParticles.isPresent() && yminParticles.isPresent()) {
+                    List<Double> ymaxList = (ArrayList<Double>) ymaxParticles.get();
+                    List<Double> yminList = (ArrayList<Double>) yminParticles.get();
+                    gateParticles = new GateRealization.Particles(ymaxList, yminList);
+                }
+
                 newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group, altIdentifier,
-                        new GateRealization.GateCharacterization(ymax, ymin, k ,n));
+                        new GateRealization.GateCharacterization(ymax, ymin, k ,n, gateParticles));
 
             } else {
                 newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group, altIdentifier);

@@ -568,13 +568,13 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         // The original input buffer ids
         Set<String> problemInputBufferIDs = problem.getInputBuffers()
                 .stream()
-                .map(gate -> gate.getIdentifier())
+                .map(Gate::getIdentifier)
                 .collect(Collectors.toSet());
 
         List<Gate> inputGates = subproblem.getInputBuffers();
         // The input buffer ids not present in the original problem
         Set<String> artificialInputBufferIDs = inputGates.stream()
-                .map(gate -> gate.getIdentifier())
+                .map(Gate::getIdentifier)
                 .filter(ident -> !problemInputBufferIDs.contains(ident))
                 .collect(Collectors.toSet());
 
@@ -599,38 +599,47 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             */
             if (artificialInputBufferIDs.size() > 0) {
             /*
-            Determining which groups of repressesors are used within the assignment.
+            Determining which groups of repressors are used within the assignment.
             */
-                Set<String> usedGroups = assignment.values().stream().map(realization -> realization.getGroup()).collect(Collectors.toSet());
+                Set<String> usedGroups = assignment.values().stream().map(GateRealization::getGroup).collect(Collectors.toSet());
 
 
             /*
-            Set up the prerequisites for the maximization of input intervall.
+            Set up the prerequisites for the maximization of input interval.
              */
                 double yMax;
                 double yMin;
-                for (LogicType type : LogicType.values()) {
-                    if (realizations.get(type) == null)
-                        continue;
+
+                List<Double> yMaxParticles = new ArrayList<>();
+                List<Double> yMinParticles = new ArrayList<>();
+
 
                 /*
                 Determine all realizations which belong to groups not already used.
                  */
-                    List<GateRealization.GateCharacterization> availableRealizations = realizations.get(type).stream()
-                            .filter(realization -> !usedGroups.contains(realization.getGroup()) && realization.isCharacterized())
-                            .map(realization -> realization.getCharacterization())
-                            .collect(Collectors.toList());
-
-                    if (availableRealizations.isEmpty())
-                        continue;
+                List<GateRealization.GateCharacterization> availableRealizations = realizations.values().stream().flatMap(Collection::stream)
+                        .filter(realization -> !usedGroups.contains(realization.getGroup()) && realization.isCharacterized())
+                        .map(GateRealization::getCharacterization)
+                        .collect(Collectors.toList());
 
                 /*
                 Determine largest ymax and smallest ymin
                  */
-                    yMax = availableRealizations.stream().mapToDouble(gateCharacterization -> gateCharacterization.getYmax()).max().orElse(Math.pow(10, 15));
-                    yMin = availableRealizations.stream().mapToDouble(gateCharacterization -> gateCharacterization.getYmin()).min().orElse(0);
-                    maxVal = Math.max(maxVal, yMax);
-                    minVal = Math.min(minVal, yMin);
+                yMax = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmax).max().orElse(Math.pow(10, 15));
+                yMin = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmin).min().orElse(0);
+                maxVal = Math.max(maxVal, yMax);
+                minVal = Math.min(minVal, yMin);
+
+                // TODO: remove quick fix
+                if (true) {
+                    for (int i = 0; i < 5000; i++) {
+                        int finalI = i;
+                        yMax = availableRealizations.stream().mapToDouble(r -> r.getParticles().getYmax(finalI)).max().orElse(Math.pow(10, 15));
+                        yMin = availableRealizations.stream().mapToDouble(r -> r.getParticles().getYmin(finalI)).min().orElse(0);
+
+                        yMaxParticles.add(i, yMax);
+                        yMinParticles.add(i, yMin);
+                    }
                 }
             }
         }

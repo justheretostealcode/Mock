@@ -161,8 +161,7 @@ def circuitScore(dataON, dataOFF):
         score = sign * ot.wasserstein_1d(np.log(dataON), np.log(dataOFF), p=simContext["wasserstein_p"])
         score = np.exp(score)
     elif ("ws-log-exp-asym" == DIST):
-        score = sign * ot.wasserstein_1d(np.log(dataON[dataON <= median_on]), np.log(dataOFF[dataOFF >= median_off]),
-                                         p=simContext["wasserstein_p"])
+        score = 0.5*(np.log(median_on) - np.log(median_off)) + (np.sum(np.log(dataON[dataON < median_on])) - np.sum(np.log(dataOFF[dataOFF > median_off])))/len(dataON)
         score = np.exp(score)
     else:
         score = -9999  # (np.mean(dataON) - np.mean(dataOFF)) ** 2    # Error Code if no appropriate score is used
@@ -221,9 +220,9 @@ def initialiseSimulator(structureContent, gateLib, maxNumberOfParticles):
         return responseFunctions
 
     """
-    This method prepares the particles for the gates  
+    This method prepares the particles for the gates
     The particles provided in the gatelib are used and filled up if their number is not sufficient for the maximum number of particles required.
-    
+
     gateLib: The genetic gate library to use
     n: The maximum number of particles applicable to use during simulation
     """
@@ -307,7 +306,7 @@ def initialiseSimulator(structureContent, gateLib, maxNumberOfParticles):
 
     """
     This method returns a list of node IDs, which is sorted in the order of evaluation for the simulation.
-    
+
     nodes: The nodes of the circuit
     edges: The edges of the circuit
     """
@@ -386,7 +385,7 @@ def initialiseSimulator(structureContent, gateLib, maxNumberOfParticles):
     This method generates the truthtable essential for simulation.
     This truthtable includes the boolean as well as bio assignments and the boolean output values of the circuit.
     These information is essential for the simulation as well as the subsequent scoring.
-    
+
     inputIDs: The ids of the input buffers
     outputIDs: The ids of the output buffers
     outputTruthTable: The truthtable string of the boolean circuit
@@ -627,7 +626,7 @@ The method performing the actual simulation of the circuit depending on the prov
 
 assignment: The precise assignment to simulate on the circuit of interest
 simData: The data prepared during the initialisation phase, including response function parameters and the truthtables.
-simSpec: Additional information currently not required 
+simSpec: Additional information currently not required
 """
 
 
@@ -672,7 +671,7 @@ def startSimulation(assignment, simData, simSpec):
     """
     This method is the entrypoint for the actual simulation of the genetic circuit.
     In detail, this method iterates over the single particles, if they exist, and initiates the per particle/parameter simulation
-    
+
     nodeOrder: The order in which the nodes shall be evaluated
     circuit: The circuit representation
     assignment: The assignment to simulate
@@ -761,7 +760,7 @@ def startSimulation(assignment, simData, simSpec):
     This method is only required for currently ongoing work and not used in case of a normal simulation.
     !!!
     The substitution is implemented on this level, since it is mathematically correct for single values.
-    It has not been proven for particle simulation yet. 
+    It has not been proven for particle simulation yet.
     """
 
     def simulateSubstitutedCircuit(nodeOrder, circuit, assignment, truthTable, responseFunctions, circuitSim, results,
@@ -861,16 +860,16 @@ def startSimulation(assignment, simData, simSpec):
     """
     For a given set of parameters, this method adds the circuit outputs to the corresponding sets.
     The corresponding ID and either to the True or False set.
-    
-    
+
+
     nodeOrder: The order in which the nodes shall be evaluated
     circuit: The circuit representation
     assignment: The assignment to simulate
     truthTable: The truthtable dict including input assignements and boolean outputs
-    responseFunctions: The responsefunctions used within simulation    
+    responseFunctions: The responsefunctions used within simulation
     circuitSim: A dict acting as template for storing the circuit values or as direct store location
     results: The map including the values for each circuit output. The current simulations results are added to this dict.
-    completeCircuitVals: A field used to store every value present within the genetic circuit 
+    completeCircuitVals: A field used to store every value present within the genetic circuit
     iteration: The current iteration, respectively the index of the particle used for a given parameter
     substitutionValues: Values to use during substitution. (Only present if called by simulateSubstitutedCircuit)
     """
@@ -924,14 +923,14 @@ def startSimulation(assignment, simData, simSpec):
     """
     Evaluates a complete circuit according to the specified nodeOrder
     The parameters provided by the responseFunctions are used.
-    
+
     nodeOrder: The order in which the nodes shall be evaluated
     circuit: The circuit representation
     assignment: The assignment to simulate
     truthTable: The truthtable dict including input assignements and boolean outputs
     circuitInputs: The concentrations representing the circuit input assignment
     circuitVals: The dict including the values within the circuit
-    responseFunctions: The responsefunctions used within simulation    
+    responseFunctions: The responsefunctions used within simulation
     substitution: The map giving rise to which values need to be substituted (Only present if called by simulateSubstitutedCircuit)
     substitutionValues: Values to use during substitution. (Only present if called by simulateSubstitutedCircuit)
     """

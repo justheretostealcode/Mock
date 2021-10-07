@@ -57,12 +57,13 @@ public class SimulatorInterface {
 
         try {
             String structureFileName = "structure_" + circuit.getIdentifier() + "_tid" + Thread.currentThread().getId() + "_" + System.nanoTime() + ".json";
-            String dotFileName = structureFileName.replace(".json", ".dot");
-
             File structureFile = new File(simulatorPath, structureFileName);
+            circuit.save(structureFile);
+
+            //String dotFileName = structureFileName.replace(".json", ".dot");
             //File dotFile = new File(simulatorPath, dotFileName);
             //circuit.print(dotFile);
-            circuit.save(structureFile);
+            //dotFile.delete();
 
             ProcessBuilder pb = new ProcessBuilder(pythonBinary, simScript, "s_path=" + structureFileName + " lib_path=" + library.getAbsolutePath() + " " + simInitArgs);
             pb.directory(simulatorPath);
@@ -73,7 +74,7 @@ public class SimulatorInterface {
 
             while (!reader.readLine().startsWith("ready:"));
 
-            //dotFile.delete();
+
             structureFile.delete();
 
         } catch (Exception e) {
@@ -100,7 +101,7 @@ public class SimulatorInterface {
             if (scoreStr.startsWith("O ")) {
                 scoreStr = scoreStr.substring(2);
             }
-
+            // relevant to correctly parse infinity as returned score
             score = scoreStr.equals("inf") ? Double.POSITIVE_INFINITY : Double.parseDouble(scoreStr);
 
         } catch (Exception e) {

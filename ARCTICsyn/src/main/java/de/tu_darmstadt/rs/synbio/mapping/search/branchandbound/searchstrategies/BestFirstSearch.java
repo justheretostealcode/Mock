@@ -8,6 +8,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Class implementing BestFirstSearch (BeFS) as search strategy.
+ */
 public class BestFirstSearch implements SearchStrategy {
     private ArrayList<QueueItem> queue;
 
@@ -45,8 +48,6 @@ public class BestFirstSearch implements SearchStrategy {
 
     @Override
     public void addToQueue(QueueItem item) {
-//        queue.add(item);
-//        queue.sort(comparator);
         if (item == null)
             return;
 
@@ -58,8 +59,6 @@ public class BestFirstSearch implements SearchStrategy {
 
     @Override
     public void addToQueue(List<QueueItem> items) {
-
-        // TODO Check, whether the order of items is preserved
         if (items == null)
             return;
 
@@ -78,7 +77,6 @@ public class BestFirstSearch implements SearchStrategy {
                     indexCache.put(key, indexCache.get(key) + 1); // Increment as an node has been added in front
             }
         }
-        // isQueueOrdered(queue);
         updateStatistics();
     }
 

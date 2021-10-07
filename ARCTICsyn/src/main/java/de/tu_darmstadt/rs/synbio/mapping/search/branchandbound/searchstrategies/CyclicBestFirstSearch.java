@@ -5,6 +5,9 @@ import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.QueueItem;
 
 import java.util.*;
 
+/**
+ * Implementation of CyclicBestFirstSearch (CBeFS) as search strategy.
+ */
 public class CyclicBestFirstSearch implements SearchStrategy {
     private ArrayList<QueueItem>[] queues;
 
@@ -95,7 +98,6 @@ public class CyclicBestFirstSearch implements SearchStrategy {
                         indexes.put(key, indexes.get(key) + 1); // Increment as an node has been added in front
                 }
             }
-            // isQueueOrdered(queue);
         }
         updateStatistics();
     }

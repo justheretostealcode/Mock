@@ -10,6 +10,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+/**
+ * A class to visualize the branch and bound search tree
+ */
 public class SearchTreeVisualizer {
     private final String initialNodeID = "EMPTY_INITIALISATION_NODE";
     private BufferedWriter writer;
@@ -17,6 +20,15 @@ public class SearchTreeVisualizer {
     private LogicGate[] reversedLogicGates;
     private boolean bVisualize;
 
+
+    /**
+     * Creates a search tree visualizer. <br>
+     * A file is created to store the created graph.
+     * @param structureName         The name of the structure considered
+     * @param mappingConfiguration  The mapping configuration
+     * @param reversedLogicGates    The gates of the structure in reversed topological order
+     * @param bVisualize            Whether to visualize or not
+     */
     public SearchTreeVisualizer(String structureName, MappingConfiguration mappingConfiguration, LogicGate[] reversedLogicGates, boolean bVisualize) {
 
         this.reversedLogicGates = reversedLogicGates;
@@ -30,9 +42,7 @@ public class SearchTreeVisualizer {
                 file.createNewFile();
                 writer = new BufferedWriter(new FileWriter(file));
 
-
                 writer.write("digraph \"" + structureName + "_" + System.currentTimeMillis() + "\" {\n");
-
 
                 writer.write("ranksep=\"1.2 equally\";\n");
                 writer.write(String.format("%s [label=\"root\"];\n", initialNodeID));
@@ -73,27 +83,6 @@ public class SearchTreeVisualizer {
         if (size == 0)
             return;
 
-//        LogicGate gate = reversedLogicGates[size - 1];
-//        GateRealization realization = assignment.get(gate);
-//        String targetIdentifier = getNodeIdentifier(gate, realization);
-//
-//        String sourceIdentifier;
-//        if (size > 2) {
-//            LogicGate sourceGate = reversedLogicGates[size - 2];
-//            GateRealization sourceRealization = assignment.get(sourceGate);
-//            sourceIdentifier = getNodeIdentifier(sourceGate, sourceRealization);
-//            targetIdentifier = sourceIdentifier + "-" + targetIdentifier;
-//            LogicGate prevGate = reversedLogicGates[size - 3];
-//            sourceIdentifier = getNodeIdentifier(prevGate, assignment.get(prevGate)) + sourceIdentifier;
-//
-//        }
-//        else if (size == 2) {
-//
-//        }
-//        else {
-//            targetIdentifier = initialNodeID + "-" + targetIdentifier;
-//            sourceIdentifier = initialNodeID;
-//        }
         LogicGate gate = reversedLogicGates[size - 1];
         GateRealization realization = assignment.get(gate);
         String sourceIdentifier = "";
@@ -124,6 +113,9 @@ public class SearchTreeVisualizer {
         return identifier;
     }
 
+    /**
+     * Completes the created graph and finalizes its export to the file.
+     */
     public void finish() {
         if (!bVisualize)
             return;
@@ -136,5 +128,4 @@ public class SearchTreeVisualizer {
             e.printStackTrace();
         }
     }
-
 }

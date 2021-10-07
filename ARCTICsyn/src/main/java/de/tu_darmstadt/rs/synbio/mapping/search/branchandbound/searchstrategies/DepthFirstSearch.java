@@ -6,6 +6,9 @@ import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.QueueItem;
 import java.lang.reflect.Array;
 import java.util.*;
 
+/**
+ * This class implements the search strategy DepthFirstSearch (DFS)
+ */
 public class DepthFirstSearch implements SearchStrategy {
 
     private ArrayList<QueueItem> queue;

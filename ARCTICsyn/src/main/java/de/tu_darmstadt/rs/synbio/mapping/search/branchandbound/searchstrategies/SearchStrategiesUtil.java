@@ -5,6 +5,9 @@ import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.QueueItem;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class provides means for efficiently inserting an element into an ordered list.
+ */
 public class SearchStrategiesUtil {
     @Deprecated
     public static List<QueueItem> binaryInsert(List<QueueItem> list, QueueItem elem) {

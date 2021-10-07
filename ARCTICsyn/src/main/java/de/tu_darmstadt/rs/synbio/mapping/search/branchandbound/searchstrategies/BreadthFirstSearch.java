@@ -8,6 +8,9 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Implements the search strategy BreadthFirstSearch (BFS)
+ */
 public class BreadthFirstSearch implements SearchStrategy{
     private ArrayList<QueueItem> queue;
 

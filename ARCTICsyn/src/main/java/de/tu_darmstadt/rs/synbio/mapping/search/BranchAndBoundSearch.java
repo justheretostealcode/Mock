@@ -53,14 +53,6 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
     public BranchAndBoundSearch(Circuit structure, GateLibrary lib, MappingConfiguration mapConfig, SimulationConfiguration simConfig) {
         super(structure, lib, mapConfig, simConfig);
-        // TODO Remove fixed circuit later
-
-
-        // TODO Beachten, dass die Bounding Function für Minimierung angepasst werden müsste
-
-        // TODO Möglichkeit geben eine Initiale Lösung zu übernehmen
-
-        // TODO Möglichkeit implementieren die lower bound iterativ zu decrementieren (am besten als Mögliche Optimierungsart)
 
         if (mapConfig.getOptimizationType() == MappingConfiguration.OptimizationType.MINIMIZE)
             throw new Error("The Branch and Bound search is only capable of performing a maximization and not to minimize.");
@@ -111,6 +103,12 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         int iX = 0;
     }
 
+    /**
+     * Derives the subproblems of the provided structure
+     *
+     * @param structure The structure to consider
+     * @return An array of circuits
+     */
     private Circuit[] getSubproblems(Circuit structure) {
         List<Circuit> subproblems = BranchAndBoundUtil.getSubproblems(structure);
         Collections.reverse(subproblems);   // Reverse the order to achieve, that the index corresponds to the distance from the source in the search tree
@@ -149,7 +147,6 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         for (Iterator it = iterator; it.hasNext(); ) {
             Gate g = (Gate) it.next();
-            //System.out.println(g.getIdentifier());
             if (g.getType() == Gate.Type.LOGIC)
                 gates.add(g);
         }
@@ -197,7 +194,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             if (libraryOrder == MappingConfiguration.BAB_Sort_Order.SORTED || libraryOrder == MappingConfiguration.BAB_Sort_Order.REVERSED) {
                 realizations.sort(comparator);
                 if (mapConfig.getBabSearchStrategy() == MappingConfiguration.BAB_SearchStrategy.DEPTH_FIRST_SEARCH)
-                    Collections.reverse(realizations);    // Reversion is necessary for depth first search, since the gate library is sorted descending based on the realizations possible scores (better first)
+                    // Reversion is necessary for depth first search, since the gate library is sorted descending based on the realizations possible scores (better first)
+                    Collections.reverse(realizations);
 
                 if (libraryOrder == MappingConfiguration.BAB_Sort_Order.REVERSED)
                     Collections.reverse(realizations);
@@ -238,48 +236,20 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
     @Override
     public SimulationResult assign() {
-        // TODO: Check whether initial Assignment exists. If not create one or start blank.
-
-
-        // TODO: Generate Subproblems (inclusive Whitelists etc.) (+)
-        //       (+) Erzeugen der Simulatoren für jedes Subproblem
-        //       (+)   Ordnung über Gatter aufstellen
-        //       (+)   Whitelists Berechnen
-        //       (+) Strukturen erzeugen
-        //       (?) (Heuristik für gute initiale Lösung)
-
-        // TODO Optimierung Implementieren
-        //      (+)Bounding Function implementieren
-        //      (+) Selection Strategy implementieren (Allgemein, sodass die vier genannten Strategien möglich sind)
-        //           Überprüfen wie das modifizierte Depth First Search eingesetzt werden kann, welches den besten Kindsknoten präveriert
-        //           Kann durch Selection Strategy anhand der Ebene des Subproblems erkannt werden und dem Score (oder Beihilfe durch die Branching Strategy)
-        //      (+) Branching Function implementieren
-        //           Nur valide Assignments erzeugen -> Auf Gruppen Zugehörigkeit prüfen
-        //           Der Wert der Bounding Function wird nicht in der Branching Function evaluiert
-        //           Hier werden wirklich nur alle Kindsknoten erzeugt
-        //           List aller verfügbaren Gatter nehmen und diese auf die Group Constraint filtern
-        //      Selection Strategy Switch implementieren
-
-        // TODO Logging implementieren
-        //      (+) Anzahl der benötigten Simulationen
-        //      Score in Abhängigkeit der Iteration
-        //      Wie viele Knoten wurden besucht
-        //      Wie viele Knoten wurden auf jeder Ebene besucht
-        //      Auf welcher Ebene wurden die meisten Knoten gepruned
-        //      Durchschnittlicher Score auf einer Ebene (Auch Median und Varianz betrachten)
-
         SearchStatsLogger searchStatsLogger = new SearchStatsLogger(structure, mapConfig, simConfig, reversedLogicGates.length);
 
         Comparator<QueueItem> comparator;
         if (mapConfig.getBabSearchStrategy() == MappingConfiguration.BAB_SearchStrategy.DEPTH_FIRST_SEARCH)
-            comparator = new Comparator<QueueItem>() {                   // Sort ascending to improve Depth First Search
+            // Sort ascending to improve Depth First Search
+            comparator = new Comparator<QueueItem>() {
                 @Override
                 public int compare(QueueItem o1, QueueItem o2) {
                     return (int) Math.signum(o1.val - o2.val);
                 }
             };
         else
-            comparator = new Comparator<QueueItem>() {                   // Sort descending to improve Breath First Search
+            // Sort descending to improve Breath First Search
+            comparator = new Comparator<QueueItem>() {
                 @Override
                 public int compare(QueueItem o1, QueueItem o2) {
                     return (int) Math.signum(o2.val - o1.val);
@@ -293,7 +263,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                 break;
             case SHUFFLED:
                 // In the shuffled case, the branched assignments are shuffled and then not sorted later on
-                // Therefore no break here since the following comparator achieves
+                // Therefore no break here since the following comparator does not apply any order after shuffling
             case UNSORTED:
                 comparator = new Comparator<QueueItem>() {
                     @Override
@@ -321,8 +291,6 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         SearchStrategy strategy = getSearchStrategy();
 
-
-        // TODO Optionally determine a value based on the library
         strategy.addInitialItemToQueue(Double.POSITIVE_INFINITY);
 
         long numberOfItemsAddedAndSkipped = 0;
@@ -338,7 +306,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             if (iteration % 100 == 0)  // Only update every hundred iterations
                 System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
 
-            if (currentItem.val <= bestScore) { // This check is required, if the best score has changed after this queue item has been added to the queue
+            if (currentItem.val <= bestScore) {
+                // Removes item if the best score has changed after this queue item has been added to the queue
                 numberOfItemsAddedAndSkipped++;
                 continue;
             }
@@ -363,20 +332,12 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
                 if (currentAssignment.size() < logicGates.length - 1) {    // The child assignments are intermediate nodes (no leaves)
 
-//                    QueueItem finalCurrentItem = currentItem;
 
                     double finalBestScore = bestScore;
                     List<QueueItem> queueItems = childs.stream()
                             .map(assignment -> {                                    // Map to QueueItem
 
-//                                if (assignment.toString().equals("{\"NOR2_4 : NOR2_4\", \"NOR2_7 : NOR2_1\", \"NOT_0 : NOT_17\", \"NOR2_3 : NOR2_13\", \"NOR2_2 : NOR2_10\"}")) {
-//                                    logger.info("Assignment of interest");
-//                                }
                                 double dVal = bound(assignment);
-
-//                                if (dVal > finalCurrentItem.val) {
-//                                    logger.info("Error regarding optimality of bounding function.");
-//                                }
 
                                 ref.highestScore = Math.max(ref.highestScore, dVal);
                                 return QueueItem.getQueueItem(assignment, dVal);
@@ -384,15 +345,10 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                             .filter(item -> bVisualize || item.val > finalBestScore)              // Filter the assignments which do not have sufficient score (Filtering is skipped if visualisation is turned on, in order to result obtain complete Search Trees)
                             .sorted(comparator)// Ensures, that the search strategy visits the best node first
                             .collect(Collectors.toList());
-                    //.forEach(item -> strategy.addToQueue(item));            // Add to queue
                     strategy.addToQueue(queueItems);
                 } else {   // The child assignments are leaves
 
                     for (Assignment assignment : childs) {
-//                        if (currentItem.val < 200) {
-//                            logger.info("Assignment of interest.");     // TODO Remove!
-//                        }
-
                         val = bound(assignment);
                         ref.highestScore = Math.max(ref.highestScore, val);
                         searchTreeVisualizer.addLeafNode(assignment, val, bestScore);
@@ -409,16 +365,13 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                     searchStatsLogger.addBoundingFunctionScore(currentAssignment.size(), currentItem.val, ref.highestScore);
                 searchStatsLogger.addEntryToOverallSimulations(currentItem.val, childs.size());
 
-//                ToDo Remove
-                if (boundingFunctionScore < 1)
-                    logger.error(String.format("ERROR %s: Boundingfunction score is below 1. Score: %f, Parent Item Score: %f, Child Item Score: %f.", structure.getIdentifier(), boundingFunctionScore, currentItem.val, ref.highestScore));
-
+                // Activate Code in case the error is required
+//                if (bFastMode && boundingFunctionScore < 1)
+//                    logger.error(String.format("ERROR %s: Boundingfunction score is below 1. Score: %f, Parent Item Score: %f, Child Item Score: %f.", structure.getIdentifier(), boundingFunctionScore, currentItem.val, ref.highestScore));
 
             } else {
                 /*
                 Lazy Branch and Bound
-                Verifizieren ob numberofOverallSimulations identisch ist.
-                Optional die Stats wie BoundingFunctionScores hier hinzufügen.
                 */
                 val = (currentAssignment.size() != 0) ? bound(currentAssignment) : Double.POSITIVE_INFINITY;
                 if (val <= bestScore)       // This check is required, if the best score has changed after this queue item has been added to the queue
@@ -428,24 +381,16 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                     // The assignment is an intermediate node and needs to be branched
                     childs = branch(currentAssignment);
 
-
-//                    if (mapConfig.getBabSearchStrategy() == MappingConfiguration.BAB_SearchStrategy.DEPTH_FIRST_SEARCH)
-//                        Collections.reverse(childs);    // Reversion is necessary for depth first search, since the gate library is sorted descending based on the realizations possible scores (better first)
                     /*
                     The gate library is sorted ascending for depth first search and otherwise descending, based on the possible maximum scores of each gate.
 
                     Since depth first search adds the last to the front, the best gate will be used first, when it is added last.
                     For Breadth First Search the order is appropriate. However, Breadth First Search itself is not appropriate either.
                      */
-//                    // TODO Adding elements to queue twice is a huge mistake!
-//                    for (Assignment assignment : childs) {
-//                        strategy.addToQueue(QueueItem.getQueueItem(assignment, val));   // At child with parents score
-//                    }
                     double finalVal = val;
                     List<QueueItem> queueItems = childs.stream()
                             .map(assignment -> QueueItem.getQueueItem(assignment, finalVal))
                             .collect(Collectors.toList());
-                    //.forEach(item -> strategy.addToQueue(item));
                     strategy.addToQueue(queueItems);
 
                 } else {
@@ -461,13 +406,6 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             iteration++;
         }
 
-//        // TODO bestScore needs to be evaluated for non custom input specification
-//        //      Also therefore it would help, that the simulator is capable of changing the input specification for any simulation
-//        double score = interfaces[bestAssignment.size() - 1].simulate(bestAssignment, " cis=0 substitute=f ");
-//        if (score != bestScore)
-//            throw new Error(String.format("Mismatch in scores. Check correctness of bounding. Current best score: %f vs. obtained score: %f", bestScore, score));
-//        bestScore = score;  // TODO Evaluieren ob noch notwendig, da die Bound Funktion ja
-
         SimulationResult result = new SimulationResult(structure, bestAssignment, bestScore);
         result.setNeededSimulations(iNeededSimulations);
         result.setMinimumBranchAndBoundSimulations(minimalNumberOfSimulations(bestAssignment));
@@ -482,8 +420,6 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             searchStatsLogger.save("statistics/statistics_" + structure.getIdentifier() + "_" + mapConfig.toString().hashCode() + "_" + randVal + "_" + System.currentTimeMillis() + ".json");
 
 
-//        String searchStatsEval = searchStatsLogger.evaluate(bestScore);
-//        logger.info(searchStatsEval);
 
         shutDown();
 
@@ -541,7 +477,6 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             additionalArgs = " custom_input_specification=0 substitute=0 "; // Use default values if leaf node
 
         double score = interfaces[assignmentSize - 1].simulate(assignment, additionalArgs);
-        //double score = interfaces[assignment.size() - 1].simulate(assignment, " custom_input_specification=1 custom_input_low=0.00001 custom_input_high=100 ");
         return score;
     }
 
@@ -605,7 +540,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
 
             /*
-            Set up the prerequisites for the maximization of input intervall.
+            Set up the prerequisites for the maximization of input interval.
              */
                 double yMax;
                 double yMin;
@@ -640,7 +575,6 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         substitutionMode.equals("t") -> Substitution is performed -> Leads to guaranteed optimal result but also to less tightness
          */
         additionalArgs = String.format(" substitute=%s use_custom_input_specification=1 cis=%s", substitutionMode, BranchAndBoundUtil.createCustomInputSpecification(artificialInputBufferIDs, minVal, maxVal));
-        //additionalArgs = additionalArgs.replace(",", ".");
         return additionalArgs;
     }
 
@@ -650,7 +584,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      * @return
      */
     private SearchStrategy getSearchStrategy() {
-        // Get corresponding informaiton from mapConfig
+        // Get corresponding information from mapConfig
         SearchStrategy strategy;
         switch (mapConfig.getBabSearchStrategy()) {
             case DEPTH_FIRST_SEARCH:
@@ -683,7 +617,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         long min = 0;
         long numberOfAvailableRealizations = 0;
         HashSet<String> usedGroups = new HashSet<>();
-        //LogicGate gate;
+
         for (LogicGate gate : reversedLogicGates) {
             numberOfAvailableRealizations = realizations.get(gate.getLogicType()).stream().filter(realization -> !usedGroups.contains(realization.getGroup())).count();
             min += numberOfAvailableRealizations;

@@ -537,7 +537,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         }
 
         //TODO: implement additional args for particle case
-        additionalArgs = String.format(" substitute=%s use_custom_input_specification=1 cis=%s", bFastMode ? "1" : "0", BranchAndBoundUtil.createCustomInputSpecification(artificialInputBufferIDs, minVal, maxVal));
+        additionalArgs = String.format(" substitute=%s use_custom_input_specification=1 cis=%s", bFastMode ? "0" : "1", BranchAndBoundUtil.createCustomInputSpecification(artificialInputBufferIDs, minVal, maxVal));
         return additionalArgs;
     }
 

@@ -33,6 +33,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
     private String identifier;
 
+    // Additional parameters only required by Branch and Bound
     private String whitelist;
     private List<Map<Gate, List<Gate>>> substitutionsList;
     private Map<Gate, String> substitutionTruthTables;

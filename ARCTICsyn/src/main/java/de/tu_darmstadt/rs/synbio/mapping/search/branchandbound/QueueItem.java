@@ -16,7 +16,7 @@ public class QueueItem {
 
     /**
      * The value assigned to this assignment. <br>
-     *     Whether it is its own or its parents score depends on whether eager or lazy branch and bound is used.
+     * Whether it is its own or its parents score depends on whether eager or lazy branch and bound is used.
      */
     public double val;
 
@@ -24,27 +24,34 @@ public class QueueItem {
     private static ArrayList<QueueItem> items = new ArrayList<>();
 
 
-
     /**
      * A method for obtaining a queue item of the asked values. <br>
-     *     If there exists at least one non used item, this one is used while otherwise a new one is created. <br>
-     *         This enables the recycling of already created QueueItem Objects
+     * If there exists at least one non used item, this one is used while otherwise a new one is created. <br>
+     * This enables the recycling of already created QueueItem Objects
+     *
      * @param assignment
      * @param val
-     * @return
+     * @return The queue item featuring the provided information
      */
     public static QueueItem getQueueItem(Assignment assignment, double val) {
-        if (items.size() == 0)  {
+        if (items.size() == 0) {
             return new QueueItem(assignment, val);
         }
-        //TODO da aktuell Free nie genutzt wird, ist dieser Mechanismus ohne Funktion
+
         QueueItem item1 = items.remove(0);
         item1.assignment = assignment;
         item1.val = val;
         return item1;
     }
 
-    public QueueItem(Assignment assignment, double val)    {
+    /**
+     * A method for obtaining a queue item of the asked values. <br>
+     *
+     * @param assignment
+     * @param val
+     * @return The queue item featuring the provided information
+     */
+    public QueueItem(Assignment assignment, double val) {
         this.assignment = assignment;
         this.val = val;
     }
@@ -52,7 +59,7 @@ public class QueueItem {
     /**
      * This method needs to be called in order to add this item to the list of available items for reuse.
      */
-    public void free()   {
+    public void free() {
         items.add(this);
         this.assignment = null;
         this.val = Double.NEGATIVE_INFINITY;

@@ -22,17 +22,13 @@ import java.util.stream.Collectors;
 public class BranchAndBoundUtil {
     private static final Logger logger = LoggerFactory.getLogger(BranchAndBoundUtil.class);
 
-    public static final String TEST_DIRECTORY = "reference_subproblem_circuit\\";
-    public static final String SUBPROBLEM_0 = "Rep.json";
-    public static final String SUBPROBLEM_1 = "Rep_Subproblem_1.json";
-    public static final String SUBPROBLEM_2 = "Rep_Subproblem_2.json";
 
     public static final String DEFAULT_INPUT_SPECIFICATION_ENTRY_FORMAT_STRING = "\"%s\" : {\"0\" : %s, \"1\" : %s}, ";
     public static final Map<String, Map<Boolean, Double>> CELLO_INPUT_SPECIFICATION = Map.ofEntries(
-            new AbstractMap.SimpleEntry<String, Map<Boolean, Double>>("a", Map.of(false, 0.0034, true, 2.8)),
-            new AbstractMap.SimpleEntry<String, Map<Boolean, Double>>("b", Map.of(false, 0.0013, true, 4.4)),
-            new AbstractMap.SimpleEntry<String, Map<Boolean, Double>>("c", Map.of(false, 0.0082, true, 2.5)),
-            new AbstractMap.SimpleEntry<String, Map<Boolean, Double>>("d", Map.of(false, 0.025, true, 0.31))
+            new AbstractMap.SimpleEntry<>("a", Map.of(false, 0.0034, true, 2.8)),
+            new AbstractMap.SimpleEntry<>("b", Map.of(false, 0.0013, true, 4.4)),
+            new AbstractMap.SimpleEntry<>("c", Map.of(false, 0.0082, true, 2.5)),
+            new AbstractMap.SimpleEntry<>("d", Map.of(false, 0.025, true, 0.31))
     );
 
 
@@ -57,49 +53,36 @@ public class BranchAndBoundUtil {
      * @return A ordered list of subproblems (the first index is the original structure and the last is a circuit containing only one logic gate)
      */
     public static List<Circuit> getSubproblems(Circuit structure) {
-//        System.out.println("\n\n------------------------------------");
-//        System.out.println("Start: Subproblem Creation");
-//        Circuit structure = getCircuit(circuit3Path);
-//        System.out.println("The circuit has " + structure.getNumberLogicGates() + " logic gates.");
 
         // Establish the reverse topological order of the logic gates
         ArrayList<Gate> gatesInReversedOrder = new ArrayList<>();
         Iterator<Gate> iterator = new TopologicalOrderIterator(structure);
         for (Iterator it = iterator; it.hasNext(); ) {
             Gate g = (Gate) it.next();
-            //System.out.println(g.getIdentifier());
+
             if (g.getType() == Gate.Type.LOGIC)
                 gatesInReversedOrder.add(g);
         }
-        //Collections.reverse(gatesInReversedOrder);
 
-        //gatesInReversedOrder.forEach(gate -> System.out.println(gate.getIdentifier()));
         Gate[] gateOrder = new Gate[gatesInReversedOrder.size()];
         gatesInReversedOrder.toArray(gateOrder);
 
         List<Gate> originalInputBuffers = structure.getInputBuffers();
-        List<Map<Gate, List<Gate>>> substitutionsList;// = determineSubstitutionList(structure, originalInputBuffers);
-        Map<Gate, String> substitutionTruthTables;// = determineSubstitutionTruthtables(structure, substitutionsList);
+        List<Map<Gate, List<Gate>>> substitutionsList;
+        Map<Gate, String> substitutionTruthTables;
         // Create subproblems
         ArrayList<Circuit> subProblems = new ArrayList<>(gateOrder.length - 1);
         Circuit subproblem = new Circuit("Subproblem");
-        Graphs.addGraph(subproblem, structure); // Cop< Graph
+        Graphs.addGraph(subproblem, structure);
         FormulaFactory factory = new FormulaFactory();
         String structureIdentifier = structure.getIdentifier();
         String subproblemIdentifier = structureIdentifier + "_subproblem_";
 
-        String dir = "reference_subproblem_circuit\\test2\\";
-//        subproblem.print(new File(dir + "subproblem_0.dot"));
-//        subproblem.save(new File(dir + "subproblem_0.json"));
-        //subproblem.setSubstitutionsList(substitutionsList); // Not necessary since for the final problem no substitution is performed
         subProblems.add(subproblem.copy(subproblemIdentifier + 0));
 
         Map<Gate, Gate> insertedInputBuffers = new HashMap<>();
         for (int iX = 0; iX < gateOrder.length - 1; iX++) {
-            //System.out.println("\n");
-            //String path = dir + "subproblem_" + (iX + 1);
             Gate g = gateOrder[iX];
-
 
             // Remove Vertex
             Set<Wire> wires = subproblem.outgoingEdgesOf(g);
@@ -121,7 +104,7 @@ public class BranchAndBoundUtil {
             subproblem.removeRedundantGates();
 
 
-            // Get Whitelist for the resulting circuit
+            // Get the Whitelist for the resulting structure
             String whiteList = determineWhitelist(structure, subproblem, insertedInputBuffers);
             subproblem.setWhitelist(whiteList);
 
@@ -132,21 +115,10 @@ public class BranchAndBoundUtil {
             // Substitution Truthtables are not used anymore
             substitutionTruthTables = determineSubstitutionTruthtables(subproblem, substitutionsList, originalInputBuffers);
             subproblem.setSubstitutionTruthTables(substitutionTruthTables);
-//            System.out.println("Whitelist: " + whiteList);
-            //logger.debug("Whitelist: " + whiteList);
-
-//            subproblem.print(new File(path + ".dot"));
-//            subproblem.save(new File(path + ".json"));
-//            System.out.println("Removed: " + g.getIdentifier() + "");
-
 
             subProblems.add(subproblem.copy(subproblemIdentifier + (iX + 1)));
-            //logger.debug("Removed Gate: " + g.getIdentifier());
         }
 
-
-//        System.out.println("Finished");
-//        System.out.println("------------------------------------\n\n");
         return subProblems;
     }
 
@@ -173,8 +145,6 @@ public class BranchAndBoundUtil {
             else
                 truthTable = new TruthTable(structure.getExpression(g2), inputAssignmentsCircuit);
             truthTables.put(g2, truthTable);
-//           System.out.println(g2.getIdentifier() + ": " + truthTable.toString());
-            //logger.debug(g2.getIdentifier() + ": " + truthTable.toString());
         }
 
 
@@ -209,7 +179,7 @@ public class BranchAndBoundUtil {
             // Create a string which would be equal to the .toString() reference of the assignment with the same values.
             String positiveLiterals = (stringBuilders[1].length() > 2) ? stringBuilders[1].substring(2) : "";
             String negativeLiterals = (stringBuilders[0].length() > 2) ? stringBuilders[0].substring(2) : "";
-            //String assig = ("Assignment{pos=[" + positiveLiterals.toString() + "], neg=[" + negativeLiterals.toString() + "]}");
+
             String assig = "Assignment{pos=[" + positiveLiterals + "], neg=[" + negativeLiterals + "]}";
 
             // Add the assignment to the set of available assignments
@@ -221,7 +191,7 @@ public class BranchAndBoundUtil {
         StringBuilder whiteListBuilder = new StringBuilder();
         List<Assignment> inputAssignmentsSubproblem = new ArrayList<>(TruthTable.getAllAssignments(subproblem.getExpression().variables()));
         for (Assignment assignment : inputAssignmentsSubproblem) {
-            //System.out.println(assignment.toString());
+
             if (availableCombinations.contains(assignment.toString()))
                 whiteListBuilder.append("1");
             else
@@ -271,9 +241,6 @@ public class BranchAndBoundUtil {
      * @return A string which can be directly added
      */
     private static List<Map<Gate, List<Gate>>> determineSubstitutionList(Circuit structure, List<Gate> originalInputBuffers) {
-//        StringBuilder builder = new StringBuilder();
-//        List<String> substitutionPositionsList = new ArrayList<String>();
-
         List<Assignment> inputAssignmentsCircuit = new ArrayList<>(TruthTable.getAllAssignments(structure.getExpression().variables()));
 
         List<LogicGate> logicGates = structure.getLogicGates();
@@ -306,37 +273,22 @@ public class BranchAndBoundUtil {
 
                 Set<Gate> ancestors = ancestorsMap.get(g);
                 for (Gate anc : ancestors) {
-                    // Outcommented, since the procedure in the simulator guarantees to use the appropriate value.
-                    // Could speed up the propagation, but also carries the risk of not considering this anymore.
-                    if (originalInputBuffers.contains(anc)) // TODO Whatch out, whether this fits to the data to simulate. (If input distributions are considered, this could become a problem)
+                    // TODO Whatch out, whether this fits to the data to simulate. (If input distributions are considered, this could become a problem)
+                    if (originalInputBuffers.contains(anc))
                         continue;       // Since the values of the real input Buffers are fixed, it is not necessary to substitute them.
 
                     boolean bInput = structure.getExpression(anc).evaluate(assignment);
-                    if (bInput == false) {   // If Input is false, the provided bound is not adequate and thus needs to be substituded.
+                    if (bInput == false) {   // If Input is false, the provided bound is not adequate and thus needs to be substituted.
 
                         if (!pairsToSubstitute.containsKey(anc))    // If anc not already included add the list
                             pairsToSubstitute.put(anc, new ArrayList<>());
 
                         pairsToSubstitute.get(anc).add(g);
                     }
-                    //builder.append(String.format("\"%s\", ", anc.getIdentifier()));
                 }
             }
-//            builder.setLength(0);   // Clear the StringBuilder
-//            builder.append("{");
-//            pairsToSubstitute.forEach((g1, g2) ->{
-//                builder.append(String.format("\"%s\":\"%s\", ", g1.getIdentifier(), g2.getIdentifier()));
-//            });
-//
-//            builder.append("}");
-//            substitutionPositionsList.add(builder.toString());
             substitutionList.add(pairsToSubstitute);
         }
-//        builder.setLength(0);
-//        builder.append("[");
-//        substitutionPositionsList.stream().forEach(s -> builder.append(s + ", "));
-//        builder.append("]");
-
         return substitutionList;
     }
 
@@ -358,7 +310,8 @@ public class BranchAndBoundUtil {
     }
 
     /**
-     * Not relevant anymore
+     * Returns the truthtables of the gates for which substitution is to perform. <br>
+     * This feature is currently not used by the simulator.
      *
      * @param structure            The subproblem for which the substitution truthtables shall be determined
      * @param substitutionList     The list of substitutions for each assignment

@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IntSummaryStatistics;
 
+/**
+ * This class is used to log statistics of the branch and bound execution or to provide general information on the mapping result.
+ */
 public class SearchStatsLogger {
 
     private static final Logger logger = LoggerFactory.getLogger(BranchAndBoundSearch.class);
@@ -64,8 +67,6 @@ public class SearchStatsLogger {
         }
 
         this.numberOfOverallSimulations = new ArrayList<>();
-        //iterationOfBestAssignmentDiscovery = -1;
-        //bestScore = -1;
         this.structure = structure;
         this.mappingConfiguration = mappingConfiguration;
         this.simulationConfiguration = simulationConfiguration;
@@ -120,8 +121,13 @@ public class SearchStatsLogger {
         return minimalNumberOfSimulations;
     }
 
+    /**
+     * Creates a summary of the logged information and returns it as a string.
+     *
+     * @param overallBestScore
+     * @return The string representation of the logged statistics.
+     */
     public String evaluate(double overallBestScore) {
-
 
         long minimalNumberOfSimulations = getMinimalNumberOfSimulations();
 
@@ -142,14 +148,10 @@ public class SearchStatsLogger {
         return stats.toString();
     }
 
-    /*
-    TODO Tracking der Anzahl von NOT/NOR und OR
-    Überlegen ob ein Score möglich ist der Beschreibt ob die NOR/OR eher vorne oder hinten liegen.
-    Tracken was die maximale Anzahl an Elementen in der Queue ist.
-    Tracken was die durchschnittliche Anzahl an Elementen in der Queue ist.
-
+    /**
+     * Writes the logged information to the provided file in the JSON format
+     * @param path
      */
-
     public void save(String path) {
 
         ObjectMapper mapper = new ObjectMapper();
@@ -177,6 +179,7 @@ public class SearchStatsLogger {
             }});
             jsonMap.put("EXECUTION_TIME", duration);
 
+            // The branch and bound specific statistics are only added on request
             if (mappingConfiguration.getBabStatistics()) {
                 jsonMap.put("OPTIMAL_NUMBER_OF_SIMULATIONS", optimalNumberOfSimulations); // An theoretic construct which depends on the quality of the bounding function. Could be achieved if the bounding function is equal to max(childScores)
                 jsonMap.put("MINIMAL_NUMBER_OF_SIMULATIONS", getMinimalNumberOfSimulations());
@@ -208,7 +211,10 @@ public class SearchStatsLogger {
         }
     }
 
-
+    /**
+     * A representation of the logged statistics
+     * This representation can be exchanged while its .toString() method provides detailed summaries on the obtained information
+     */
     public static class SearchStats {
         private long minimumNumberOfSimulations;
         private DescriptiveStatistics boundingFunctionScoresStatistics;

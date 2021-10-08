@@ -5,6 +5,9 @@ import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.QueueItem;
 import java.util.List;
 import java.util.Queue;
 
+/**
+ * The interface for any SearchStrategy
+ */
 public interface SearchStrategy {
 
     /**

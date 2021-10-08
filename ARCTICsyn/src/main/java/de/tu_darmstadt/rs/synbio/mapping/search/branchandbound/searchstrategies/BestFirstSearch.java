@@ -12,20 +12,13 @@ import java.util.List;
  * Class implementing BestFirstSearch (BeFS) as search strategy.
  */
 public class BestFirstSearch implements SearchStrategy {
-    private ArrayList<QueueItem> queue;
-
+    private final ArrayList<QueueItem> queue;
 
     /**
      * The queueitems are sorted descending to their value. <br>
      * By this, the first item is the one with the highest score.
      */
-    private static Comparator<QueueItem> comparator = new Comparator<QueueItem>() {
-        @Override
-        public int compare(QueueItem o1, QueueItem o2) {
-            return (int) Math.signum(o2.val - o1.val);
-        }
-    };
-
+    private static final Comparator<QueueItem> comparator = (o1, o2) -> (int) Math.signum(o2.val - o1.val);
 
     public BestFirstSearch() {
         this.queue = new ArrayList<>();
@@ -117,7 +110,7 @@ public class BestFirstSearch implements SearchStrategy {
 
     private void updateStatistics() {
         int size = queue.size();
-        maximumNumberOfEntries = (size > maximumNumberOfEntries) ? size : maximumNumberOfEntries;
+        maximumNumberOfEntries = Math.max(size, maximumNumberOfEntries);
 
         divisor += 1;
 
@@ -126,7 +119,7 @@ public class BestFirstSearch implements SearchStrategy {
 
 
     private void isQueueOrdered(List<QueueItem> list) {
-        if (SearchStrategiesUtil.isSorted(list, false) == false)
+        if (!SearchStrategiesUtil.isSorted(list, false))
             throw new Error("Queue is not sorted");
     }
 }

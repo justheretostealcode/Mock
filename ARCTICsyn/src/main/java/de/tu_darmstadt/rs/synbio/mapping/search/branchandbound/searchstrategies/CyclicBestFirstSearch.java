@@ -9,10 +9,10 @@ import java.util.*;
  * Implementation of CyclicBestFirstSearch (CBeFS) as search strategy.
  */
 public class CyclicBestFirstSearch implements SearchStrategy {
-    private ArrayList<QueueItem>[] queues;
+    private final ArrayList<QueueItem>[] queues;
 
     private int pointer;
-    private int numberOfGates;
+    private final int numberOfGates;
     /**
      * The queueitems are sorted descending to their value. <br>
      * By this, the first item is the one with the highest score.
@@ -109,10 +109,9 @@ public class CyclicBestFirstSearch implements SearchStrategy {
         int currentVal = pointer;
 
         do {
-            if (queues[pointer].size() == 0)
-                item = null;
-            else
+            if (queues[pointer].size() != 0) {
                 item = queues[pointer].remove(0);
+            }
 
             pointer = (pointer + 1) % numberOfGates;
         } while (item == null && currentVal != pointer);
@@ -126,24 +125,24 @@ public class CyclicBestFirstSearch implements SearchStrategy {
     public List<QueueItem> getItems() {
         List<QueueItem> items = new ArrayList<>();
 
-        for (int iX = 0; iX < queues.length; iX++) {
-            items.addAll(queues[iX]);
+        for (ArrayList<QueueItem> queue : queues) {
+            items.addAll(queue);
         }
 
         return items;
     }
 
     private void sortAll() {
-        for (int iX = 0; iX < this.queues.length; iX++) {
-            this.queues[iX].sort(comparator);
+        for (ArrayList<QueueItem> queue : this.queues) {
+            queue.sort(comparator);
         }
     }
 
     @Override
     public int size() {
         int size = 0;
-        for (int iX = 0; iX < queues.length; iX++) {
-            size += queues[iX].size();
+        for (ArrayList<QueueItem> queue : queues) {
+            size += queue.size();
         }
         return size;
     }
@@ -164,7 +163,7 @@ public class CyclicBestFirstSearch implements SearchStrategy {
 
     private void updateStatistics() {
         int size = size();
-        maximumNumberOfEntries = (size > maximumNumberOfEntries) ? size : maximumNumberOfEntries;
+        maximumNumberOfEntries = Math.max(size, maximumNumberOfEntries);
 
         divisor += 1;
 
@@ -172,7 +171,7 @@ public class CyclicBestFirstSearch implements SearchStrategy {
     }
 
     private void isQueueOrdered(List<QueueItem> list) {
-        if (SearchStrategiesUtil.isSorted(list, false) == false)
+        if (!SearchStrategiesUtil.isSorted(list, false))
             throw new Error("Queue is not sorted");
     }
 }

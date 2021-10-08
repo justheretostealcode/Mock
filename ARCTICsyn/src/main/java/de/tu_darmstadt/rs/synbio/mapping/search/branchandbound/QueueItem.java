@@ -21,7 +21,7 @@ public class QueueItem {
     public double val;
 
     // A list for buffering items and thus trying to reduce number of object creations
-    private static ArrayList<QueueItem> items = new ArrayList<>();
+    private static final ArrayList<QueueItem> items = new ArrayList<>();
 
 
     /**

@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class DepthFirstSearch implements SearchStrategy {
 
-    private ArrayList<QueueItem> queue;
+    private final ArrayList<QueueItem> queue;
 
     public DepthFirstSearch() {
         this.queue = new ArrayList<>();
@@ -20,7 +20,7 @@ public class DepthFirstSearch implements SearchStrategy {
     public DepthFirstSearch(List<QueueItem> items) {
         this.queue = new ArrayList<>(items);
 
-        /**
+        /*
          * The queueitems are sorted descending according to their assignment size.
          * By this, a very simple depthfirst ordering is created from the view of the first to the last item.
          */
@@ -93,7 +93,7 @@ public class DepthFirstSearch implements SearchStrategy {
 
     private void updateStatistics() {
         int size = queue.size();
-        maximumNumberOfEntries = (size > maximumNumberOfEntries) ? size : maximumNumberOfEntries;
+        maximumNumberOfEntries = Math.max(size, maximumNumberOfEntries);
 
         divisor += 1;
 

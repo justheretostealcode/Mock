@@ -117,8 +117,7 @@ public class SearchStatsLogger {
                 .filter(item -> item.score > bestScore)
                 .mapToInt(item -> item.childCount)
                 .summaryStatistics();
-        long minimalNumberOfSimulations = simulationStats.getSum();
-        return minimalNumberOfSimulations;
+        return simulationStats.getSum();
     }
 
     /**
@@ -133,14 +132,14 @@ public class SearchStatsLogger {
 
         DescriptiveStatistics boundingFunctionScoreStatistics = new DescriptiveStatistics();
         for (ArrayList<Double> list : boundingFunctionScores) {
-            list.stream().forEach(boundingFunctionScoreStatistics::addValue);
+            list.forEach(boundingFunctionScoreStatistics::addValue);
         }
 
         DescriptiveStatistics[] boundingFunctionScoreLevelStatistics = new DescriptiveStatistics[boundingFunctionScores.length];
         for (int iX = 0; iX < boundingFunctionScores.length; iX++) {
             boundingFunctionScoreLevelStatistics[iX] = new DescriptiveStatistics();
             int finalIX = iX;
-            boundingFunctionScores[iX].stream().forEach(item -> boundingFunctionScoreLevelStatistics[finalIX].addValue(item));
+            boundingFunctionScores[iX].forEach(item -> boundingFunctionScoreLevelStatistics[finalIX].addValue(item));
         }
 
         SearchStats stats = new SearchStats(minimalNumberOfSimulations, boundingFunctionScoreStatistics, boundingFunctionScoreLevelStatistics, iterationOfBestAssignmentDiscovery);
@@ -216,10 +215,10 @@ public class SearchStatsLogger {
      * This representation can be exchanged while its .toString() method provides detailed summaries on the obtained information
      */
     public static class SearchStats {
-        private long minimumNumberOfSimulations;
-        private DescriptiveStatistics boundingFunctionScoresStatistics;
-        private DescriptiveStatistics[] boundingFunctionScoresLevelStatistics;
-        private long iterationOfBestAssignmentDiscovery;
+        private final long minimumNumberOfSimulations;
+        private final DescriptiveStatistics boundingFunctionScoresStatistics;
+        private final DescriptiveStatistics[] boundingFunctionScoresLevelStatistics;
+        private final long iterationOfBestAssignmentDiscovery;
 
         private SearchStats(long minimumNumberOfSimulations, DescriptiveStatistics boundingFunctionScoresStatistics, DescriptiveStatistics[] boundingFunctionScoresLevelStatistics, long iterationOfBestAssignmentDiscovery) {
             this.minimumNumberOfSimulations = minimumNumberOfSimulations;
@@ -257,22 +256,19 @@ public class SearchStatsLogger {
 
 
         private String descriptiveStatisticsToString(DescriptiveStatistics statistics) {
-            StringBuilder builder = new StringBuilder();
 
-            builder.append(String.format("Median Bounding Function Score: %f\n", statistics.getPercentile(50)));
-            builder.append(String.format("Average Bounding Function Score: %f\n", statistics.getMean()));
-            builder.append(String.format("Variance Bounding Function Scores: %f\n", statistics.getVariance()));
-            builder.append(String.format("[Min, Max]: [%f, %f]\n", statistics.getMin(), statistics.getMax()));
-            builder.append(String.format("Quantiles: Q001 = %f\n", statistics.getPercentile(1)));
-            builder.append(String.format("           Q005 = %f\n", statistics.getPercentile(5)));
-            builder.append(String.format("           Q025 = %f\n", statistics.getPercentile(25)));
-            builder.append(String.format("           Q045 = %f\n", statistics.getPercentile(45)));
-            builder.append(String.format("           Q055 = %f\n", statistics.getPercentile(55)));
-            builder.append(String.format("           Q075 = %f\n", statistics.getPercentile(75)));
-            builder.append(String.format("           Q095 = %f\n", statistics.getPercentile(95)));
-            builder.append(String.format("           Q099 = %f\n", statistics.getPercentile(99)));
-
-            return builder.toString();
+            return String.format("Median Bounding Function Score: %f\n", statistics.getPercentile(50)) +
+                    String.format("Average Bounding Function Score: %f\n", statistics.getMean()) +
+                    String.format("Variance Bounding Function Scores: %f\n", statistics.getVariance()) +
+                    String.format("[Min, Max]: [%f, %f]\n", statistics.getMin(), statistics.getMax()) +
+                    String.format("Quantiles: Q001 = %f\n", statistics.getPercentile(1)) +
+                    String.format("           Q005 = %f\n", statistics.getPercentile(5)) +
+                    String.format("           Q025 = %f\n", statistics.getPercentile(25)) +
+                    String.format("           Q045 = %f\n", statistics.getPercentile(45)) +
+                    String.format("           Q055 = %f\n", statistics.getPercentile(55)) +
+                    String.format("           Q075 = %f\n", statistics.getPercentile(75)) +
+                    String.format("           Q095 = %f\n", statistics.getPercentile(95)) +
+                    String.format("           Q099 = %f\n", statistics.getPercentile(99));
         }
     }
 }

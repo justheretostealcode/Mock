@@ -376,7 +376,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         if (substitutionsList != null)
             newCircuit.setSubstitutionsList(substitutionsList.stream().map(map -> {
                 Map<Gate, List<Gate>> newMap = new HashMap<Gate, List<Gate>>();
-                map.entrySet().stream().forEach(gateListEntry -> {
+                map.entrySet().forEach(gateListEntry -> {
                     newMap.put(gateListEntry.getKey(), new ArrayList<>(gateListEntry.getValue()));
                 });
                 return newMap;
@@ -543,7 +543,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
                 jsonMap.put("substitutions_list", BranchAndBoundUtil.substitutionListToString(this.substitutionsList));
             }
             if (substitutionTruthTables != null) {
-                jsonMap.put("substitution_truthtables", BranchAndBoundUtil.substitutionTruthtablesToString(this.substitutionTruthTables));
+                jsonMap.put("substitution_truthtables", BranchAndBoundUtil.substitutionTruthTablesToString(this.substitutionTruthTables));
             }
             mapper.writerWithDefaultPrettyPrinter().writeValue(file, jsonMap);
 

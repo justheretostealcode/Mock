@@ -17,7 +17,7 @@ public class SearchTreeVisualizer {
     private final String initialNodeID = "EMPTY_INITIALISATION_NODE";
     private BufferedWriter writer;
     private int expansionIndex;
-    private LogicGate[] reversedLogicGates;
+    private final LogicGate[] reversedLogicGates;
     private boolean bVisualize;
 
 
@@ -109,8 +109,7 @@ public class SearchTreeVisualizer {
     }
 
     private String getNodeIdentifier(LogicGate gate, GateRealization realization) {
-        String identifier = gate.getIdentifier() + "_" + gate.getLogicType().toString() + "_" + realization.getIdentifier() + "_" + realization.getGroup();
-        return identifier;
+        return gate.getIdentifier() + "_" + gate.getLogicType().toString() + "_" + realization.getIdentifier() + "_" + realization.getGroup();
     }
 
     /**

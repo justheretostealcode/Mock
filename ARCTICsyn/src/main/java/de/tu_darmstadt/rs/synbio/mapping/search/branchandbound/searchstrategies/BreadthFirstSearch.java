@@ -12,7 +12,7 @@ import java.util.List;
  * Implements the search strategy BreadthFirstSearch (BFS)
  */
 public class BreadthFirstSearch implements SearchStrategy{
-    private ArrayList<QueueItem> queue;
+    private final ArrayList<QueueItem> queue;
 
     public BreadthFirstSearch()   {
         this.queue = new ArrayList<>();
@@ -21,7 +21,7 @@ public class BreadthFirstSearch implements SearchStrategy{
     public BreadthFirstSearch(List<QueueItem> items)   {
         this.queue = new ArrayList<>(items);
 
-        /**
+        /*
          * The queueitems are sorted according to their assignment size.
          * By this, a very simple breadth first ordering is created.
          */
@@ -50,9 +50,7 @@ public class BreadthFirstSearch implements SearchStrategy{
 
     @Override
     public void addToQueue(List<QueueItem> items) {
-        for (QueueItem item : items)    {
-            queue.add(item);
-        }
+        queue.addAll(items);
         updateStatistics();
     }
 
@@ -93,7 +91,7 @@ public class BreadthFirstSearch implements SearchStrategy{
 
     private void updateStatistics() {
         int size = queue.size();
-        maximumNumberOfEntries = (size > maximumNumberOfEntries) ? size : maximumNumberOfEntries;
+        maximumNumberOfEntries = Math.max(size, maximumNumberOfEntries);
 
         divisor += 1;
 

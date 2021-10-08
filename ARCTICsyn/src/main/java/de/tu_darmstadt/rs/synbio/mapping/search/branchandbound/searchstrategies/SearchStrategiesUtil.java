@@ -31,7 +31,7 @@ public class SearchStrategiesUtil {
                     if (list.get(l).val < x)
                         list.add(l + 1, elem);
                     else
-                        list.add(l + 0, elem);
+                        list.add(l, elem);
                     break;
                 } else if (val == x) {
                     list.add(m + 1, elem);

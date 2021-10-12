@@ -30,7 +30,7 @@ public enum LogicType {
     }
 
     public int getWeight() {
-        if (this.equals(EMPTY) || this.equals(OR2))
+        if (this.equals(EMPTY)/* || this.equals(OR2)*/)
             return 0;
         else
             return 1;

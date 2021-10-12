@@ -59,11 +59,11 @@ public class ARCTICsyn {
         /* initialize gate library */
 
         final GateLibrary gateLib = new GateLibrary(gateLibraryFile, new Double[]{0.9,0.1,0.0});
-        logger.info("Loaded gate library " + gateLib.getSourceFile() + ".");
+        //logger.info("Loaded gate library " + gateLib.getSourceFile() + ".");
 
         /* circuit enumeration */
 
-        logger.info("Enumeration of circuit variants...");
+        //logger.info("Enumeration of circuit variants...");
         Enumerator enumerator = new Enumerator(gateLib, inputTruthTable, synConfig.getMaxDepth(), synConfig.getMaxWeight(), synConfig.getWeightRelaxation());
         enumerator.enumerate();
         List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().values());
@@ -73,7 +73,7 @@ public class ARCTICsyn {
             return;
         }
 
-        logger.info("Found " + circuits.size() + " circuits.");
+        //logger.info("Found " + circuits.size() + " circuits.");
 
         circuits.sort(Circuit::compareTo);
 
@@ -92,9 +92,10 @@ public class ARCTICsyn {
 
         if (simConfig.isSimEnabled()) {
 
-            logger.info("Technology mapping...");
+            //logger.info("Technology mapping...");
 
-            SimulationResult bestResult = null;
+            SimulationResult[] bestResults = new SimulationResult[synConfig.getWeightRelaxation() + 1];
+            int minSize = circuits.get(circuits.size() - 1).getWeight();
 
             for (int i = circuits.size() - 1; i >= 0; i--) {
 
@@ -102,28 +103,37 @@ public class ARCTICsyn {
 
                 try {
                     SimulationResult result = sim.assign();
+                    int relSize = circuits.get(i).getWeight() - minSize;
 
-                    if (bestResult == null || result.getScore() > bestResult.getScore())
-                        bestResult = result;
+                    if (bestResults[relSize] == null || result.getScore() > bestResults[relSize].getScore())
+                        bestResults[relSize] = result;
 
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
 
-            if (bestResult != null) {
-                bestResult.getStructure().save(new File(outputDir, "best_" + bestResult.getStructure().getIdentifier() + ".json"));
-                bestResult.getStructure().print(new File(outputDir, "best_" + bestResult.getStructure().getIdentifier() + ".dot"));
+            for(int i = 0; i < bestResults.length; i++) {
+                SimulationResult result = bestResults[i];
 
-                try {
-                    ObjectMapper mapper = new ObjectMapper();
-                    mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outputDir, "best_" + bestResult.getStructure().getIdentifier() + "_assignment.json"), bestResult.getAssignment());
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if (result != null) {
+                    result.getStructure().save(new File(outputDir, "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax.json"));
+                    result.getStructure().print(new File(outputDir, "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax.dot"));
+
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outputDir, "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax_assignment.json"), result.getAssignment());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    result.getStructure().saveGml(new File(outputDir.getParent(), "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax.gml"), result.getAssignment());
+
+                    logger.info(result.getStructure().getTruthTable() + "," + i + "," + result.getStructure().getNumberLogicGates() + "," + result.getScore());
+
+                    //logger.info("Finished. Result:");
+                    //logger.info(result.getStructure().getIdentifier() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getAssignment().getIdentifierMap().toString());
                 }
-
-                logger.info("Finished. Result:");
-                logger.info(bestResult.getStructure().getIdentifier() + "," + bestResult.getScore() + "," + bestResult.getStructure().getWeight() + "," + bestResult.getAssignment().getIdentifierMap().toString());
             }
         }
         System.exit(0);

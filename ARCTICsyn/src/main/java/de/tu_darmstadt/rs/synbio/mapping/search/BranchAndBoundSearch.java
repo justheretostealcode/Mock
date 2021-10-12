@@ -267,14 +267,14 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         QueueItem currentItem;
         Assignment currentAssignment;
-        System.out.print("Iteration: " + 0);
+        //System.out.print("Iteration: " + 0);
         long iteration = 0;
         while ((currentItem = strategy.getNext()) != null) {    // Get the next element from queue and repeat until the queue is empty
 
             searchTreeVisualizer.add(currentItem, bestScore);
 
-            if (iteration % 100 == 0)  // Only update every hundred iterations
-                System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
+            //if (iteration % 100 == 0)  // Only update every hundred iterations
+            //    System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
 
             if (currentItem.val <= bestScore) {
                 // Removes item if the best score has changed after this queue item has been added to the queue

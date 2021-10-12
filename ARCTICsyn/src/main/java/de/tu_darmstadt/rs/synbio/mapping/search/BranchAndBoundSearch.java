@@ -29,7 +29,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
     private final HashMap<LogicType, List<GateRealization>> realizations;
 
-    private final Circuit[] subproblems;
+    private final Circuit[] subProblems;
     private final SimulatorInterface[] interfaces;
 
     private final LogicGate[] logicGates;
@@ -66,8 +66,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
 
         // Bei n logic Gattern werden n-1 Teilprobleme erzeugt
-        subproblems = getSubProblems(this.structure);
-        interfaces = getSubProblemInterfaces(this.structure, this.subproblems);
+        subProblems = getSubProblems(this.structure);
+        interfaces = getSubProblemInterfaces(this.structure, this.subProblems);
 
 
         logicGates = getLogicGatesInTopologicalOrder(structure);
@@ -117,8 +117,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      * The first element in the returned array belongs to the smallest sub problem. <br>
      * The last element in the returned array is the interface for the provided attribute @structure.
      *
-     * @param structure The structure to crate the subp  roblems interfaces for
-     * @return Simulator Interfaces to all subproblem of the structure and the structure itself
+     * @param structure The structure to crate the sub problems interfaces for
+     * @return Simulator Interfaces to all sub problem of the structure and the structure itself
      */
     private SimulatorInterface[] getSubProblemInterfaces(Circuit structure, Circuit[] subProblems) {
         ArrayList<SimulatorInterface> interfaces = new ArrayList<>(structure.edgeSet().size() - 2);
@@ -412,7 +412,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                 .forEach(gateRealization -> {
                     Assignment a = new Assignment(assignment);
                     a.put(logicGate, gateRealization);
-                    assignments.add(a);
+
+                    if (a.fulfilsConstraints(structure))
+                        assignments.add(a);
                 });
 
         if (mapConfig.getBabChildrenOrder() == MappingConfiguration.BAB_Sort_Order.SHUFFLED)
@@ -452,15 +454,15 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         String additionalArgs;
 
         int subProblemPointer = assignment.size() - 1;
-        int problemPointer = subproblems.length - 1;
+        int problemPointer = subProblems.length - 1;
         if (subProblemPointer == problemPointer)
             return " cis=0 ";
 
         /*
         Determine which input gates of the original circuit are present in the actual circuit.
          */
-        Circuit subProblem = subproblems[subProblemPointer]; // assignment.size() sollte immer größer 0 sein
-        Circuit problem = subproblems[problemPointer];
+        Circuit subProblem = subProblems[subProblemPointer]; // assignment.size() sollte immer größer 0 sein
+        Circuit problem = subProblems[problemPointer];
 
         // The original input buffer ids
         Set<String> problemInputBufferIDs = problem.getInputBuffers()

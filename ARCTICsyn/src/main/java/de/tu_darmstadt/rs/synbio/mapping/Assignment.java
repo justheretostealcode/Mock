@@ -1,5 +1,9 @@
 package de.tu_darmstadt.rs.synbio.mapping;
 
+import de.tu_darmstadt.rs.synbio.common.LogicType;
+import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Wire;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
 
@@ -86,6 +90,40 @@ public class Assignment {
             }
         }
 
+        return true;
+    }
+
+    public boolean fulfilsConstraints(Circuit structure) {
+
+        for (LogicGate dest : keySet()) {
+
+            if (!dest.getLogicType().equals(LogicType.NOR2))
+                continue;
+
+            Set<Wire> wires = structure.incomingEdgesOf(dest);
+
+            List<LogicGate> gates = new ArrayList<>();
+            for(Wire wire : wires) {
+                Gate gateSrc = structure.getEdgeSource(wire);
+
+                if (gateSrc instanceof LogicGate)
+                    gates.add((LogicGate)gateSrc);
+            }
+
+            if (gates.size() == 2) {
+
+                GateRealization gr0 = get(gates.get(0));
+                GateRealization gr1 = get(gates.get(1));
+
+                if (gr0 == null || gr1 == null)
+                    continue;
+
+                if (gr0.getGroup().equals("PhlF") || gr0.getGroup().equals("SrpR") || gr0.getGroup().equals("BM3R1") || gr0.getGroup().equals("QacR"))
+                    if (gr1.getGroup().equals("PhlF") || gr1.getGroup().equals("SrpR") || gr1.getGroup().equals("BM3R1") || gr1.getGroup().equals("QacR"))
+                        return false;
+            }
+
+        }
         return true;
     }
 

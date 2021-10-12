@@ -275,7 +275,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
             neighbor.put(selectedCircuitGate, realizationsInRadius.get(rand.nextInt(realizationsInRadius.size())));
 
-        } while (!neighbor.isValid() || (neighbor.equals(current)));
+        } while (!neighbor.isValid() || !neighbor.fulfilsConstraints(structure) || (neighbor.equals(current)));
 
         return neighbor;
     }

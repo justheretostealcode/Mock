@@ -33,9 +33,13 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
     @Override
     public SimulationResult call() {
 
+        Assignment assignment;
         simulator.initSimulation(structure);
 
-        Assignment assignment = assigner.getNextAssignment();
+        do {
+            assignment = assigner.getNextAssignment();
+        } while(assignment != null && !assignment.fulfilsConstraints(structure));
+
         SimulationResult bestRes = null;
 
         while (assignment != null && !Thread.interrupted()) {

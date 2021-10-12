@@ -193,7 +193,7 @@ public class SimulationTestbench {
                     //        "result_" + child.getName() + ".gml"), result.getAssignment());
 
                     try {
-                        out.print("," + result.getScore() + "," + result.getAssignment().getIdentifierMap());
+                        out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getScore() + "," + result.getAssignment().getIdentifierMap());
                         out.flush();
                     } catch (Exception e) {
                         e.printStackTrace();

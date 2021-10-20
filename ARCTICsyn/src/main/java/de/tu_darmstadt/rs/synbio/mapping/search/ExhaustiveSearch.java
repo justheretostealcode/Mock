@@ -67,6 +67,8 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
 
         logger.info("Finished simulating " + structure.getIdentifier() + ", score: " + (bestRes != null ? bestRes.getScore() : 0));
 
+        executor.shutdownNow();
+
         return bestRes;
     }
 }

@@ -948,7 +948,7 @@ def startSimulation_VEC(assignment, simData, simSpec):
                 for nodeIdent in nodeOrder:
                     if (nodeIdent not in inputIDs and nodeIdent not in outputIDs):
                         tox *= gateToxicity(np.median(circuitVals[nodeIdent]), responseFunctions[assignment[nodeIdent]]["toxicity"])
-                print("growth for", inputIdent, "at", tox)
+                #print("growth for", inputIdent, "at", tox)
                 if (tox < growthScore[0]):
                     growthScore[0] = tox
 

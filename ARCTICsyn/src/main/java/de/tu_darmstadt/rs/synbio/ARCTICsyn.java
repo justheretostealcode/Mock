@@ -113,10 +113,12 @@ public class ARCTICsyn {
                 }
             }
 
+            double currentBestScore = 0.0;
+
             for(int i = 0; i < bestResults.length; i++) {
                 SimulationResult result = bestResults[i];
 
-                if (result != null) {
+                if (result != null && result.getScore() > currentBestScore) {
                     result.getStructure().save(new File(outputDir, "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax.json"));
                     result.getStructure().print(new File(outputDir, "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax.dot"));
 
@@ -130,6 +132,8 @@ public class ARCTICsyn {
                     result.getStructure().saveGml(new File(outputDir.getParent(), "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax.gml"), result.getAssignment());
 
                     logger.info(result.getStructure().getTruthTable() + "," + i + "," + result.getStructure().getNumberLogicGates() + "," + result.getScore());
+
+                    currentBestScore = result.getScore();
 
                     //logger.info("Finished. Result:");
                     //logger.info(result.getStructure().getIdentifier() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getAssignment().getIdentifierMap().toString());

@@ -98,17 +98,28 @@ public class SimulatorInterface {
             writer.flush();
 
             String scoreStr = reader.readLine();
+            String growthString = reader.readLine();
+
             if (scoreStr.startsWith("O ")) {
                 scoreStr = scoreStr.substring(2);
             }
             // relevant to correctly parse infinity as returned score
             score = scoreStr.equals("inf") ? Double.POSITIVE_INFINITY : Double.parseDouble(scoreStr);
 
+            growthString = growthString.substring(7);
+            growth = Double.parseDouble(growthString);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return score;
+    }
+
+    Double growth;
+
+    public Double getLastGrowth() {
+        return growth;
     }
 
     public Double simulate(Assignment assignment) {

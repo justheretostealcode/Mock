@@ -125,6 +125,20 @@ def saveSimResults(truthTable, simRes, completeCircuitVals=[]):
                      "sym_args": sys.argv}, file)
 
 
+# function to calculate toxicity level from affine interpolation using the toxicity table
+def gateToxicity(value, toxTable):
+    idx = next((x[0] for x in enumerate(toxTable["input"]) if x[1] > value), -1)
+    if (idx - 1 < 0):  # check if idx is either 0 or -1
+        tox = toxTable["growth"][idx]
+    else:
+        x0 = toxTable["input"][idx - 1]
+        x1 = toxTable["input"][idx]
+        g0 = toxTable["growth"][idx - 1]
+        g1 = toxTable["growth"][idx]
+        tox = g1 - (g1 - g0)*(x1 - value)/(x1 - x0)
+    return tox
+
+
 # Calculates the circuit score based on the data provided for ON (dataON) and OFF (dataOFF)
 def circuitScore(dataON, dataOFF):
     median_on = np.median(dataON)
@@ -210,6 +224,9 @@ def initialiseSimulator(structureContent, gateLib, maxNumberOfParticles):
                     gate["biorep"]["response_function"]["parameters"])
                 responseFunctions[gate["identifier"]]["library_parameters"] = dict.copy(
                     gate["biorep"]["response_function"]["parameters"])
+                # Read out toxicity table
+                responseFunctions[gate["identifier"]]["toxicity"] = dict.copy(
+                    gate["toxicity"])
 
                 if ("group" in gate):
                     responseFunctions[gate["identifier"]]["group"] = gate["group"]
@@ -751,12 +768,15 @@ def startSimulation_VEC(assignment, simData, simSpec):
 
         # print(responseFunctions["NOT_0"])
 
+        # generate the container for the growth score
+        growthScore = [np.inf]
+
         # Simulate Circuit
         # Either calls simulateCircuit or simulateSubstitutedCircuit (Depends on former if)
         simulatorFunction(nodeOrder, circuit, assignment, truthTable, responseFunctions, circuitSim, results,
-                          completeCircuitVals, numberOfParticlesToUse)
+                          completeCircuitVals, numberOfParticlesToUse, growthScore)
 
-        return results, completeCircuitVals
+        return results, completeCircuitVals, growthScore
 
     """
     !!!
@@ -767,7 +787,7 @@ def startSimulation_VEC(assignment, simData, simSpec):
     """
 
     def simulateSubstitutedCircuit_VEC(nodeOrder, circuit, assignment, truthTable, responseFunctions, circuitSim, results,
-                                   completeCircuitVals, N):
+                                   completeCircuitVals, N, growthScore):
 
         def determineInitialValuesToSubstitute(substitutionTruthTableKeys, responseFunctions, assignment, truthTable):
             inputIDs = truthTable["input_IDs"].keys()
@@ -833,7 +853,7 @@ def startSimulation_VEC(assignment, simData, simSpec):
             # Simulate based on the current valuesToSubstitute
             simulateCircuit_VEC(nodeOrder=nodeOrder, circuit=circuit, assignment=assignment, truthTable=truthTable,
                             responseFunctions=responseFunctions, circuitSim=circuitSim, results=results,
-                            completeCircuitVals=currentCircuitVals, N=N,
+                            completeCircuitVals=currentCircuitVals, N=N, growthScore=growthScore,
                             substitutionValues=valuesToSubstitute)
 
             previousValuesToSubstitute = valuesToSubstitute
@@ -879,8 +899,9 @@ def startSimulation_VEC(assignment, simData, simSpec):
     """
 
     def simulateCircuit_VEC(nodeOrder, circuit, assignment, truthTable, responseFunctions, circuitSim, results,
-                        completeCircuitVals, N, substitutionValues={}):
+                        completeCircuitVals, N, growthScore, substitutionValues={}):
         outputIDs = truthTable["output_IDs"].keys()
+        inputIDs = truthTable["input_IDs"].keys()
 
         # print(nodeOrder)
         bioInputs = truthTable["bio_inputs"]
@@ -897,6 +918,9 @@ def startSimulation_VEC(assignment, simData, simSpec):
 
         saveCircuitVals = visualise or substitute
         # Iterates over the given inputs
+
+        # reinitialize the growth score, to infinity, just to be sure
+        growthScore[0] = np.inf
 
         # Iterate over the output ids in order to simulate every input assignment
         for outputIdent in truthTable["outputs"]:
@@ -918,6 +942,15 @@ def startSimulation_VEC(assignment, simData, simSpec):
                 for nodeIdent in nodeOrder:
                     completeCircuitVals[inputIdent][nodeIdent] = circuitVals[nodeIdent].tolist()
                 # completeCircuitVals[inputIdent] = dict(circuitVals)
+
+            if (simContext["toxicity"]):
+                tox = 1.
+                for nodeIdent in nodeOrder:
+                    if (nodeIdent not in inputIDs and nodeIdent not in outputIDs):
+                        tox *= gateToxicity(np.median(circuitVals[nodeIdent]), responseFunctions[assignment[nodeIdent]]["toxicity"])
+                print("growth for", inputIdent, "at", tox)
+                if (tox < growthScore[0]):
+                    growthScore[0] = tox
 
             # Store the circuit outputs in the result list
             for outputID in outputIDs:
@@ -1199,7 +1232,7 @@ def startSimulation_VEC(assignment, simData, simSpec):
         Perform Simulation.
     """
 
-    simRes, completeCircuitVals = startSimulation_VEC(nodeOrder, circuit, assignment, truthTableToUse, responseFunctions,
+    simRes, completeCircuitVals, growthScore = startSimulation_VEC(nodeOrder, circuit, assignment, truthTableToUse, responseFunctions,
                                                   particles,
                                                   dict(circuitVals))
 
@@ -1226,6 +1259,10 @@ def startSimulation_VEC(assignment, simData, simSpec):
         # TODO: Remove this. It shouldn't be suppressed here, but enuMap crashes with YFP output
         if outputID != 'YFP':
             print(outputID, simRes[outputID]["SCORE"])
+
+    # print the growth score as well
+    if (simContext["toxicity"] == True):
+        print("GROWTH", growthScore[0])
 
     # Methods for visualising the values within the circuit
     if (simContext["visualise_circuit"]):
@@ -1336,6 +1373,8 @@ def parseInput(inputText):
                 specDict["wasserstein_p"] = float(val)
             elif (field == "log_input_std"):
                 specDict["log_input_std"] = float(val)
+            elif (field == "toxicity" or field == "tox"):
+                specDict["toxicity"] = bool(parseBool(val))
             elif (field == "store_suffix"):
                 specDict[field] = val.lower().replace('"', '').replace("'", "")
             else:
@@ -1395,6 +1434,7 @@ simContext["custom_input_low"] = 0.00001
 simContext["custom_input_high"] = 10
 simContext["wasserstein_p"] = 2.0
 simContext["log_input_std"] = 0.  # have a clean input bei default
+simContext["toxicity"] = False  # shall the circuit's median toxicity be calculated and returned as well?
 simContext["store_suffix"] = str(int(time.time()))
 
 debugPrint(str(sys.argv))

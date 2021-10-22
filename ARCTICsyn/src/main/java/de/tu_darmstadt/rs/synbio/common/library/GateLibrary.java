@@ -3,7 +3,7 @@ package de.tu_darmstadt.rs.synbio.common.library;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.synthesis.util.TruthTable;
+import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

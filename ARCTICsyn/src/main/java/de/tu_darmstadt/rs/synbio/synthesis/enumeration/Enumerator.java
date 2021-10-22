@@ -4,7 +4,7 @@ import de.tu_darmstadt.rs.synbio.common.*;
 import de.tu_darmstadt.rs.synbio.common.circuit.*;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
-import de.tu_darmstadt.rs.synbio.synthesis.util.TruthTable;
+import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -14,7 +14,6 @@ import org.logicng.formulas.Variable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 

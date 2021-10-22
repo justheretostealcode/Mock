@@ -1,4 +1,4 @@
-package de.tu_darmstadt.rs.synbio.synthesis.util;
+package de.tu_darmstadt.rs.synbio.common;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

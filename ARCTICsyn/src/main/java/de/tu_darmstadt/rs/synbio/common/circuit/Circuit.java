@@ -8,7 +8,7 @@ import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.util.BranchAndBoundUtil;
 import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
-import de.tu_darmstadt.rs.synbio.synthesis.util.TruthTable;
+import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import org.jgrapht.GraphPath;
 import org.jgrapht.Graphs;
 import org.jgrapht.alg.isomorphism.VF2GraphIsomorphismInspector;

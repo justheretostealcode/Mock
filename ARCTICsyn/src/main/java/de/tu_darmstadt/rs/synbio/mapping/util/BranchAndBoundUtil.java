@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.*;
 import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
-import de.tu_darmstadt.rs.synbio.synthesis.util.TruthTable;
+import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import org.jgrapht.Graphs;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.logicng.datastructures.Assignment;

@@ -9,7 +9,7 @@ import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
 import de.tu_darmstadt.rs.synbio.synthesis.SynthesisConfiguration;
 import de.tu_darmstadt.rs.synbio.synthesis.enumeration.Enumerator;
-import de.tu_darmstadt.rs.synbio.synthesis.util.TruthTable;
+import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

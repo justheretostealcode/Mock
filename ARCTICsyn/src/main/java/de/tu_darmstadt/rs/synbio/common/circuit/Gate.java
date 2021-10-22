@@ -1,7 +1,7 @@
 package de.tu_darmstadt.rs.synbio.common.circuit;
 
 import de.tu_darmstadt.rs.synbio.common.LogicType;
-import de.tu_darmstadt.rs.synbio.synthesis.util.TruthTable;
+import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
 import org.jgrapht.io.Attribute;
 import org.jgrapht.io.VertexProvider;

@@ -4,7 +4,7 @@ import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.synthesis.SynthesisConfiguration;
 import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
-import de.tu_darmstadt.rs.synbio.synthesis.util.TruthTable;
+import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

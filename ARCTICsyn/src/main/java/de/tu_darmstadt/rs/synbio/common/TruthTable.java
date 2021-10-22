@@ -86,7 +86,7 @@ public class TruthTable {
         StringBuilder builder = new StringBuilder();
 
         for (int i = 0; i < firstUnusedBit; i ++) {
-            builder.append(truthTable.get(i) ? "1" : "0");
+            builder.insert(0, truthTable.get(i) ? "1" : "0");
         }
 
         return builder.toString();
@@ -107,11 +107,11 @@ public class TruthTable {
     @JsonCreator
     public TruthTable(String jsonValue) {
 
-        int i = 0;
+        int i = jsonValue.length() - 1;
         for (Character character : jsonValue.toCharArray()) {
             truthTable.set(i, (character == '1'));
-            i++;
+            i--;
         }
-        firstUnusedBit = i;
+        firstUnusedBit = jsonValue.length();
     }
 }

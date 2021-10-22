@@ -99,8 +99,7 @@ public class Main {
             if ((ttLength & (ttLength - 1)) != 0) {
                 exit("Length of truth table has to be power of two.");
             }
-            String decTT = Integer.parseInt(cmd.getOptionValue("truthtable"), 2) + "," + cmd.getOptionValue("truthtable").length();
-            inputTruthTable = new TruthTable(decTT);
+            inputTruthTable = new TruthTable(cmd.getOptionValue("truthtable"));
         }
 
         // call main program

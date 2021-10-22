@@ -161,11 +161,10 @@ public class BranchAndBoundUtil {
             for (Variable v : inputVariablesSubProblem) {
                 Gate vGate = inputBuffers.stream().filter(gate -> gate.getExpression().variables().first() == v).findFirst().get();
                 TruthTable vT = truthTables.get(vGate);
-                int vVal = vT.getTruthTable();
-                vVal = (vVal & (1 << iX)) >> iX;
 
-                stringBuilder = stringBuilders[vVal];
-                stringBuilder.append(prefix[vVal]);
+                int selector = vT.getBitSet().get(iX) ? 1 : 0;
+                stringBuilder = stringBuilders[selector];
+                stringBuilder.append(prefix[selector]);
                 stringBuilder.append(v.name());
             }
 

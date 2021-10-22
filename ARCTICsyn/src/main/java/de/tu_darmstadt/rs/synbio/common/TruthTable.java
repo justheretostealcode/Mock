@@ -12,68 +12,44 @@ import java.util.*;
 
 public class TruthTable {
 
-    private Integer truthTable;
-    private Integer firstUnusedBit;
+    private final BitSet truthTable = new BitSet();
+    private final int firstUnusedBit;
 
     public TruthTable(Formula f) {
-
-        this.truthTable = 0;
-        this.firstUnusedBit = 0;
-
+        int i = 0;
         for (Assignment assignment : getAllAssignments(f.variables())) {
-            this.insert(f.evaluate(assignment));
+            truthTable.set(i, f.evaluate(assignment));
+            i++;
         }
+        firstUnusedBit = i;
     }
 
     public TruthTable(Formula f, List<Assignment> assignments)  {
-        this.truthTable = 0;
-        this.firstUnusedBit = 0;
-        for (Assignment assignment : assignments)   {
-            this.insert(f.evaluate(assignment));
+        int i = 0;
+        for (Assignment assignment : assignments) {
+            truthTable.set(i, f.evaluate(assignment));
+            i++;
         }
+        firstUnusedBit = i;
     }
 
-    public Integer getTruthTable() {
+    public BitSet getBitSet() {
         return truthTable;
     }
 
     public int getSupportSize() {
-        int supportSize;
 
-        switch (firstUnusedBit) {
-            case 2:
-                supportSize = 1;
-                break;
-            case 4:
-                supportSize = 2;
-                break;
-            case 8:
-                supportSize = 3;
-                break;
-            case 16:
-                supportSize = 4;
-                break;
-            case 32:
-                supportSize = 5;
-                break;
-            default:
-                supportSize = 0;
+        int support = 0;
+
+        while((1 << support) < firstUnusedBit) {
+            support ++;
         }
 
-        return supportSize;
+        return support;
     }
 
-    private Integer getLength() {
+    public int getLength() {
         return firstUnusedBit;
-    }
-
-    private void insert(boolean value) throws IndexOutOfBoundsException {
-
-        if (firstUnusedBit > 32)
-            throw new IndexOutOfBoundsException("Truth table may maximally contain 32 bits / 5 inputs.");
-
-        truthTable |= (value ? 1 : 0) << firstUnusedBit;
-        firstUnusedBit++;
     }
 
     public static LinkedList<Assignment> getAllAssignments(SortedSet<Variable> variables) {
@@ -110,26 +86,32 @@ public class TruthTable {
         StringBuilder builder = new StringBuilder();
 
         for (int i = 0; i < firstUnusedBit; i ++) {
-            builder.insert(0, ((truthTable & (1 << i)) != 0) ? "1" : "0");
+            builder.append(truthTable.get(i) ? "1" : "0");
         }
 
         return builder.toString();
     }
 
     public boolean equalsLogically(TruthTable cmp) {
-        return new EqualsBuilder().append(this.truthTable, cmp.getTruthTable()).append(this.getLength(), cmp.getLength()).isEquals();
+        if (this.firstUnusedBit != cmp.firstUnusedBit)
+            return false;
+
+        return this.truthTable.equals(cmp.truthTable);
     }
 
     @JsonValue
     public String toJson() {
-        return this.truthTable + "," + this.firstUnusedBit;
+        return toString();
     }
 
     @JsonCreator
     public TruthTable(String jsonValue) {
 
-        String[] values = jsonValue.split(",");
-        this.truthTable = Integer.parseInt(values[0], 10);
-        this.firstUnusedBit = Integer.parseInt(values[1], 10);
+        int i = 0;
+        for (Character character : jsonValue.toCharArray()) {
+            truthTable.set(i, (character == '1'));
+            i++;
+        }
+        firstUnusedBit = i;
     }
 }

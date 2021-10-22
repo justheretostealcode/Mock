@@ -871,12 +871,12 @@ def startSimulation_VEC(assignment, simData, simSpec):
                         break
             # Stop when there is no change in the values to substitute, since the result would be identical
 
-            # determineScores(results)
-            # if (debugMode):
-            #     for key in results:
-            #         debugPrint(str(key) + ": " + str(results[key]["SCORE"]))
-            # debugPrint("Finished iteration %d (stop=%s) \n" % (i, str(stop)))
-            # i += 1
+            determineScores(results)
+            if (debugMode):
+                for key in results:
+                    debugPrint(str(key) + ": " + str(results[key]["SCORE"]))
+            debugPrint("Finished iteration %d (stop=%s) \n" % (i, str(stop)))
+            i += 1
 
         # The freshest result should be in result automatically
 

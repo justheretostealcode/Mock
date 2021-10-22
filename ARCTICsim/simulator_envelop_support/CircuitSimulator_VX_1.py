@@ -853,13 +853,13 @@ def startSimulation_VEC(assignment, simData, simSpec):
             # Simulate based on the current valuesToSubstitute
             simulateCircuit_VEC(nodeOrder=nodeOrder, circuit=circuit, assignment=assignment, truthTable=truthTable,
                             responseFunctions=responseFunctions, circuitSim=circuitSim, results=results,
-                            completeCircuitVals=currentCircuitVals, N=N, growthScore=growthScore,
+                            completeCircuitVals=currentCircuitVals_VEC, N=N, growthScore=growthScore,
                             substitutionValues=valuesToSubstitute)
 
             previousValuesToSubstitute = valuesToSubstitute
             valuesToSubstitute = refineValuesToSubstitute(substitutionTruthtableKeys=substitutionTruthtableKeys,
                                                           substitutionTruthTables=substitutionTruthtables,
-                                                          currentCircuitVals=currentCircuitVals,
+                                                          currentCircuitVals=currentCircuitVals_VEC,
                                                           inputIdents=inputIdents,
                                                           previousValuesToSubstitute=previousValuesToSubstitute)
 

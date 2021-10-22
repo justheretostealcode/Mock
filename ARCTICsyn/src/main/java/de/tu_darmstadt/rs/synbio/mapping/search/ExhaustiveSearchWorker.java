@@ -51,7 +51,9 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
                 }
             }
 
-            assignment = assigner.getNextAssignment();
+            do {
+                assignment = assigner.getNextAssignment();
+            } while(assignment != null && !assignment.fulfilsConstraints(structure));
         }
 
         simulator.shutdown();

@@ -319,7 +319,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                         val = bound(assignment);
                         ref.highestScore = Math.max(ref.highestScore, val);
                         searchTreeVisualizer.addLeafNode(assignment, val, bestScore);
-                        if (val > bestScore) {   // Since the node is a terminal node (leave), one needs to check if it is better than the current best solution
+
+                        double growth = interfaces[assignment.size() - 1].getLastGrowth();
+                        if (val > bestScore && growth >= 0.75) {   // Since the node is a terminal node (leave), one needs to check if it is better than the current best solution
                             bestScore = val;
                             bestAssignment = assignment;
                             searchStatsLogger.notifyNewBestAssignment(iteration, iNeededSimulations);

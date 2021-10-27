@@ -81,9 +81,19 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         ExhaustiveAssigner exhaustiveAssigner = new ExhaustiveAssigner(gateLib, structure);
         RandomAssigner randomAssigner = new RandomAssigner(gateLib, structure);
 
-        Assignment current = randomAssigner.getNextAssignment();
-        long problemSize = exhaustiveAssigner.getNumTotalPermutations();
-        double currentScore = simulator.simulate(current);
+
+        Assignment current;
+        long problemSize;
+        double currentScore;
+        double currentGrowth;
+
+        do {
+            current = randomAssigner.getNextAssignment();
+            problemSize = exhaustiveAssigner.getNumTotalPermutations();
+            currentScore = simulator.simulate(current);
+            currentGrowth = simulator.getLastGrowth();
+            currentScore = currentScore * (currentGrowth< 0.75 ? Math.pow(currentGrowth * 1.33, 2) : 1.0);
+        } while (!current.fulfilsConstraints(structure) || simulator.getLastGrowth() < 0.75);
 
         // initialize search
 
@@ -117,11 +127,14 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
                 break;
 
             double neighborScore = simulator.simulate(neighbor);
+            double neighborGrowth = simulator.getLastGrowth();
+            neighborScore =  neighborScore * (neighborGrowth < 0.75 ? Math.pow(neighborGrowth * 1.33, 2) : 1.0);
             simCount ++;
 
             if (accept(currentScore, neighborScore, temperature)) {
                 current = neighbor;
                 currentScore = neighborScore;
+                currentGrowth = neighborGrowth;
                 acceptCount ++;
             }
 
@@ -130,7 +143,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
                 scoreHistory.remove(scoreHistory.size() - 1);
             }
 
-            if (mapConfig.getOptimizationType().compare(bestScore, currentScore)) {
+            if (mapConfig.getOptimizationType().compare(bestScore, currentScore) && currentGrowth >= 0.75) {
                 best = current;
                 bestScore = currentScore;
             }
@@ -181,7 +194,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
         }
 
-        SimulationResult result = new SimulationResult(structure, best, bestScore);
+        SimulationResult result = new SimulationResult(structure, best, simulator.simulate(best));
         result.setNeededSimulations(simCount);
         simulator.shutdown();
         return result;

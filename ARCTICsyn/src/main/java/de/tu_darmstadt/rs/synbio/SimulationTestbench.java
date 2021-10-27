@@ -189,8 +189,8 @@ public class SimulationTestbench {
                     //result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
                     //        "result_" + child.getName() + ".dot"), result.getAssignment());
 
-                    //result.getStructure().saveGml(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
-                    //        "result_" + child.getName() + ".gml"), result.getAssignment());
+                    result.getStructure().saveGml(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
+                            "result_" + child.getName() + ".gml"), result.getAssignment());
 
                     try {
                         out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getScore() + "," + result.getAssignment().getIdentifierMap());

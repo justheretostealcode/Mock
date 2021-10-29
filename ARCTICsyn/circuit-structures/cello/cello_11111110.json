@@ -1,0 +1,4 @@
+{
+  "truthtable" : "11111110",
+  "graph" : {"creator":"JGraphT JSON Exporter","version":"1","nodes":[{"id":"a","expression":"a","primitiveIdentifier":"","type":"INPUT"},{"id":"b","expression":"b","primitiveIdentifier":"","type":"INPUT"},{"id":"c","expression":"c","primitiveIdentifier":"","type":"INPUT"},{"id":"YFP","expression":"x | y","primitiveIdentifier":"OR2","type":"LOGIC"},{"id":"P2_PhlF","expression":"~(x | y)","primitiveIdentifier":"NOR2","type":"LOGIC"},{"id":"A1_AmtR","expression":"~x","primitiveIdentifier":"NOT","type":"LOGIC"},{"id":"O","expression":"x","primitiveIdentifier":"","type":"OUTPUT"}],"edges":[{"id":"1","source":"b","target":"P2_PhlF","variable":"x"},{"id":"2","source":"a","target":"P2_PhlF","variable":"y"},{"id":"3","source":"P2_PhlF","target":"A1_AmtR","variable":"x"},{"id":"4","source":"c","target":"YFP","variable":"x"},{"id":"5","source":"A1_AmtR","target":"YFP","variable":"y"},{"id":"6","source":"YFP","target":"O","variable":"x"}]}
+}

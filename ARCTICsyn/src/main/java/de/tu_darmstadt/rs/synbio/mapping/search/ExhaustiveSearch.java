@@ -51,13 +51,20 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
 
         SimulationResult bestRes = null;
 
+        long numSims = 0;
+
         for (Future<SimulationResult> result : simResults) {
 
             try {
                 SimulationResult res = result.get();
 
-                if (res != null && (bestRes == null || (mapConfig.getOptimizationType().compare(bestRes.getScore(), res.getScore())))) {
-                    bestRes = res;
+                if (res != null) {
+
+                    numSims += res.getNeededSimulations();
+
+                    if (bestRes == null || (mapConfig.getOptimizationType().compare(bestRes.getScore(), res.getScore()))) {
+                        bestRes = res;
+                    }
                 }
 
             } catch (Exception e) {
@@ -68,6 +75,9 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
         //logger.info("Finished simulating " + structure.getIdentifier() + ", score: " + (bestRes != null ? bestRes.getScore() : 0));
 
         executor.shutdownNow();
+
+        if (bestRes != null)
+            bestRes.setNeededSimulations(numSims);
 
         return bestRes;
     }

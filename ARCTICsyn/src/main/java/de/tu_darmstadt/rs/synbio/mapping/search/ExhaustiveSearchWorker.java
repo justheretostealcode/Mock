@@ -41,9 +41,11 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
         } while(assignment != null && !assignment.fulfilsConstraints(structure));
 
         SimulationResult bestRes = null;
+        long numSims = 0;
 
         while (assignment != null && !Thread.interrupted()) {
             SimulationResult result = new SimulationResult(structure, assignment, simulator.simulate(assignment));
+            numSims ++;
 
             if (simulator.getLastGrowth() >= 0.75) {
                 if (bestRes == null || (mapConfig.getOptimizationType().compare(bestRes.getScore(), result.getScore()))) {
@@ -57,6 +59,9 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
         }
 
         simulator.shutdown();
+
+        if (bestRes != null)
+            bestRes.setNeededSimulations(numSims);
 
         return bestRes;
     }

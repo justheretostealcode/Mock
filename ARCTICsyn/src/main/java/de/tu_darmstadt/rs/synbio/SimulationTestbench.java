@@ -184,13 +184,13 @@ public class SimulationTestbench {
 
                     neededSims += result.getNeededSimulations();
 
-                    logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + result.getAssignment().getIdentifierMap());
+                    logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + result.getAssignment().getIdentifierMap());
 
                     //result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
                     //        "result_" + child.getName() + ".dot"), result.getAssignment());
 
-                    result.getStructure().saveGml(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
-                            "result_" + child.getName() + ".gml"), result.getAssignment());
+                    //result.getStructure().saveGml(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
+                    //        "result_" + child.getName() + ".gml"), result.getAssignment());
 
                     try {
                         out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getScore() + "," + result.getAssignment().getIdentifierMap());

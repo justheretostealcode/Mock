@@ -92,7 +92,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             problemSize = exhaustiveAssigner.getNumTotalPermutations();
             currentScore = simulator.simulate(current);
             currentGrowth = simulator.getLastGrowth();
-            currentScore = currentScore * (currentGrowth< 0.75 ? Math.pow(currentGrowth * 1.33, 2) : 1.0);
+            currentScore = currentScore * (currentGrowth< 0.75 ? Math.pow(currentGrowth * 1.33, 1) : 1.0);
         } while (!current.fulfilsConstraints(structure) || simulator.getLastGrowth() < 0.75);
 
         // initialize search
@@ -128,7 +128,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
             double neighborScore = simulator.simulate(neighbor);
             double neighborGrowth = simulator.getLastGrowth();
-            neighborScore =  neighborScore * (neighborGrowth < 0.75 ? Math.pow(neighborGrowth * 1.33, 2) : 1.0);
+            neighborScore =  neighborScore * (neighborGrowth < 0.75 ? Math.pow(neighborGrowth * 1.33, 1) : 1.0);
             simCount ++;
 
             if (accept(currentScore, neighborScore, temperature)) {

@@ -660,7 +660,7 @@ def startSimulation_VEC(assignment, simData, simSpec):
                 if (responseFunctions[key]["type"] == "INHIBITORY_HILL_EQUATION"):
                     responseFunctions[key]["equation"] = inhibitoryHillEquation_VEC
                 elif (responseFunctions[key]["type"] == "IMPLICIT_OR"):
-                    responseFunctions[key]["equation"] = nativeImplicitOr
+                    responseFunctions[key]["equation"] = nativeImplicitOr_VEC
                 elif (responseFunctions[key]["type"] == "ENVELOPE"):
                     i = 0  # DO Nothing
             # The case of not native response functions is currently not treated yet, but is intented already by the design of the genetic gate library
@@ -1033,7 +1033,7 @@ def startSimulation_VEC(assignment, simData, simSpec):
         ymax = parameters["ymax"][:N]
         return ymin + (ymax - ymin) / (1 + np.power(x / K, n))
 
-    def nativeImplicitOr(x, parameters):
+    def nativeImplicitOr_VEC(x, parameters, N):
         return x;
 
     """

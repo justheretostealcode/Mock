@@ -32,6 +32,7 @@ public class SimulationTestbench {
 
     private static String mappingConfigFile = "map.config";
     private static String simulationConfigFile = "sim.config";
+    private static Double[] proxWeights = {0.9, 0.1, 0.0};
 
     private static int numRepetitions = 1;
 
@@ -39,18 +40,14 @@ public class SimulationTestbench {
 
         Options options = new Options();
 
-        Option inputDirString = new Option("i", "inputPath", true, "path to the input directory or file");
-        options.addOption(inputDirString);
-        Option gateLibraryFile = new Option("l", "library", true, "path of the gate library file");
-        options.addOption(gateLibraryFile);
-        Option proxWeightsOpt = new Option("w", "proxWeights", true, "weights for the gate proximity measure");
-        options.addOption(proxWeightsOpt);
+        /* parameters */
+        options.addRequiredOption("i", "inputPath", true, "path to the input directory or file");
 
-
-        Option mappingConfigString = new Option("mc", "mappingConfig", true, "path to the mapping configuration");
-        options.addOption(mappingConfigString);
-        Option simulationConfigString = new Option("sc", "simulationConfig", true, "path to the simulation configuration");
-        options.addOption(simulationConfigString);
+        /* optional parameters */
+        options.addOption("w", "proxWeights", true, "weights for the gate proximity measure");
+        options.addOption("mc", "mappingConfig", true, "path to the mapping configuration");
+        options.addOption("sc", "simulationConfig", true, "path to the simulation configuration");
+        options.addOption("n", "numRepetitions", true, "iteration number for the test bench");
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -60,25 +57,26 @@ public class SimulationTestbench {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             logger.error(e.getMessage());
-            formatter.printHelp("AssignmentBenchmark", options);
+            formatter.printHelp("ARCTIC SimulationTestbench", options);
             System.exit(1);
             return;
         }
 
-        if (!cmd.hasOption("inputPath") || !cmd.hasOption("library")) {
-            logger.error("Input directory or gate library file not given!");
-            formatter.printHelp("enuMap", options);
+        if (!cmd.hasOption("inputPath")) {
+            logger.error("Input directory or file not given!");
+            formatter.printHelp("ARCTIC SimulationTestbench", options);
             System.exit(1);
             return;
         }
-
-        Double[] proxWeights = {0.9, 0.1, 0.0};
 
         if (cmd.hasOption("proxWeights")) {
             String[] pw = cmd.getOptionValue("proxWeights").split(",");
             proxWeights = Arrays.stream(pw).map(Double::valueOf).toArray(Double[]::new);
         }
 
+        if (cmd.hasOption("numRepetitions")) {
+            numRepetitions = Integer.parseInt(cmd.getOptionValue("numRepetitions"));
+        }
 
         // Override mapping config file if provided
         if (cmd.hasOption("mappingConfig")) {
@@ -90,17 +88,12 @@ public class SimulationTestbench {
             simulationConfigFile = cmd.getOptionValue("simulationConfig");
         }
 
-
         MappingConfiguration mapConfig = new MappingConfiguration(mappingConfigFile);
         SimulationConfiguration simConfig = new SimulationConfiguration(simulationConfigFile);
 
-        if (mapConfig.getNumRepetitions() > 0)
-            // TODO Dirty coding since mapping config ideally should not change the simulation testbench
-            numRepetitions = mapConfig.getNumRepetitions();
+        GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), proxWeights);
 
-        GateLibrary gateLib = new GateLibrary(new File(cmd.getOptionValue("library")), proxWeights);
-
-        CompatibilityChecker checker = new CompatibilityChecker(gateLib);
+        //CompatibilityChecker checker = new CompatibilityChecker(gateLib);
 
         File inputPath = new File(cmd.getOptionValue("inputPath"));
 
@@ -190,7 +183,13 @@ public class SimulationTestbench {
                     //        "result_" + child.getName() + ".dot"), result.getAssignment());
 
                     //result.getStructure().saveGml(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
-                    //        "result_" + child.getName() + ".gml"), result.getAssignment());
+                    //        "result_" + child.getName() + "_" + i + ".gml"), result.getAssignment());
+
+                    /*try {
+                        mapper.writerWithDefaultPrettyPrinter().writeValue(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(), "result_" + result.getStructure().getTruthTable() + "_" + i + "_assignment.json"), result.getAssignment());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }*/
 
                     try {
                         out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getScore() + "," + result.getAssignment().getIdentifierMap());
@@ -212,7 +211,6 @@ public class SimulationTestbench {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
             }
         }
 

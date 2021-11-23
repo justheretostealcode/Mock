@@ -10,10 +10,7 @@ import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -21,10 +18,13 @@ public class MappingConfiguration {
 
     private static final Logger logger = LoggerFactory.getLogger(MappingConfiguration.class);
 
+    /* global mapping parameters */
+    private final File library;
     private final MappingConfiguration.SearchAlgorithm searchAlgorithm;
     private final MappingConfiguration.OptimizationType optimizationType;
-    private boolean statistics;
+    private final boolean statistics;
 
+    /* Branch-and-Bound parameters */
     private MappingConfiguration.BAB_SearchStrategy babSearchStrategy;
     private MappingConfiguration.BAB_Type babType;
     private boolean babStatistics;
@@ -33,8 +33,6 @@ public class MappingConfiguration {
     private BAB_Sort_Order babLibraryOrder;
     private BAB_Sort_Order babChildrenOrder;
     private BAB_INPUT_SPECIFICATION_TYPE babInputSpecificationType;
-
-    private int numRepetitions;
 
     public enum SearchAlgorithm {
         EXHAUSTIVE, ANNEALING, BRANCH_AND_BOUND
@@ -82,11 +80,15 @@ public class MappingConfiguration {
     public MappingConfiguration(String configFile) throws Exception {
 
         /* config file handling */
-
         Properties props = new Properties();
         InputStream is = null;
         is = new FileInputStream(configFile);
         props.load(is);
+
+        library = new File(props.getProperty("LIBRARY"));
+
+        if (!library.exists())
+            throw new IOException("Gate library file " + library.getAbsolutePath() + " does not exist.");
 
         switch (props.getProperty("SEARCH_ALGORITHM")) {
             case "EXHAUSTIVE":
@@ -114,10 +116,6 @@ public class MappingConfiguration {
         }
 
         statistics = props.getProperty("STATISTICS", "false").equalsIgnoreCase("true");
-
-        numRepetitions = Integer.valueOf(props.getProperty("REPETITIONS", "-1"));
-
-
 
         if (SearchAlgorithm.BRANCH_AND_BOUND == searchAlgorithm) {   // The following fields are only necessary for BranchAndBound
             switch (props.getProperty("BAB-TYPE")) {
@@ -203,14 +201,16 @@ public class MappingConfiguration {
                     babInputSpecificationType = BAB_INPUT_SPECIFICATION_TYPE.PRECISE;
                     break;
             }
-
-
         }
     }
 
     public void print() {
         logger.info("\tsearch algorithm: " + searchAlgorithm.name());
         logger.info("\toptimization type: " + optimizationType.name());
+    }
+
+    public File getLibrary() {
+        return library;
     }
 
     public OptimizationType getOptimizationType() {
@@ -251,10 +251,6 @@ public class MappingConfiguration {
 
     public BAB_INPUT_SPECIFICATION_TYPE getBabInputSpecificationType() {
         return babInputSpecificationType;
-    }
-
-    public int getNumRepetitions()  {
-        return numRepetitions;
     }
 
     /* factories */

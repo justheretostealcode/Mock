@@ -24,13 +24,12 @@ public class ARCTICsyn {
 
     private final TruthTable inputTruthTable;
     private final File outputDir;
-    private final File gateLibraryFile;
 
     private final SynthesisConfiguration synConfig;
     private final MappingConfiguration mapConfig;
     private final SimulationConfiguration simConfig;
 
-    public ARCTICsyn(TruthTable inputTruthTable, String libraryPath, SynthesisConfiguration synConfig,
+    public ARCTICsyn(TruthTable inputTruthTable, SynthesisConfiguration synConfig,
                      MappingConfiguration mapConfig, SimulationConfiguration simConfig) throws IOException {
 
         this.inputTruthTable = inputTruthTable;
@@ -39,31 +38,23 @@ public class ARCTICsyn {
         this.simConfig = simConfig;
 
         /* output dir handling */
-
         outputDir = (synConfig.getOutputDir() == null) ? new File("run_" + System.currentTimeMillis() + "_" + inputTruthTable.toString()) :
                 new File(synConfig.getOutputDir(), "run_" + System.currentTimeMillis() + "_" + inputTruthTable.toString());
 
         if (!this.outputDir.mkdirs())
             throw new IOException("Error creating output directory " + outputDir.getAbsolutePath());
-
-        /* library file handling */
-
-        gateLibraryFile = new File(libraryPath);
-
-        if (!gateLibraryFile.exists())
-            throw new IOException("Primitive gate library file " + gateLibraryFile + " does not exist.");
     }
 
     public void synthesize() {
 
         /* initialize gate library */
 
-        final GateLibrary gateLib = new GateLibrary(gateLibraryFile, new Double[]{0.9,0.1,0.0});
-        //logger.info("Loaded gate library " + gateLib.getSourceFile() + ".");
+        final GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), new Double[]{0.9,0.1,0.0});
+        logger.info("Loaded gate library " + gateLib.getSourceFile() + ".");
 
         /* circuit enumeration */
 
-        //logger.info("Enumeration of circuit variants...");
+        logger.info("Enumeration of circuit variants...");
         Enumerator enumerator = new Enumerator(gateLib, inputTruthTable, synConfig.getMaxDepth(), synConfig.getMaxWeight(), synConfig.getWeightRelaxation());
         enumerator.enumerate();
         List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().values());
@@ -73,7 +64,7 @@ public class ARCTICsyn {
             return;
         }
 
-        //logger.info("Found " + circuits.size() + " circuits.");
+        logger.info("Found " + circuits.size() + " circuits.");
 
         circuits.sort(Circuit::compareTo);
 
@@ -92,7 +83,7 @@ public class ARCTICsyn {
 
         if (simConfig.isSimEnabled()) {
 
-            //logger.info("Technology mapping...");
+            logger.info("Technology mapping...");
 
             SimulationResult[] bestResults = new SimulationResult[synConfig.getWeightRelaxation() + 1];
             int minSize = circuits.get(circuits.size() - 1).getWeight();
@@ -135,8 +126,8 @@ public class ARCTICsyn {
 
                     currentBestScore = result.getScore();
 
-                    //logger.info("Finished. Result:");
-                    //logger.info(result.getStructure().getIdentifier() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getAssignment().getIdentifierMap().toString());
+                    logger.info("Finished. Result:");
+                    logger.info(result.getStructure().getIdentifier() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getAssignment().getIdentifierMap().toString());
                 }
             }
         }

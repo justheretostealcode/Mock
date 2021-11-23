@@ -25,7 +25,7 @@ while IFS=\n read -r truthtable
 do
 	wait_jobs
     	echo "mapping truth table $truthtable ..."
-	./gradlew -q run --args="-t $truthtable -l ../ARCTICsim/gate_libs/gate_lib_particles_id_cytometry_01.json" </dev/null >> $OUTDIR/$LOGFILE &
+	./gradlew -q run --args="-t $truthtable </dev/null >> $OUTDIR/$LOGFILE &
 done < cello_functions.csv
 
 for job in `jobs -pr`; do

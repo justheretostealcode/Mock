@@ -93,7 +93,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             currentScore = simulator.simulate(current);
             currentGrowth = simulator.getLastGrowth();
             currentScore = currentScore * (currentGrowth< 0.75 ? Math.pow(currentGrowth * 1.33, 1) : 1.0);
-        } while (!current.fulfilsConstraints(structure) || simulator.getLastGrowth() < 0.75);
+        } while (!current.fulfilsConstraints(structure) || currentGrowth < 0.75);
 
         // initialize search
 
@@ -115,7 +115,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         double temperature = getInitialTemperature(simulator);
         double coolingFactor;
 
-        int movesPerTemp = 50 * (int) Math.pow(problemSize, 0.25);
+        int movesPerTemp = 60 * (int) Math.pow(problemSize, 0.25);
 
         double histBestSDev = Math.abs(bestScore);
 

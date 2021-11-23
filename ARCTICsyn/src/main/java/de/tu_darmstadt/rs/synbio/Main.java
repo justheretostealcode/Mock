@@ -26,25 +26,13 @@ public class Main {
         // parse command line arguments
 
         /* input */
+        options.addOption("f", "function", true, "input function");
+        options.addOption("t", "truthtable", true, "input truth table");
 
-        Option function = new Option("f", "function", true, "input function");
-        options.addOption(function);
-
-        Option truthTable = new Option("t", "truthtable", true, "input truth table");
-        options.addOption(truthTable);
-
-        /* library */
-
-        Option gateLibraryFile = new Option("l", "library", true, "path of the gate library file");
-        options.addOption(gateLibraryFile);
-
-
-        Option mappingConfigString = new Option("mc", "mappingConfig", true, "path to the mapping configuration");
-        options.addOption(mappingConfigString);
-        Option simulationConfigString = new Option("sc", "simulationConfig", true, "path to the simulation configuration");
-        options.addOption(simulationConfigString);
-        Option synthesisConfigString = new Option("synconf", "synthesisConfig", true, "path to the synthesis configuration");
-        options.addOption(synthesisConfigString);
+        /* config files*/
+        options.addOption("mc", "mappingConfig", true, "path to the mapping configuration");
+        options.addOption("sc", "simulationConfig", true, "path to the simulation configuration");
+        options.addOption("synconf", "synthesisConfig", true, "path to the synthesis configuration");
 
         CommandLine cmd;
 
@@ -57,36 +45,28 @@ public class Main {
 
         // sanity check arguments
 
-        if (!(cmd.hasOption("function")  || cmd.hasOption("truthtable")) || !cmd.hasOption("library")) {
-            exit("Input function or gate library file not given!");
+        if (!(cmd.hasOption("function")  || cmd.hasOption("truthtable"))) {
+            exit("Input function or truth table not given!");
         }
 
         if (cmd.hasOption("function")  && cmd.hasOption("truthtable")) {
-            exit("Input function and truth table given!");
+            exit("Both input function and truth table given!");
         }
 
-        // Override mapping config file if provided
+        // Override config files if provided
         if (cmd.hasOption("mappingConfig")) {
             mappingConfigFile = cmd.getOptionValue("mappingConfig");
         }
-
-        // Override simulation config file if provided
         if (cmd.hasOption("simulationConfig")) {
             simulationConfigFile = cmd.getOptionValue("simulationConfig");
         }
-
-        // Override synthesis config file if provided
-        // Override simulation config file if provided
         if (cmd.hasOption("synthesisConfig")) {
             synthesisConfigFile = cmd.getOptionValue("synthesisConfig");
         }
 
         SynthesisConfiguration synConfig = new SynthesisConfiguration(synthesisConfigFile);
-        //synConfig.print();
         SimulationConfiguration simConfig = new SimulationConfiguration(simulationConfigFile);
-        //simConfig.print();
         MappingConfiguration mapConfig = new MappingConfiguration(mappingConfigFile);
-        //mapConfig.print();
 
         /* input handling */
 
@@ -97,14 +77,13 @@ public class Main {
         } else {
             int ttLength = cmd.getOptionValue("truthtable").length();
             if ((ttLength & (ttLength - 1)) != 0) {
-                exit("Length of truth table has to be power of two.");
+                exit("Length of truth table has to be a power of two.");
             }
             inputTruthTable = new TruthTable(cmd.getOptionValue("truthtable"));
         }
 
         // call main program
-
-        ARCTICsyn syn = new ARCTICsyn(inputTruthTable, cmd.getOptionValue("library"), synConfig, mapConfig, simConfig);
+        ARCTICsyn syn = new ARCTICsyn(inputTruthTable, synConfig, mapConfig, simConfig);
         syn.synthesize();
     }
 

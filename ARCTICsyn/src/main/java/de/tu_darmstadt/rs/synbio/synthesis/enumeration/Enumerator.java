@@ -73,7 +73,7 @@ public class Enumerator {
     /* helper functions for handling of primitive circuits */
 
     private List<LogicType> mapEntryToRow(PrimitiveCircuit.Entry entry) {
-        return combinations[entry.combId].get(entry.index);
+        return combinations.get(entry.combId).get(entry.index);
     }
 
     private boolean isCoveredByLibrary(List<LogicType> row) {
@@ -193,7 +193,7 @@ public class Enumerator {
 
     /* main algorithm */
 
-    List<List<LogicType>>[] combinations;
+    List<List<List<LogicType>>> combinations;
 
     public void enumerate() {
 
@@ -210,19 +210,19 @@ public class Enumerator {
         // max number of gates in uppermost level
         int maxRowLength = (int) Math.pow(maxGateFeasibility.getAsInt(), maxDepth - 1);
 
-        // array of array lists of arrays containing combinations
-        combinations = new ArrayList[maxRowLength];
+        // lists containing combinations
+        combinations = new ArrayList<>(maxRowLength);
 
         for (int i = 0; i < maxRowLength; i ++) {
-            combinations[i] = new ArrayList<>();
+            combinations.add(i, new ArrayList<>());
         }
 
         // generate rows (combinations of gates and empty slots)
         for (int rowLength = 1; rowLength <= maxRowLength; rowLength ++) {
 
-            List<List<LogicType>> lengthCombinations = combinations[rowLength - 1];
+            List<List<LogicType>> lengthCombinations = combinations.get(rowLength - 1);
 
-            for (Integer i = 0; i < (int) Math.pow(gateTypes.size(), rowLength); i ++) {
+            for (int i = 0; i < (int) Math.pow(gateTypes.size(), rowLength); i ++) {
 
                 String combination = Integer.toString(i, gateTypes.size());
                 combination = StringUtils.leftPad(combination, rowLength, '0');
@@ -263,7 +263,7 @@ public class Enumerator {
         // if circuit is empty --> build start circuits and recurse
         if (level == 0) {
 
-            for (int i = 0; i < combinations[0].size(); i++) {
+            for (int i = 0; i < combinations.get(0).size(); i++) {
                 PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);
                 newCircuit.insertEntry(0, i);
                 buildCircuits(newCircuit, 1);
@@ -277,9 +277,9 @@ public class Enumerator {
             int numberOfInputs = getNumberOfInputs(mapEntryToRow(entry));
 
             // iterate over rows with corresponding number of gates/entries
-            for (int i = 0; i < combinations[numberOfInputs - 1].size(); i++) {
+            for (int i = 0; i < combinations.get(numberOfInputs - 1).size(); i++) {
 
-                if (combinations[numberOfInputs - 1].get(i).contains(LogicType.OR2)) // limit OR gate to output row
+                if (combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OR2)) // limit OR gate to output row
                     continue;
 
                 PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);

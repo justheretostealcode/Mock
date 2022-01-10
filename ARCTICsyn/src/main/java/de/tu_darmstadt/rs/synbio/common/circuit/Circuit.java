@@ -158,8 +158,12 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
             if (logicGate.getExpression().variables().size() > incomingEdgesOf(logicGate).size())
                 return false;
 
+        }
+
+        for (Gate gate : vertexSet().stream().filter(gate -> !gate.getType().equals(Gate.Type.OUTPUT)).collect(Collectors.toList())) {
+
             // test if gate output is connected
-            if (outgoingEdgesOf(logicGate).isEmpty())
+            if (outgoingEdgesOf(gate).isEmpty())
                 return false;
         }
 

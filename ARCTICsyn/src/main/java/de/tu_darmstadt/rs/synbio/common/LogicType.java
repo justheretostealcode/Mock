@@ -10,14 +10,18 @@ public enum LogicType {
     NOR2,
     OR2;
 
+    private static final Formula notExpr = ExpressionParser.parse("~x");
+    private static final Formula nor2Expr = ExpressionParser.parse("~(x|y)");
+    private static final Formula or2Expr = ExpressionParser.parse("(x|y)");
+
     public Formula getExpression() {
         switch (this) {
             case NOT:
-                return ExpressionParser.parse("~x");
+                return notExpr;
             case NOR2:
-                return ExpressionParser.parse("~(x|y)");
+                return nor2Expr;
             default:
-                return ExpressionParser.parse("(x|y)");
+                return or2Expr;
         }
     }
 

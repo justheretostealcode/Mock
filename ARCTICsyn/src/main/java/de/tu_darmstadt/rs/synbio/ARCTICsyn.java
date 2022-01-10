@@ -10,6 +10,7 @@ import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
 import de.tu_darmstadt.rs.synbio.synthesis.SynthesisConfiguration;
 import de.tu_darmstadt.rs.synbio.synthesis.enumeration.Enumerator;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
+import de.tu_darmstadt.rs.synbio.synthesis.enumeration.EnumeratorFast;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,9 @@ public class ARCTICsyn {
         /* circuit enumeration */
 
         logger.info("Enumeration of circuit variants...");
-        Enumerator enumerator = new Enumerator(gateLib, inputTruthTable, synConfig.getMaxDepth(), synConfig.getMaxWeight(), synConfig.getWeightRelaxation());
+        EnumeratorFast enumerator = new EnumeratorFast(gateLib, inputTruthTable, synConfig.getMaxDepth(), synConfig.getMaxWeight(), synConfig.getWeightRelaxation());
+        //Enumerator enumerator = new Enumerator(gateLib, inputTruthTable, synConfig.getMaxDepth(), synConfig.getMaxWeight(), synConfig.getWeightRelaxation());
+
         enumerator.enumerate();
         List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().values());
 

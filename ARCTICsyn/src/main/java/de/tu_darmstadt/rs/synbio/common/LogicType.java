@@ -14,6 +14,10 @@ public enum LogicType {
     private static final Formula nor2Expr = ExpressionParser.parse("~(x|y)");
     private static final Formula or2Expr = ExpressionParser.parse("(x|y)");
 
+    private static final String notStr = notExpr.toString();
+    private static final String nor2Str = nor2Expr.toString();
+    private static final String or2Str = or2Expr.toString();
+
     public Formula getExpression() {
         switch (this) {
             case NOT:
@@ -22,6 +26,17 @@ public enum LogicType {
                 return nor2Expr;
             default:
                 return or2Expr;
+        }
+    }
+
+    public String getExpressionString() {
+        switch (this) {
+            case NOT:
+                return notStr;
+            case NOR2:
+                return nor2Str;
+            default:
+                return or2Str;
         }
     }
 

@@ -9,14 +9,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.jgrapht.Graphs;
-import org.logicng.formulas.Formula;
-import org.logicng.formulas.FormulaFactory;
 import org.logicng.formulas.Variable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,28 +22,27 @@ public class EnumeratorFast {
     private static final Logger logger = LoggerFactory.getLogger(EnumeratorFast.class);
 
     private TruthTable targetTruthTable;
+    private int weightRelaxation;
+
     private final GateLibrary gateLib;
     private final int maxDepth;
     private final int feasibility;
     private final int maxWeight;
-    private int weightRelaxation;
-
-    private final int numGroupsInLib;
-
-    private final Circuit templateCircuit;
-    private int gateCounter;
-    private final List<LogicType> gateTypes;
-
-    private List<PrimitiveCircuit> intermediateCircuits;
-
-    /* reservoirs */
-    private List<Formula> inputVars;
-    private List<Formula> intermediateVariables;
-    private List<InputGate> inputGates;
-
-    private HashMap<TruthTable, Circuit> resultCircuits;
 
     private int currentMinSize;
+
+    private final int numGroupsInLib;
+    private final Circuit templateCircuit;
+    private final List<LogicType> gateTypes;
+
+    private List<PrimitiveCircuit> intermediateCircuits; //TODO
+    private HashMap<TruthTable, Circuit> resultCircuits;
+
+    /* reservoirs */
+    private final List<String> gateInputNames;
+    private final List<String> inputVars;
+    private final List<String> intermediateVariables;
+    private final List<InputGate> inputGates;
 
     /* constructor for guided enumeration */
 
@@ -74,10 +70,281 @@ public class EnumeratorFast {
 
         this.numGroupsInLib = gateLib.getGroups().size();
 
-        // init template circuit
+        /* init final fields */
         templateCircuit = new Circuit();
         Gate output = new OutputGate("O");
         templateCircuit.addVertex(output);
+
+        gateInputNames = new ArrayList<>();
+        gateInputNames.add("x");
+        gateInputNames.add("y");
+
+        inputVars = new ArrayList<>();
+        inputGates = new ArrayList<>();
+        char varName = 'a';
+        for (int i = 0; i < feasibility; i ++) {
+            inputVars.add(""+varName);
+            inputGates.add(new InputGate(ExpressionParser.parse(Character.toString(varName)), Character.toString(varName)));
+            varName ++;
+        }
+
+        intermediateVariables = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            intermediateVariables.add("m" + String.format("%03d", i)); //TODO: make dynamically grow
+        }
+    }
+
+    /* main algorithm */
+
+    List<List<List<LogicType>>> combinations;
+
+    public void enumerate() {
+
+        intermediateCircuits = new ArrayList<>();
+        resultCircuits = new HashMap<>();
+
+        OptionalInt maxGateFeasibility = gateTypes.stream().mapToInt(LogicType::getNumInputs).max();
+        if (maxGateFeasibility.isEmpty())
+            return;
+
+        // max number of gates in uppermost level
+        int maxRowLength = (int) Math.pow(maxGateFeasibility.getAsInt(), maxDepth - 1);
+
+        // lists containing combinations
+        combinations = new ArrayList<>(maxRowLength);
+
+        for (int i = 0; i < maxRowLength; i ++) {
+            combinations.add(i, new ArrayList<>());
+        }
+
+        // generate rows (combinations of gates and empty slots)
+        for (int rowLength = 1; rowLength <= maxRowLength; rowLength ++) {
+
+            List<List<LogicType>> lengthCombinations = combinations.get(rowLength - 1);
+
+            for (int i = 0; i < (int) Math.pow(gateTypes.size(), rowLength); i ++) {
+
+                String combination = Integer.toString(i, gateTypes.size());
+                combination = StringUtils.leftPad(combination, rowLength, '0');
+
+                ArrayList<LogicType> row = new ArrayList<>(rowLength);
+
+                for (int j = 0; j < combination.length(); j++) {
+                    row.add(j, gateTypes.get(Character.getNumericValue(combination.charAt(j))));
+                }
+
+                if (isCoveredByLibrary(row) && isNotEmpty(row))
+                    if (!(rowLength != 1 && row.contains(LogicType.OR2))) // limit OR gate to output row
+                        lengthCombinations.add(row);
+            }
+        }
+
+        // call recursive circuit build function
+        PrimitiveCircuit emptyCircuit = new PrimitiveCircuit(maxDepth);
+        buildCircuits(emptyCircuit, 0);
+
+        logger.info("found " + intermediateCircuits.size() + " pre-filtered circuits.");
+
+        filterRedundantCircuits();
+
+        logger.info("found " + intermediateCircuits.size() + " structurally different circuits.");
+
+        // generate input mapping (primary inputs --> unbounded circuit inputs)
+        for (PrimitiveCircuit circuit : intermediateCircuits){
+
+            int numUnboundInputs = getNumberOfUnboundInputs(circuit);
+
+            for (int i = 0; i < (int) Math.pow(feasibility, numUnboundInputs); i++) {
+
+                String inputMapping = Integer.toString(i, feasibility);
+                inputMapping = StringUtils.leftPad(inputMapping, numUnboundInputs, '0');
+
+                // test if mapping contains all primary inputs
+                boolean valid = true;
+                for (int j = 0; j < feasibility; j++) {
+                    if (inputMapping.indexOf(Character.forDigit(j, feasibility)) == -1) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (!valid)
+                    continue;
+
+                // evaluate primitive circuit with input mapping
+                TruthTable circuitTT = evaluatePrimitiveCircuit(circuit, inputMapping);
+
+                if (circuitTT == null)
+                    continue;
+
+                // match, build graph, remove redundancies
+                if(targetTruthTable == null || targetTruthTable.equalsLogically(circuitTT)) {
+                    //logger.info("prim: " + circuitTT.toString());
+                    buildCircuitGraph(circuit, inputMapping);
+                }
+            }
+        }
+    }
+
+    private void buildCircuits(PrimitiveCircuit circuit, int level) {
+
+        // if max depth reached --> abort
+        if (level >= maxDepth)
+            return;
+
+        // if circuit is empty --> build start circuits and recurse
+        if (level == 0) {
+
+            for (int i = 0; i < combinations.get(0).size(); i++) {
+                PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);
+                newCircuit.insertEntry(0, i);
+                buildCircuits(newCircuit, 1);
+            }
+
+            // if circuit is not empty --> extend by next row
+        } else {
+
+            // get number of inputs of lower level
+            PrimitiveCircuit.Entry entry = circuit.getEntry(level - 1);
+            int numberOfInputs = getNumberOfInputs(mapEntryToRow(entry));
+
+            // iterate over rows with corresponding number of gates/entries
+            for (int i = 0; i < combinations.get(numberOfInputs - 1).size(); i++) {
+
+                if (combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OR2)) // limit OR gate to output row
+                    continue;
+
+                PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);
+                newCircuit.addEntry(level, numberOfInputs - 1, i);
+
+                if (circuitAllowedByPreFilter(newCircuit))
+                    intermediateCircuits.add(newCircuit);
+
+                buildCircuits(newCircuit, level + 1);
+            }
+        }
+    }
+
+    private boolean circuitAllowedByPreFilter(PrimitiveCircuit circuit) {
+
+        // check if circuit is implementable with library
+        if (!isCoveredByLibrary(circuit.getList().stream().map(this::mapEntryToRow).flatMap(Collection::stream).collect(Collectors.toCollection(ArrayList::new))))
+            return false;
+
+        // check is feasibility is met
+        if (getNumberOfUnboundInputs(circuit) < feasibility)
+            return false;
+
+        // check circuit weight. if it exceeds maximum --> continue
+        if (getCircuitWeight(circuit) > maxWeight)
+            return false;
+
+        // check if circuit contains redundant inverters
+        if (hasRedundantInverters(circuit))
+            return false;
+
+        return true;
+    }
+
+    private void buildCircuitGraph(PrimitiveCircuit candidate, String inputMapping) {
+
+        /* build circuit */
+        Circuit circuit = new Circuit();
+        Graphs.addGraph(circuit, templateCircuit);
+
+        // add first logic gate after output
+        LogicType type = mapEntryToRow(candidate.getEntry(0)).get(0);
+        int gateCounter = 0;
+        Gate newGate = new LogicGate(type.name() + "_" + gateCounter, type);
+        circuit.addVertex(newGate);
+        circuit.addEdge(newGate, circuit.getOutputBuffer(), new Wire(circuit.getOutputBuffer().getExpression().variables().first()));
+
+        // add rows of gates and wire them
+        List<Gate> prevRow = new ArrayList<>();
+        List<Gate> currentRow = new ArrayList<>();
+        prevRow.add(newGate);
+
+        int inputCount = 0;
+
+        for (int level = 1; level <= candidate.getDepth(); level ++) {
+
+            int column = 0;
+
+            for (Gate anchorGate : prevRow) {
+
+                for (Variable anchorVariable : anchorGate.getExpression().variables()) {
+
+                    if (level < candidate.getDepth())
+                        type = mapEntryToRow(candidate.getEntry(level)).get(column);
+                    else
+                        type = LogicType.EMPTY;
+
+                    if (type != LogicType.EMPTY) {
+
+                        gateCounter++;
+                        newGate = new LogicGate(type.name() + "_" + gateCounter, type);
+                        circuit.addVertex(newGate);
+                        circuit.addEdge(newGate, anchorGate, new Wire(anchorVariable));
+
+                        currentRow.add(newGate);
+                    } else {
+
+                        InputGate inputGate = inputGates.get(Integer.parseInt(String.valueOf(inputMapping.charAt(inputCount))));
+
+                        if (!circuit.containsVertex(inputGate))
+                            circuit.addVertex(inputGate);
+
+                        if (circuit.containsEdge(inputGate, anchorGate))
+                            return;
+
+                        circuit.addEdge(inputGate, anchorGate, new Wire(anchorVariable));
+
+                        inputCount ++;
+                    }
+
+                    column++;
+                }
+            }
+
+            prevRow = new ArrayList<>(currentRow);
+            currentRow.clear();
+        }
+
+        // remove redundant gates
+        if (!circuit.removeRedundantGates())
+            return;
+
+        // compare to current min size
+        int weight = circuit.getWeight();
+        if (weight > currentMinSize + weightRelaxation)
+            return;
+
+        TruthTable truthTable = new TruthTable(circuit.getExpression());
+
+        if (!truthTable.equalsLogically(targetTruthTable)) {
+            circuit.print(new File("test.dot"));
+            evaluatePrimitiveCircuit(candidate, inputMapping);
+            logger.error("Synthesis error: " + truthTable.toString());
+        }
+
+        // filter out structurally equivalent circuits
+        for (TruthTable libTruthTable : resultCircuits.keySet()) {
+
+            if (targetTruthTable != null || libTruthTable.equalsLogically(truthTable)) {
+
+                if (circuit.isEquivalent(resultCircuits.get(libTruthTable))) {
+                    return;
+                }
+            }
+        }
+
+        if (weight < currentMinSize) {
+            currentMinSize = weight;
+
+            // update result circuits
+            resultCircuits.entrySet().removeIf(e -> e.getValue().getWeight() > (currentMinSize + weightRelaxation));
+        }
+
+        resultCircuits.put(truthTable, circuit);
     }
 
     /* helper functions for handling of primitive circuits */
@@ -201,167 +468,105 @@ public class EnumeratorFast {
         return false;
     }
 
-    /* main algorithm */
-
-    List<List<List<LogicType>>> combinations;
-
-    public void enumerate() {
-
-        //logger.info("starting circuit enumeration.");
-
-        intermediateCircuits = new ArrayList<>();
-
-        resultCircuits = new HashMap<>();
-        gateCounter = 0;
-
-        inputVars = new ArrayList<>();
-        inputGates = new ArrayList<>();
-        char varName = 'a';
-        for (int i = 0; i < feasibility; i ++) {
-            inputVars.add(ExpressionParser.parse(varName + ""));
-            inputGates.add(new InputGate(ExpressionParser.parse(Character.toString(varName)), Character.toString(varName)));
-            varName ++;
-        }
-
-        intermediateVariables = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            intermediateVariables.add(ExpressionParser.parse("m" + String.format("%03d", i)));
-        }
-
-        OptionalInt maxGateFeasibility = gateTypes.stream().mapToInt(LogicType::getNumInputs).max();
-        if (maxGateFeasibility.isEmpty())
-            return;
-
-        // max number of gates in uppermost level
-        int maxRowLength = (int) Math.pow(maxGateFeasibility.getAsInt(), maxDepth - 1);
-
-        // lists containing combinations
-        combinations = new ArrayList<>(maxRowLength);
-
-        for (int i = 0; i < maxRowLength; i ++) {
-            combinations.add(i, new ArrayList<>());
-        }
-
-        // generate rows (combinations of gates and empty slots)
-        for (int rowLength = 1; rowLength <= maxRowLength; rowLength ++) {
-
-            List<List<LogicType>> lengthCombinations = combinations.get(rowLength - 1);
-
-            for (int i = 0; i < (int) Math.pow(gateTypes.size(), rowLength); i ++) {
-
-                String combination = Integer.toString(i, gateTypes.size());
-                combination = StringUtils.leftPad(combination, rowLength, '0');
-
-                ArrayList<LogicType> row = new ArrayList<>(rowLength);
-
-                for (int j = 0; j < combination.length(); j++) {
-                    row.add(j, gateTypes.get(Character.getNumericValue(combination.charAt(j))));
-                }
-
-                if (isCoveredByLibrary(row) && isNotEmpty(row))
-                    if (!(rowLength != 1 && row.contains(LogicType.OR2))) // limit OR gate to output row
-                        lengthCombinations.add(row);
-            }
-        }
-
-        // call recursive circuit build function
-        PrimitiveCircuit emptyCircuit = new PrimitiveCircuit(maxDepth);
-        buildCircuits(emptyCircuit, 0);
-
-        logger.info("found " + intermediateCircuits.size() + " pre-filtered circuits.");
-
-        filterRedundantCircuits();
-
-        logger.info("found " + intermediateCircuits.size() + " structurally different circuits.");
-
-        // generate input mapping (primary inputs --> unbounded circuit inputs)
-        for (PrimitiveCircuit circuit : intermediateCircuits){
-
-            int numUnboundInputs = getNumberOfUnboundInputs(circuit);
-
-            for (int i = 0; i < (int) Math.pow(feasibility, numUnboundInputs); i++) {
-
-                String inputMapping = Integer.toString(i, feasibility);
-                inputMapping = StringUtils.leftPad(inputMapping, numUnboundInputs, '0');
-
-                // test if mapping contains all primary inputs
-                boolean valid = true;
-                for (int j = 0; j < feasibility; j++) {
-                    if (inputMapping.indexOf(Character.forDigit(j, feasibility)) == -1) {
-                        valid = false;
-                        break;
-                    }
-                }
-                if (!valid)
-                    continue;
-
-                // evaluate primitive circuit with input mapping
-                TruthTable circuitTT = evaluatePrimitiveCircuit(circuit, inputMapping);
-
-                if (circuitTT == null)
-                    continue;
-
-                // match, build graph, remove redundancies
-                if(targetTruthTable == null || targetTruthTable.equalsLogically(circuitTT)) {
-                    //logger.info("prim: " + circuitTT.toString());
-                    buildWireAddCircuit(circuit, inputMapping);
-                }
-            }
-        }
-    }
-
     TruthTable evaluatePrimitiveCircuit(PrimitiveCircuit circuit, String inputMapping) {
 
-        int varCount = 0;
-        Integer gateCount = 0;
+        int varCount = 0;       /* counter for instantiating intermediate variables */
+        Integer gateCount = 0;  /* counter for identifying gates */
 
-        Map<Formula, Integer> varsToGates = new HashMap<>();
+        /* list of currently unconnected variables */
+        List<String> currentVars = new ArrayList<>();
 
-        Formula expression = mapEntryToRow(circuit.getEntry(0)).get(0).getExpression();
+        /* map of variables to gate IDs */
+        Map<String, Integer> varsToGates = new HashMap<>();
 
-        for (Variable var : expression.variables()) {
-            expression = expression.substitute(var, intermediateVariables.get(varCount));
-            varCount ++;
-        }
+        /* get expression of output gate */
+        /*String expression = mapEntryToRow(circuit.getEntry(0)).get(0).getExpressionString();
 
-        List<Variable> finalVars= new ArrayList<>();
+        /* replace gate inputs by intermediate variables
+        String varName;
+        for (String inputName : gateInputNames) {
+            if (expression.contains(inputName)) {
+                varName = intermediateVariables.get(varCount);
+                expression = expression.replaceAll(inputName, varName);
+                currentVars.add(varName);
+                varsToGates.put(varName, gateCount);
+                varCount++;
+            }
+        }*/
 
-        for (int row = 1; row < circuit.getDepth(); row ++) {
+        /* list of variables to be connected to primary inputs */
+        List<String> finalVars = new ArrayList<>();
+
+        /* temporary list of replaced variables */
+        List<String> replacedVars = new ArrayList<>();
+
+        String varName;
+        String expression = "";
+
+        for (int row = 0; row < circuit.getDepth(); row ++) {
 
             List<LogicType> currentRow = mapEntryToRow(circuit.getEntry(row));
 
-
-            List<Variable> currentVars = new ArrayList<>(expression.variables());
+            /* update current vars */
+            currentVars.removeAll(replacedVars);
             currentVars.removeAll(finalVars);
+            Collections.sort(currentVars);
+
+            replacedVars.clear();
 
             for (int column = 0; column < currentRow.size(); column ++) {
 
-                if (currentRow.get(column) == LogicType.EMPTY) {
+                /* empty type means gate input will be connected to circuit input */
+                if (row > 0 && currentRow.get(column) == LogicType.EMPTY) {
                     finalVars.add(currentVars.get(column));
                     continue;
                 }
 
-                Formula gateExpression = currentRow.get(column).getExpression();
+                /* insert expression of gate */
+                String gateExpression = currentRow.get(column).getExpressionString();
 
-                expression = expression.substitute(currentVars.get(column), gateExpression);
+                if (expression.isBlank()) {   /* output gate: add expression */
+                    expression = gateExpression;
+                } else {                    /* every other gate: replace variable by expression */
+                    String varToReplace = currentVars.get(column);
+                    expression = expression.replaceAll(varToReplace, gateExpression);
+                    replacedVars.add(varToReplace);
+                }
 
-                for (Variable var : gateExpression.variables()) {
-                    expression = expression.substitute(var, intermediateVariables.get(varCount));
-                    varsToGates.put(intermediateVariables.get(varCount), gateCount);
-                    varCount ++;
+                /* replace gate inputs by intermediate variables */
+                for (String inputName : gateInputNames) {
+                    if (expression.contains(inputName)) {
+                        varName = intermediateVariables.get(varCount);
+                        expression = expression.replaceAll(inputName, varName);
+                        currentVars.add(varName);
+                        varsToGates.put(varName, gateCount);
+                        varCount++;
+                    }
                 }
 
                 gateCount ++;
             }
         }
 
-        Map<Integer, Formula> gatesToSubstitutions = new HashMap<>(); // TODO: for 3 or more input gates: replace values by sets of formulas
+        /* update current variables. all left current and final variables are connected to inputs */
+        currentVars.removeAll(finalVars);
+        currentVars.removeAll(replacedVars);
+
+        List<String> allVars = new ArrayList<>();
+        allVars.addAll(currentVars);
+        allVars.addAll(finalVars);
+        Collections.sort(allVars);
+
+        /* map of gate IDs to substituted inputs */
+        Map<Integer, String> gatesToSubstitutions = new HashMap<>(); // TODO: for 3 or more input gates: replace values by sets of formulas
 
         int substCount = 0;
-        for (Variable var : expression.variables()) {
+        for (String var : allVars) {
 
-            Formula substitution = inputVars.get(Character.getNumericValue(inputMapping.charAt(substCount)));
+            /* get input to substitute according to input mapping */
+            String substitution = inputVars.get(Character.getNumericValue(inputMapping.charAt(substCount)));
 
+            /* check if input is already connected to other variable of gate and abort */
             if (gatesToSubstitutions.containsKey(varsToGates.get(var)) && gatesToSubstitutions.get(varsToGates.get(var)).equals(substitution)) {
                 return null;
             }
@@ -369,72 +574,14 @@ public class EnumeratorFast {
             if (varsToGates.containsKey(var))
                 gatesToSubstitutions.put(varsToGates.get(var), substitution);
 
-            expression = expression.substitute(var, substitution);
+            expression = expression.replaceAll(var, substitution);
             substCount ++;
         }
 
-        return new TruthTable(expression);
+        return new TruthTable(ExpressionParser.parse(expression));
     }
 
-    private void buildCircuits(PrimitiveCircuit circuit, int level) {
-
-        // if max depth reached --> abort
-        if (level >= maxDepth)
-            return;
-
-        // if circuit is empty --> build start circuits and recurse
-        if (level == 0) {
-
-            for (int i = 0; i < combinations.get(0).size(); i++) {
-                PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);
-                newCircuit.insertEntry(0, i);
-                buildCircuits(newCircuit, 1);
-            }
-
-        // if circuit is not empty --> extend by next row
-        } else {
-
-            // get number of inputs of lower level
-            PrimitiveCircuit.Entry entry = circuit.getEntry(level - 1);
-            int numberOfInputs = getNumberOfInputs(mapEntryToRow(entry));
-
-            // iterate over rows with corresponding number of gates/entries
-            for (int i = 0; i < combinations.get(numberOfInputs - 1).size(); i++) {
-
-                if (combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OR2)) // limit OR gate to output row
-                    continue;
-
-                PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);
-                newCircuit.addEntry(level, numberOfInputs - 1, i);
-
-                if (circuitAllowedByPreFilter(newCircuit))
-                    intermediateCircuits.add(newCircuit);
-
-                buildCircuits(newCircuit, level + 1);
-            }
-        }
-    }
-
-    private boolean circuitAllowedByPreFilter(PrimitiveCircuit circuit) {
-
-        // check if circuit is implementable with library
-        if (!isCoveredByLibrary(circuit.getList().stream().map(this::mapEntryToRow).flatMap(Collection::stream).collect(Collectors.toCollection(ArrayList::new))))
-            return false;
-
-        // check is feasibility is met
-        if (getNumberOfUnboundInputs(circuit) < feasibility)
-            return false;
-
-        // check circuit weight. if it exceeds maximum --> continue
-        if (getCircuitWeight(circuit) > maxWeight)
-            return false;
-
-        // check if circuit contains redundant inverters
-        if (hasRedundantInverters(circuit))
-            return false;
-
-        return true;
-    }
+    /* structural equivalence check */
 
     private List<HashMap<Coordinates, List<List<LogicType>>>> pathDB;
 
@@ -651,115 +798,6 @@ public class EnumeratorFast {
             builder.append(column);
             return builder.hashCode();
         }
-    }
-
-    private void buildWireAddCircuit(PrimitiveCircuit candidate, String inputMapping) {
-
-        /* build circuit */
-        Circuit circuit = new Circuit();
-        Graphs.addGraph(circuit, templateCircuit);
-
-        // add first logic gate after output
-        LogicType type = mapEntryToRow(candidate.getEntry(0)).get(0);
-        gateCounter = 0;
-        Gate newGate = new LogicGate(type.name() + "_" + gateCounter, type);
-        circuit.addVertex(newGate);
-        circuit.addEdge(newGate, circuit.getOutputBuffer(), new Wire(circuit.getOutputBuffer().getExpression().variables().first()));
-
-        // add rows of gates and wire them
-        List<Gate> prevRow = new ArrayList<>();
-        List<Gate> currentRow = new ArrayList<>();
-        prevRow.add(newGate);
-
-        int inputCount = 0;
-
-        for (int level = 1; level <= candidate.getDepth(); level ++) {
-
-            int column = 0;
-
-            for (Gate anchorGate : prevRow) {
-
-                for (Variable anchorVariable : anchorGate.getExpression().variables()) {
-
-                    if (level < candidate.getDepth())
-                        type = mapEntryToRow(candidate.getEntry(level)).get(column);
-                    else
-                        type = LogicType.EMPTY;
-
-                    if (type != LogicType.EMPTY) {
-
-                        gateCounter++;
-                        newGate = new LogicGate(type.name() + "_" + gateCounter, type);
-                        circuit.addVertex(newGate);
-                        circuit.addEdge(newGate, anchorGate, new Wire(anchorVariable));
-
-                        currentRow.add(newGate);
-                    } else {
-
-                        InputGate inputGate = inputGates.get(Integer.parseInt(String.valueOf(inputMapping.charAt(inputCount))));
-
-                        if (!circuit.containsVertex(inputGate))
-                            circuit.addVertex(inputGate);
-
-                        if (circuit.containsEdge(inputGate, anchorGate))
-                            return;
-
-                        circuit.addEdge(inputGate, anchorGate, new Wire(anchorVariable));
-
-                        inputCount ++;
-                    }
-
-                    column++;
-                }
-            }
-
-            prevRow = new ArrayList<>(currentRow);
-            currentRow.clear();
-        }
-
-        // add remaining inputs
-
-        /* wire inputs, post-build checks, addition */
-
-        // remove redundant gates
-        if (!circuit.removeRedundantGates())
-            return;
-
-        // compare to current min size
-        int weight = circuit.getWeight();
-        if (weight > currentMinSize + weightRelaxation)
-            return;
-
-        TruthTable truthTable = new TruthTable(circuit.getExpression());
-
-        /*for (int i = 0; i < candidate.getDepth(); i++) {
-            logger.info(mapEntryToRow(candidate.getEntry(i)).toString());
-        }*/
-
-        //logger.info("circ: " + truthTable.toString());
-
-        //if (!truthTable.equalsLogically(evaluatePrimitiveCircuit(candidate, inputMapping)))
-            //evaluatePrimitiveCircuit(candidate, inputMapping);
-
-        // filter out structurally equivalent circuits
-        for (TruthTable libTruthTable : resultCircuits.keySet()) {
-
-            if (targetTruthTable != null || libTruthTable.equalsLogically(truthTable)) {
-
-                if (circuit.isEquivalent(resultCircuits.get(libTruthTable))) {
-                    return;
-                }
-            }
-        }
-
-        if (weight < currentMinSize) {
-            currentMinSize = weight;
-
-            // update result circuits
-            resultCircuits.entrySet().removeIf(e -> e.getValue().getWeight() > (currentMinSize + weightRelaxation));
-        }
-
-        resultCircuits.put(truthTable, circuit);
     }
 
     /* getter */

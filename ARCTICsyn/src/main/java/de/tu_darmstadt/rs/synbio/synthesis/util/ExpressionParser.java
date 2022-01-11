@@ -15,9 +15,6 @@ public class ExpressionParser {
 
     public static Formula parse(String expression) {
 
-        //FormulaFactory factory = new FormulaFactory();
-        //PropositionalParser parser = new PropositionalParser(factory);
-
         Formula f = null;
         try {
             f = parser.parse(expression);

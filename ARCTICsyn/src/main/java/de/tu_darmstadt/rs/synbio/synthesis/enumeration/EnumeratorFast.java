@@ -4,6 +4,7 @@ import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import de.tu_darmstadt.rs.synbio.common.circuit.*;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
+import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
 import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -15,6 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class EnumeratorFast {
@@ -107,6 +111,8 @@ public class EnumeratorFast {
         if (maxGateFeasibility.isEmpty())
             return;
 
+        /* generate valid combinations of gates */
+
         // max number of gates in uppermost level
         int maxRowLength = (int) Math.pow(maxGateFeasibility.getAsInt(), maxDepth - 1);
 
@@ -139,50 +145,52 @@ public class EnumeratorFast {
             }
         }
 
-        // call recursive circuit build function
+        /* call recursive circuit build function */
+
         PrimitiveCircuit emptyCircuit = new PrimitiveCircuit(maxDepth);
         buildCircuits(emptyCircuit, 0);
 
         logger.info("found " + intermediateCircuits.size() + " pre-filtered circuits.");
 
+        /* filter structurally equivalent circuits */
+
         filterRedundantCircuits();
 
         logger.info("found " + intermediateCircuits.size() + " structurally different circuits.");
 
+        /* evaluate circuits in multiple threads */
+
+        List<EnumerationWorker> workers = new ArrayList<>();
+
         // generate input mapping (primary inputs --> unbounded circuit inputs)
         for (PrimitiveCircuit circuit : intermediateCircuits){
+            workers.add(new EnumerationWorker(this, circuit, feasibility, targetTruthTable));
+        }
 
-            int numUnboundInputs = getNumberOfUnboundInputs(circuit);
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
 
-            for (int i = 0; i < (int) Math.pow(feasibility, numUnboundInputs); i++) {
+        List<Future<List<EnumerationResult>>> results = Collections.emptyList();
 
-                String inputMapping = Integer.toString(i, feasibility);
-                inputMapping = StringUtils.leftPad(inputMapping, numUnboundInputs, '0');
+        try {
+            results = executor.invokeAll(workers);
+        } catch (InterruptedException e) {
+            logger.error(e.getMessage());
+        }
 
-                // test if mapping contains all primary inputs
-                boolean valid = true;
-                for (int j = 0; j < feasibility; j++) {
-                    if (inputMapping.indexOf(Character.forDigit(j, feasibility)) == -1) {
-                        valid = false;
-                        break;
-                    }
+        /* build graphs of result circuits and perform final checks */
+
+        for (Future<List<EnumerationResult>> resultList : results) {
+
+            try {
+                for (EnumerationResult result : resultList.get()) {
+                    buildCircuitGraph(result.getCircuit(), result.getInputMapping());
                 }
-                if (!valid)
-                    continue;
-
-                // evaluate primitive circuit with input mapping
-                TruthTable circuitTT = evaluatePrimitiveCircuit(circuit, inputMapping);
-
-                if (circuitTT == null)
-                    continue;
-
-                // match, build graph, remove redundancies
-                if(targetTruthTable == null || targetTruthTable.equalsLogically(circuitTT)) {
-                    //logger.info("prim: " + circuitTT.toString());
-                    buildCircuitGraph(circuit, inputMapping);
-                }
+            }  catch (Exception e) {
+                logger.error(e.getMessage());
             }
         }
+
+        executor.shutdownNow();
     }
 
     private void buildCircuits(PrimitiveCircuit circuit, int level) {
@@ -349,7 +357,7 @@ public class EnumeratorFast {
 
     /* helper functions for handling of primitive circuits */
 
-    private List<LogicType> mapEntryToRow(PrimitiveCircuit.Entry entry) {
+    List<LogicType> mapEntryToRow(PrimitiveCircuit.Entry entry) {
         return combinations.get(entry.combId).get(entry.index);
     }
 
@@ -398,7 +406,7 @@ public class EnumeratorFast {
         return numInputs;
     }
 
-    private int getNumberOfUnboundInputs(PrimitiveCircuit circuit) {
+    int getNumberOfUnboundInputs(PrimitiveCircuit circuit) {
 
         // get total number of gate inputs
         int totalInputs = circuit.getList().stream().map(this::mapEntryToRow).mapToInt(this::getNumberOfInputs).sum();
@@ -468,7 +476,7 @@ public class EnumeratorFast {
         return false;
     }
 
-    TruthTable evaluatePrimitiveCircuit(PrimitiveCircuit circuit, String inputMapping) {
+    String evaluatePrimitiveCircuit(PrimitiveCircuit circuit, String inputMapping) {
 
         int varCount = 0;       /* counter for instantiating intermediate variables */
         Integer gateCount = 0;  /* counter for identifying gates */
@@ -478,21 +486,6 @@ public class EnumeratorFast {
 
         /* map of variables to gate IDs */
         Map<String, Integer> varsToGates = new HashMap<>();
-
-        /* get expression of output gate */
-        /*String expression = mapEntryToRow(circuit.getEntry(0)).get(0).getExpressionString();
-
-        /* replace gate inputs by intermediate variables
-        String varName;
-        for (String inputName : gateInputNames) {
-            if (expression.contains(inputName)) {
-                varName = intermediateVariables.get(varCount);
-                expression = expression.replaceAll(inputName, varName);
-                currentVars.add(varName);
-                varsToGates.put(varName, gateCount);
-                varCount++;
-            }
-        }*/
 
         /* list of variables to be connected to primary inputs */
         List<String> finalVars = new ArrayList<>();
@@ -578,7 +571,7 @@ public class EnumeratorFast {
             substCount ++;
         }
 
-        return new TruthTable(ExpressionParser.parse(expression));
+        return expression;
     }
 
     /* structural equivalence check */

@@ -19,9 +19,6 @@ public class EnumerationWorker implements Callable<List<EnumerationResult>> {
     private final int feasibility;
     private final TruthTable targetTruthTable;
 
-    private final FormulaFactory factory = new FormulaFactory();
-    private final PropositionalParser parser = new PropositionalParser(factory);
-
     private final List<EnumerationResult> results;
 
     public EnumerationWorker(EnumeratorFast enumerator, PrimitiveCircuit circuit, int feasibility, TruthTable targetTruthTable) {
@@ -34,6 +31,9 @@ public class EnumerationWorker implements Callable<List<EnumerationResult>> {
 
     @Override
     public List<EnumerationResult> call() throws Exception {
+
+        FormulaFactory factory =  new FormulaFactory();
+        PropositionalParser parser = new PropositionalParser(factory);
 
         int numUnboundInputs = enumerator.getNumberOfUnboundInputs(circuit);
 

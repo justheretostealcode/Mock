@@ -4,7 +4,7 @@ import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import de.tu_darmstadt.rs.synbio.common.circuit.*;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.synthesis.SynthesisConfiguration;
 import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -25,13 +25,11 @@ public class EnumeratorFast {
 
     private static final Logger logger = LoggerFactory.getLogger(EnumeratorFast.class);
 
+    /* Configuration */
+    private final SynthesisConfiguration synConfig;
     private TruthTable targetTruthTable;
-    private int weightRelaxation;
-
     private final GateLibrary gateLib;
-    private final int maxDepth;
     private final int feasibility;
-    private final int maxWeight;
 
     private int currentMinSize;
 
@@ -39,10 +37,9 @@ public class EnumeratorFast {
     private final Circuit templateCircuit;
     private final List<LogicType> gateTypes;
 
-    private List<PrimitiveCircuit> intermediateCircuits; //TODO
     private HashMap<TruthTable, Circuit> resultCircuits;
 
-    /* reservoirs */
+    /* enumeration buffers */
     private final List<String> gateInputNames;
     private final List<String> inputVars;
     private final List<String> intermediateVariables;
@@ -50,23 +47,21 @@ public class EnumeratorFast {
 
     /* constructor for guided enumeration */
 
-    public EnumeratorFast(GateLibrary gateLib, TruthTable targetTruthTable, int maxDepth, int maxWeight, int weightRelaxation) {
+    public EnumeratorFast(GateLibrary gateLib, TruthTable targetTruthTable, SynthesisConfiguration synConfig) {
 
-        this(gateLib, targetTruthTable.getSupportSize(), maxDepth, maxWeight);
-        this.weightRelaxation = weightRelaxation;
-        currentMinSize = Integer.MAX_VALUE - weightRelaxation;
+        this(gateLib, targetTruthTable.getSupportSize(), synConfig);
+        currentMinSize = Integer.MAX_VALUE - synConfig.getWeightRelaxation();
 
         this.targetTruthTable = targetTruthTable;
     }
 
     /* constructor for free enumeration */
 
-    public EnumeratorFast(GateLibrary gateLib, int feasibility, int maxDepth, int maxWeight) {
+    public EnumeratorFast(GateLibrary gateLib, int feasibility, SynthesisConfiguration synConfig) {
 
         this.gateLib = gateLib;
-        this.maxDepth = maxDepth;
-        this.maxWeight = maxWeight;
         this.feasibility = feasibility;
+        this.synConfig = synConfig;
 
         this.gateTypes = new ArrayList<>();
         this.gateTypes.add(LogicType.EMPTY);
@@ -104,7 +99,9 @@ public class EnumeratorFast {
 
     public void enumerate() {
 
-        intermediateCircuits = new ArrayList<>();
+        int availableProcessors = Runtime.getRuntime().availableProcessors() - 1;
+
+        List<PrimitiveCircuit> rawCircuits = new ArrayList<>();
         resultCircuits = new HashMap<>();
 
         OptionalInt maxGateFeasibility = gateTypes.stream().mapToInt(LogicType::getNumInputs).max();
@@ -114,7 +111,7 @@ public class EnumeratorFast {
         /* generate valid combinations of gates */
 
         // max number of gates in uppermost level
-        int maxRowLength = (int) Math.pow(maxGateFeasibility.getAsInt(), maxDepth - 1);
+        int maxRowLength = (int) Math.pow(maxGateFeasibility.getAsInt(), synConfig.getMaxDepth() - 1);
 
         // lists containing combinations
         combinations = new ArrayList<>(maxRowLength);
@@ -147,27 +144,60 @@ public class EnumeratorFast {
 
         /* call recursive circuit build function */
 
-        PrimitiveCircuit emptyCircuit = new PrimitiveCircuit(maxDepth);
-        buildCircuits(emptyCircuit, 0);
+        List<BuildWorker> buildWorkers = new ArrayList<>();
 
-        logger.info("found " + intermediateCircuits.size() + " pre-filtered circuits.");
+        PrimitiveCircuit emptyCircuit = new PrimitiveCircuit(synConfig.getMaxDepth());
+
+        /* initialize build workers with differing start gates */
+        for (int i = 0; i < combinations.get(0).size(); i++) {
+            PrimitiveCircuit newCircuit = new PrimitiveCircuit(emptyCircuit);
+            newCircuit.insertEntry(0, i);
+            buildWorkers.add(new BuildWorker(this, newCircuit, 1, synConfig.getMaxDepth()));
+        }
+
+        int numThreads = synConfig.getSynLimitThreadsNum() == 0 ? availableProcessors : Math.min(synConfig.getSynLimitThreadsNum(), availableProcessors);
+        logger.info("possible parallelism during building: " + buildWorkers.size());
+        logger.info("number of threads resulting from hardware and synthesis settings: " + numThreads);
+
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+        List<Future<List<PrimitiveCircuit>>> buildResults = Collections.emptyList();
+
+        try {
+            buildResults = executor.invokeAll(buildWorkers);
+        } catch (InterruptedException e) {
+            logger.error(e.getMessage());
+        }
+
+        for (Future<List<PrimitiveCircuit>> resultList : buildResults) {
+
+            try {
+                rawCircuits.addAll(resultList.get());
+            }  catch (Exception e) {
+                logger.error(e.getMessage());
+            }
+        }
+
+        buildResults.clear();
+        executor.shutdownNow();
+
+        logger.info("found " + rawCircuits.size() + " pre-filtered circuits.");
 
         /* filter structurally equivalent circuits */
 
-        filterRedundantCircuits();
+        rawCircuits = filterRedundantCircuits(rawCircuits);
 
-        logger.info("found " + intermediateCircuits.size() + " structurally different circuits.");
+        logger.info("found " + rawCircuits.size() + " structurally different circuits.");
 
         /* evaluate circuits in multiple threads */
 
         List<EnumerationWorker> workers = new ArrayList<>();
 
         // generate input mapping (primary inputs --> unbounded circuit inputs)
-        for (PrimitiveCircuit circuit : intermediateCircuits){
+        for (PrimitiveCircuit circuit : rawCircuits){
             workers.add(new EnumerationWorker(this, circuit, feasibility, targetTruthTable));
         }
 
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
+        executor = Executors.newFixedThreadPool(numThreads);
 
         List<Future<List<EnumerationResult>>> results = Collections.emptyList();
 
@@ -193,10 +223,10 @@ public class EnumeratorFast {
         executor.shutdownNow();
     }
 
-    private void buildCircuits(PrimitiveCircuit circuit, int level) {
+    /*private void buildCircuits(PrimitiveCircuit circuit, int level) {
 
         // if max depth reached --> abort
-        if (level >= maxDepth)
+        if (level >= synConfig.getMaxDepth())
             return;
 
         // if circuit is empty --> build start circuits and recurse
@@ -230,9 +260,9 @@ public class EnumeratorFast {
                 buildCircuits(newCircuit, level + 1);
             }
         }
-    }
+    }*/
 
-    private boolean circuitAllowedByPreFilter(PrimitiveCircuit circuit) {
+    boolean circuitAllowedByPreFilter(PrimitiveCircuit circuit) {
 
         // check if circuit is implementable with library
         if (!isCoveredByLibrary(circuit.getList().stream().map(this::mapEntryToRow).flatMap(Collection::stream).collect(Collectors.toCollection(ArrayList::new))))
@@ -243,7 +273,7 @@ public class EnumeratorFast {
             return false;
 
         // check circuit weight. if it exceeds maximum --> continue
-        if (getCircuitWeight(circuit) > maxWeight)
+        if (getCircuitWeight(circuit) > synConfig.getMaxWeight())
             return false;
 
         // check if circuit contains redundant inverters
@@ -323,7 +353,7 @@ public class EnumeratorFast {
 
         // compare to current min size
         int weight = circuit.getWeight();
-        if (weight > currentMinSize + weightRelaxation)
+        if (weight > currentMinSize + synConfig.getWeightRelaxation())
             return;
 
         TruthTable truthTable = new TruthTable(circuit.getExpression());
@@ -349,7 +379,7 @@ public class EnumeratorFast {
             currentMinSize = weight;
 
             // update result circuits
-            resultCircuits.entrySet().removeIf(e -> e.getValue().getWeight() > (currentMinSize + weightRelaxation));
+            resultCircuits.entrySet().removeIf(e -> e.getValue().getWeight() > (currentMinSize + synConfig.getWeightRelaxation()));
         }
 
         resultCircuits.put(truthTable, circuit);
@@ -394,7 +424,7 @@ public class EnumeratorFast {
         return true;
     }
 
-    private int getNumberOfInputs(List<LogicType> row) {
+    int getNumberOfInputs(List<LogicType> row) {
 
         int numInputs = 0;
 
@@ -578,12 +608,12 @@ public class EnumeratorFast {
 
     private List<HashMap<Coordinates, List<List<LogicType>>>> pathDB;
 
-    private void filterRedundantCircuits() {
+    private List<PrimitiveCircuit> filterRedundantCircuits(List<PrimitiveCircuit> inputCircuits) {
 
         // calculate all paths
         pathDB = new ArrayList<>();
 
-        for (PrimitiveCircuit circuit : intermediateCircuits) {
+        for (PrimitiveCircuit circuit : inputCircuits) {
             pathDB.add(getAllPaths(circuit));
         }
 
@@ -591,13 +621,13 @@ public class EnumeratorFast {
         List<Integer> resultCircuitIndices = new ArrayList<>();
         resultCircuitIndices.add(0);
 
-        for (int i = 0; i < intermediateCircuits.size(); i ++) {
+        for (int i = 0; i < inputCircuits.size(); i ++) {
 
             boolean isUnique = true;
 
             for (Integer cmpIndex : resultCircuitIndices) {
 
-                if (structurallyEquivalent(intermediateCircuits.get(i), i, intermediateCircuits.get(cmpIndex), cmpIndex)) {
+                if (structurallyEquivalent(inputCircuits.get(i), i, inputCircuits.get(cmpIndex), cmpIndex)) {
                     isUnique = false;
                     break;
                 }
@@ -613,10 +643,10 @@ public class EnumeratorFast {
         List<PrimitiveCircuit> filteredCircuits = new ArrayList<>();
 
         for (Integer index : resultCircuitIndices) {
-            filteredCircuits.add(intermediateCircuits.get(index));
+            filteredCircuits.add(inputCircuits.get(index));
         }
 
-        intermediateCircuits = filteredCircuits;
+        return filteredCircuits;
     }
 
     private boolean structurallyEquivalent(PrimitiveCircuit circuit1, int circuit1Index, PrimitiveCircuit circuit2, int circuit2Index) {

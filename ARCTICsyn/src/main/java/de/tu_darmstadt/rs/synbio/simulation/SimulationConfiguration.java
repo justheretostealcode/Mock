@@ -17,7 +17,6 @@ public class SimulationConfiguration {
 
     private final boolean simEnabled;
     private String pythonBinary;
-    private boolean simLimitThreads;
     private int simLimitThreadsNum;
     private File simPath;
     private String simScript;
@@ -41,10 +40,7 @@ public class SimulationConfiguration {
 
             pythonBinary = props.getProperty("PYTHON_BINARY");
 
-            simLimitThreads = Boolean.parseBoolean(props.getProperty("SIM_LIMIT_THREADS"));
-
-            if (simLimitThreads)
-                simLimitThreadsNum = Integer.parseInt(props.getProperty("SIM_LIMIT_THREADS_NUM"));
+            simLimitThreadsNum = Integer.parseInt(props.getProperty("SIM_LIMIT_THREADS_NUM"));
 
             simPath = new File(props.getProperty("SIM_PATH"));
 
@@ -68,9 +64,7 @@ public class SimulationConfiguration {
             logger.info("\tsimulator script: " + simScript);
             logger.info("\tsimulator initialization arguments: " + simInitArgs);
             logger.info("\tsimulator arguments: " + simArgs);
-            logger.info("\tlimit sim. threads: " + simLimitThreads);
-            if (simLimitThreads)
-                logger.info("\tthread limit: " + simLimitThreadsNum);
+            logger.info("\tthread limit: " + simLimitThreadsNum);
         }
     }
 
@@ -82,10 +76,6 @@ public class SimulationConfiguration {
 
     public String getPythonBinary() {
         return pythonBinary;
-    }
-
-    public boolean simLimitThreads() {
-        return simLimitThreads;
     }
 
     public int getSimLimitThreadsNum() {

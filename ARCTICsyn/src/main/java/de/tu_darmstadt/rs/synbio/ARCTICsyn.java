@@ -56,8 +56,7 @@ public class ARCTICsyn {
         /* circuit enumeration */
 
         logger.info("Enumeration of circuit variants...");
-        EnumeratorFast enumerator = new EnumeratorFast(gateLib, inputTruthTable, synConfig.getMaxDepth(), synConfig.getMaxWeight(), synConfig.getWeightRelaxation());
-        //Enumerator enumerator = new Enumerator(gateLib, inputTruthTable, synConfig.getMaxDepth(), synConfig.getMaxWeight(), synConfig.getWeightRelaxation());
+        EnumeratorFast enumerator = new EnumeratorFast(gateLib, inputTruthTable, synConfig);
 
         enumerator.enumerate();
         List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().values());

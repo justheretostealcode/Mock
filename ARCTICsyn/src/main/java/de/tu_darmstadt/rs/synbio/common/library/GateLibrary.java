@@ -131,11 +131,6 @@ public class GateLibrary {
             String identifier = (String) Optional.ofNullable(realization.get("identifier"))
                     .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"identifier\" not found!"));
 
-            String altIdentifier = (String) Optional.ofNullable(realization.get("alternative_identifier"))
-                    .orElse("");
-
-            identifier = !altIdentifier.equals("") ? altIdentifier : identifier;
-
             String group = (String) Optional.ofNullable(realization.get("group"))
                     .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"group\" not found!"));
 

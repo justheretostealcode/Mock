@@ -433,7 +433,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         ComponentNameProvider<Gate> vertexLabelProvider = gate -> {
             if (gate instanceof LogicGate) {
                 LogicGate logicGate = (LogicGate) gate;
-                String altIdentifier = assignment == null ? "UNASSIGNED" : assignment.get(logicGate).getAltIdenfifier();
+                String altIdentifier = assignment == null ? "UNASSIGNED" : assignment.get(logicGate).getIdentifier();
 
                 if (!altIdentifier.equals(""))
                     return logicGate.getLogicType() + "," + altIdentifier;
@@ -492,10 +492,10 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         ComponentNameProvider<Gate> vertexLabelProvider = gate -> {
             if (gate instanceof LogicGate) {
                 LogicGate logicGate = (LogicGate) gate;
-                String altIdentifier = assignment.get(logicGate).getAltIdenfifier();
+                String altIdentifier = assignment.get(logicGate).getIdentifier();
 
                 if (!altIdentifier.equals(""))
-                    return logicGate.getLogicType() + "\n" + assignment.get(logicGate).getAltIdenfifier();
+                    return logicGate.getLogicType() + "\n" + assignment.get(logicGate).getIdentifier();
                 else
                     return logicGate.getLogicType().toString();
             }

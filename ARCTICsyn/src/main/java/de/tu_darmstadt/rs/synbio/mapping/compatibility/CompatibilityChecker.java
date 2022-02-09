@@ -100,7 +100,7 @@ public class CompatibilityChecker {
 
         if (incompleteAssigment != null) {
             for (LogicGate gate : incompleteAssigment.keySet()) {
-                constants.add(factory.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getAltIdenfifier()));
+                constants.add(factory.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getIdentifier()));
             }
         }
 
@@ -243,7 +243,7 @@ public class CompatibilityChecker {
             for(GateRealization realization : realizations) {
                 if (realization.isCharacterized()) {
 
-                    String repressor = realization.getAltIdenfifier();
+                    String repressor = realization.getIdentifier();
 
                     if (!extractedRepressors.contains(repressor))
                         extractedRepressors.add(repressor);

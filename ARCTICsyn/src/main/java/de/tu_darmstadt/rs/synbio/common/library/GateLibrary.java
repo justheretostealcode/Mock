@@ -1,9 +1,11 @@
 package de.tu_darmstadt.rs.synbio.common.library;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
-import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.common.TruthTable;
+import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
+import org.logicng.formulas.Formula;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,19 +18,22 @@ public class GateLibrary {
 
     private final File sourceFile;
 
-    private final HashMap<TruthTable, Circuit> circuitLibrary = new HashMap<>();
     private final HashMap<LogicType, List<GateRealization>> gateRealizations = new HashMap<>();
 
     private final Double[] proxNormalization;
     private final Double[] proxWeights;
 
-    public GateLibrary(File libraryFile) {
+    public GateLibrary(File libraryFile, boolean isThermo) {
 
         this.sourceFile = libraryFile;
         this.proxNormalization = new Double[]{1.0, 1.0, 1.0};
         this.proxWeights = new Double[]{1.0, 1.0, 1.0};
 
-        loadPrimitiveLibrary(libraryFile);
+        if (isThermo) {
+            loadThermoLibrary(libraryFile);
+        } else {
+            loadConvLibrary(libraryFile);
+        }
     }
 
     public GateLibrary(File libraryFile, Double[] proxWeights) {
@@ -36,14 +41,76 @@ public class GateLibrary {
         this.sourceFile = libraryFile;
         this.proxWeights = proxWeights;
 
-        loadPrimitiveLibrary(libraryFile);
+        loadConvLibrary(libraryFile);
 
         proxNormalization = calcProxNormalization();
     }
 
     /* library file handling */
 
-    private void loadPrimitiveLibrary(File libraryFile) {
+    private void loadThermoLibrary(File libraryFile) {
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        JsonNode content;
+
+        try {
+            content = mapper.readTree(libraryFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        JsonNode devices = null;
+        JsonNode tfs = null;
+
+        for (int i = 0; i < content.size(); i++) {
+
+            if (content.get(i).get("class").textValue().equals("devices"))
+                devices = content.get(i).get("members");
+
+            if (content.get(i).get("class").textValue().equals("transcription_factors"))
+                tfs = content.get(i).get("members");
+        }
+
+        if (devices == null || tfs == null) {
+            logger.error("Invalid thermo library.");
+            return;
+        }
+
+        Map<String, List<LogicType>> deviceFunctions = new HashMap<>();
+
+        for (JsonNode device : devices) {
+
+            String name = device.get("name").textValue();
+
+            for (JsonNode function : device.get("functions")) {
+
+                if (!deviceFunctions.containsKey(name))
+                    deviceFunctions.put(name, new ArrayList<>());
+
+                deviceFunctions.get(name).add(LogicType.valueOf(function.textValue()));
+            }
+        }
+
+        for (JsonNode tf : tfs) {
+
+            String tfName = tf.get("name").textValue();
+
+            for (JsonNode promoter : tf.get("associated_devices")) {
+
+                String promoterName = promoter.textValue();
+
+                for (LogicType function : deviceFunctions.get(promoterName)) {
+
+                    GateRealization newGate = new GateRealization(promoterName, function, tfName);
+                    addGateRealization(newGate);
+                }
+            }
+        }
+    }
+
+    private void loadConvLibrary(File libraryFile) {
 
         HashMap<String, Object>[] parsedRealizations;
 
@@ -66,6 +133,8 @@ public class GateLibrary {
 
             String altIdentifier = (String) Optional.ofNullable(realization.get("alternative_identifier"))
                     .orElse("");
+
+            identifier = !altIdentifier.equals("") ? altIdentifier : identifier;
 
             String group = (String) Optional.ofNullable(realization.get("group"))
                     .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"group\" not found!"));
@@ -107,27 +176,22 @@ public class GateLibrary {
                     gateParticles = new GateRealization.Particles(ymaxList, yminList);
                 }
 
-                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group, altIdentifier,
+                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group,
                         new GateRealization.GateCharacterization(ymax, ymin, k ,n, gateParticles));
 
             } else {
-                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group, altIdentifier);
+                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group);
             }
 
-            addToLibrary(newRealization);
+            addGateRealization(newRealization);
         }
     }
 
-    private void addToLibrary(GateRealization element) {
-
-        if (gateRealizations.containsKey(element.getLogicType())) {
-            gateRealizations.get(element.getLogicType()).add(element);
-        } else {
-            gateRealizations.put(element.getLogicType(), new ArrayList<>());
-            gateRealizations.get(element.getLogicType()).add(element);
-
-            circuitLibrary.put(new TruthTable(element.getLogicType().getExpression()), new Circuit(element, element.getLogicType().name()));
+    private void addGateRealization(GateRealization newGate) {
+        if (!gateRealizations.containsKey(newGate.getLogicType())) {
+            gateRealizations.put(newGate.getLogicType(), new ArrayList<>());
         }
+        gateRealizations.get(newGate.getLogicType()).add(newGate);
     }
 
     private Double[] calcProxNormalization() {
@@ -171,10 +235,6 @@ public class GateLibrary {
         return sourceFile;
     }
 
-    public HashMap<TruthTable, Circuit> get() {
-        return circuitLibrary;
-    }
-
     public HashMap<LogicType, List<GateRealization>> getRealizations() {
         return gateRealizations;
     }
@@ -182,10 +242,6 @@ public class GateLibrary {
     public void print() {
 
         logger.info("Circuit library:");
-
-        for (TruthTable truthTable : circuitLibrary.keySet()) {
-            logger.info(truthTable.toString() + " --> " + circuitLibrary.get(truthTable).getIdentifier());
-        }
 
         logger.info("Gate number constraints:");
 
@@ -204,18 +260,6 @@ public class GateLibrary {
 
     public List<LogicType> getGateTypes() {
         return new ArrayList<>(gateRealizations.keySet());
-    }
-
-    public int getFeasibility() {
-
-        OptionalInt feasibility = circuitLibrary.values().stream().mapToInt(c -> c.getExpression().variables().size()).max();
-
-        if (feasibility.isEmpty()) {
-            logger.error("Library feasibility could not be determined. Using a default value of 2.");
-            return 2;
-        } else {
-            return feasibility.getAsInt();
-        }
     }
 
     public Double[] getProxWeights() {

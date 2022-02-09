@@ -9,34 +9,28 @@ public class GateRealization {
     private final String identifier;
     private final LogicType logicType;
     private final String group;
-    private final String altIdenfifier;
 
     private boolean isCharacterized = false;
     private GateCharacterization characterization;
 
     /* constructor for un-characterized realizations */
 
-    public GateRealization(String identifier, LogicType type, String group, String altIdenfifier) {
+    public GateRealization(String identifier, LogicType type, String group) {
         this.identifier = identifier;
         this.logicType = type;
         this.group = group;
-        this.altIdenfifier = altIdenfifier;
     }
 
     /* constructor for characterized realizations */
 
-    public GateRealization(String identifier, LogicType type, String group, String altIdentifier, GateCharacterization characterization) {
-        this(identifier, type, group, altIdentifier);
+    public GateRealization(String identifier, LogicType type, String group, GateCharacterization characterization) {
+        this(identifier, type, group);
         this.characterization = characterization;
         this.isCharacterized = true;
     }
 
     public String getIdentifier() {
         return identifier;
-    }
-
-    public String getAltIdenfifier() {
-        return altIdenfifier;
     }
 
     public LogicType getLogicType() {

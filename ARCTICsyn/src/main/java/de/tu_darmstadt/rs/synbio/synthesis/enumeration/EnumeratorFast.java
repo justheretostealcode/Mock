@@ -99,6 +99,8 @@ public class EnumeratorFast {
 
     public void enumerate() {
 
+        logger.info("setting up enumeration...");
+
         int availableProcessors = Runtime.getRuntime().availableProcessors() - 1;
 
         List<PrimitiveCircuit> rawCircuits = new ArrayList<>();

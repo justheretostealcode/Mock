@@ -55,11 +55,23 @@ public class CircuitSerializer extends StdSerializer<Circuit> {
 
             HashMap<String, Attribute> map = new HashMap<>();
 
-            String primitiveIdentifier = gate instanceof LogicGate ? ((LogicGate) gate).getLogicType().name() : "";
+            if (true) { /* backwards compatibility */
+                map.put("primitiveIdentifier", new DefaultAttribute<>(gate.getLogicType().name(), AttributeType.STRING));
+                map.put("expression", new DefaultAttribute<>(gate.getExpression(), AttributeType.UNKNOWN));
+                String type;
+                switch (gate.getLogicType()) {
+                    case INPUT:
+                        type = "INPUT"; break;
+                    case OUTPUT:
+                        type = "OUTPUT"; break;
+                    default:
+                        type = "LOGIC";
+                }
 
-            map.put("primitiveIdentifier", new DefaultAttribute<>(primitiveIdentifier, AttributeType.STRING));
-            map.put("expression", new DefaultAttribute<>(gate.getExpression(), AttributeType.UNKNOWN));
-            map.put("type", new DefaultAttribute<>(gate.getType(), AttributeType.UNKNOWN));
+                map.put("type", new DefaultAttribute<>(type, AttributeType.UNKNOWN));
+            } else {
+                map.put("type", new DefaultAttribute<>(gate.getLogicType(), AttributeType.UNKNOWN));
+            }
 
             return map;
         }

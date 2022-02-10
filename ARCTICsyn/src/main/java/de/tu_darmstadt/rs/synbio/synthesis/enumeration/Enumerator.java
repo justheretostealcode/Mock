@@ -60,13 +60,13 @@ public class Enumerator {
 
         this.gateTypes = new ArrayList<>();
         this.gateTypes.add(LogicType.EMPTY);
-        this.gateTypes.addAll(gateLib.getGateTypes());
+        this.gateTypes.addAll(gateLib.getLogicGateTypes());
 
         this.numGroupsInLib = gateLib.getGroups().size();
 
         // init template circuit
         templateCircuit = new Circuit();
-        Gate output = new OutputGate("O");
+        Gate output = new Gate("O", LogicType.OUTPUT);
         templateCircuit.addVertex(output);
     }
 
@@ -540,7 +540,7 @@ public class Enumerator {
         // add first logic gate after output
         LogicType type = mapEntryToRow(candidate.getEntry(0)).get(0);
         gateCounter = 0;
-        Gate newGate = new LogicGate(type.name() + "_" + gateCounter, type);
+        Gate newGate = new Gate(type.name() + "_" + gateCounter, type);
         circuit.addVertex(newGate);
         circuit.addEdge(newGate, circuit.getOutputBuffer(), new Wire(circuit.getOutputBuffer().getExpression().variables().first()));
 
@@ -562,7 +562,7 @@ public class Enumerator {
                     if (type != LogicType.EMPTY) {
 
                         gateCounter++;
-                        newGate = new LogicGate(type.name() + "_" + gateCounter, type);
+                        newGate = new Gate(type.name() + "_" + gateCounter, type);
                         circuit.addVertex(newGate);
                         circuit.addEdge(newGate, anchorGate, new Wire(anchorVariable));
 
@@ -592,7 +592,7 @@ public class Enumerator {
         char inputName = 'a';
         for (Gate gateWithInput : gateInputs.keySet()) {
             for (Variable var : gateInputs.get(gateWithInput)) {
-                InputGate inputGate = new InputGate(ExpressionParser.parse(Character.toString(inputName)), Character.toString(inputName));
+                Gate inputGate = new Gate(Character.toString(inputName), LogicType.INPUT);
                 dummyCandidate.addVertex(inputGate);
                 dummyCandidate.addEdge(inputGate, gateWithInput, new Wire(var));
                 inputName ++;
@@ -610,10 +610,10 @@ public class Enumerator {
             Circuit wiredCircuit = new Circuit("gen_circuit");
             Graphs.addGraph(wiredCircuit, candidate);
 
-            List<InputGate> inputGates = new ArrayList<>();
+            List<Gate> inputGates = new ArrayList<>();
             char inputGateName = 'a';
             for (int i = 0; i < feasibility; i ++) {
-                inputGates.add(new InputGate(ExpressionParser.parse(Character.toString(inputGateName)), Character.toString(inputGateName)));
+                inputGates.add(new Gate(Character.toString(inputGateName), LogicType.INPUT));
                 inputGateName ++;
             }
 
@@ -621,7 +621,7 @@ public class Enumerator {
             for (Gate gateWithInput : gateInputs.keySet()) {
                 for (Variable var : gateInputs.get(gateWithInput)) {
 
-                    InputGate inputGate = inputGates.get(Integer.parseInt(String.valueOf(mapping.charAt(gateInputIdx))));
+                    Gate inputGate = inputGates.get(Integer.parseInt(String.valueOf(mapping.charAt(gateInputIdx))));
                     if (!wiredCircuit.containsVertex(inputGate))
                         wiredCircuit.addVertex(inputGate);
 

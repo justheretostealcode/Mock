@@ -2,7 +2,7 @@ package de.tu_darmstadt.rs.synbio.mapping.search;
 
 import de.tu_darmstadt.rs.synbio.common.*;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
@@ -91,7 +91,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             current = randomAssigner.getNextAssignment();
             problemSize = exhaustiveAssigner.getNumTotalPermutations();
             currentScore = simulator.simulate(current);
-            currentGrowth = simulator.getLastGrowth();
+            currentGrowth = 1.0;//simulator.getLastGrowth();
             currentScore = currentScore * (currentGrowth< 0.75 ? Math.pow(currentGrowth * 1.33, 1) : 1.0);
         } while (!current.fulfilsConstraints(structure) || currentGrowth < 0.75);
 
@@ -127,7 +127,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
                 break;
 
             double neighborScore = simulator.simulate(neighbor);
-            double neighborGrowth = simulator.getLastGrowth();
+            double neighborGrowth = 1.0;//simulator.getLastGrowth();
             neighborScore =  neighborScore * (neighborGrowth < 0.75 ? Math.pow(neighborGrowth * 1.33, 1) : 1.0);
             simCount ++;
 
@@ -237,7 +237,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
         Assignment neighbor;
 
-        List<LogicGate> gates = new ArrayList<>(current.keySet());
+        List<Gate> gates = new ArrayList<>(current.keySet());
 
         int tryCount = 0;
 
@@ -250,7 +250,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
 
             neighbor = new Assignment(current);
-            LogicGate selectedCircuitGate = gates.get(rand.nextInt(gates.size()));
+            Gate selectedCircuitGate = gates.get(rand.nextInt(gates.size()));
             GateRealization currentRealization = neighbor.get(selectedCircuitGate);
 
             List<GateRealization> realizationsOfType = this.realizations.get(selectedCircuitGate.getLogicType());

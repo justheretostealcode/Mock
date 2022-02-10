@@ -3,7 +3,6 @@ package de.tu_darmstadt.rs.synbio.mapping.compatibility;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
 import de.tu_darmstadt.rs.synbio.common.circuit.Wire;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
@@ -99,7 +98,7 @@ public class CompatibilityChecker {
         List<Variable> constants = new ArrayList<>();
 
         if (incompleteAssigment != null) {
-            for (LogicGate gate : incompleteAssigment.keySet()) {
+            for (Gate gate : incompleteAssigment.keySet()) {
                 constants.add(factory.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getIdentifier()));
             }
         }
@@ -272,7 +271,7 @@ public class CompatibilityChecker {
         List<String> extractedGates = new ArrayList<>();
 
         for (Gate gate : structure.vertexSet()) {
-            if (gate instanceof LogicGate && ((LogicGate) gate).getLogicType() != LogicType.OR2) {
+            if (gate.isLogicGate() && gate.getLogicType() != LogicType.OR2) {
                 extractedGates.add(gate.getIdentifier());
             }
         }
@@ -285,19 +284,17 @@ public class CompatibilityChecker {
 
         for (Gate gate : circuit.vertexSet()) {
 
-            if (!(gate instanceof LogicGate))
+            if (!gate.isLogicGate())
                 continue;
 
-            LogicGate logicGate = (LogicGate) gate;
-
-            if (logicGate.getLogicType() == LogicType.OR2)
+            if (gate.getLogicType() == LogicType.OR2)
                 continue;
 
             for (Wire wire : circuit.outgoingEdgesOf(gate)) {
 
                 Gate target = circuit.getEdgeTarget(wire);
 
-                if (target instanceof LogicGate && ((LogicGate) target).getLogicType() != LogicType.OR2) {
+                if (target.isLogicGate() && target.getLogicType() != LogicType.OR2) {
                     pairs.putIfAbsent(gate.getIdentifier(), new HashSet<>());
                     pairs.get(gate.getIdentifier()).add(target.getIdentifier());
                 }

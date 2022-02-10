@@ -58,7 +58,7 @@ public class BranchAndBoundUtil {
         while (iterator.hasNext()) {
             Gate g = iterator.next();
 
-            if (g.getType() == Gate.Type.LOGIC)
+            if (g.isLogicGate())
                 gatesInReversedOrder.add(g);
         }
 
@@ -88,7 +88,7 @@ public class BranchAndBoundUtil {
             // For each gate, which is removed, we need to add a new input to the circuit and connect this input to the following gates
             // Next to this, we mark, that the notes truthtable values result from a gate which was previous in the circuit.
             String inputIdentifier = "OUT_" + g.getIdentifier();    // Named "OUT", since it represents the output of the referenced gate
-            Gate newInputBuffer = new InputGate(ExpressionParser.parse(inputIdentifier), inputIdentifier);
+            Gate newInputBuffer = new Gate(inputIdentifier, LogicType.INPUT);
             subProblem.addVertex(newInputBuffer);
             insertedInputBuffers.put(newInputBuffer, g);
             for (Wire w : wires) {
@@ -235,11 +235,11 @@ public class BranchAndBoundUtil {
     private static List<Map<Gate, List<Gate>>> determineSubstitutionList(Circuit structure, List<Gate> originalInputBuffers) {
         List<Assignment> inputAssignmentsCircuit = new ArrayList<>(TruthTable.getAllAssignments(structure.getExpression().variables()));
 
-        List<LogicGate> logicGates = structure.getLogicGates();
+        List<Gate> logicGates = structure.getLogicGates();
 
         // Determine the ancestors of the relevant logic gates
-        HashMap<LogicGate, Set<Gate>> ancestorsMap = new HashMap<>();
-        for (LogicGate g : logicGates) {
+        HashMap<Gate, Set<Gate>> ancestorsMap = new HashMap<>();
+        for (Gate g : logicGates) {
             if (g.getLogicType() == LogicType.NOR2 || g.getLogicType() == LogicType.OR2) {
                 Set<Gate> ancestorsSet = structure.edgesOf(g).stream().filter(edge -> structure.getEdgeTarget(edge) == g).map(structure::getEdgeSource).collect(Collectors.toSet());
                 ancestorsMap.put(g, ancestorsSet);
@@ -251,7 +251,7 @@ public class BranchAndBoundUtil {
         Map<Gate, List<Gate>> pairsToSubstitute;
         for (Assignment assignment : inputAssignmentsCircuit) {
             pairsToSubstitute = new HashMap<>();
-            for (LogicGate g : ancestorsMap.keySet()) {
+            for (Gate g : ancestorsMap.keySet()) {
                 LogicType type = g.getLogicType();
 
                 /*

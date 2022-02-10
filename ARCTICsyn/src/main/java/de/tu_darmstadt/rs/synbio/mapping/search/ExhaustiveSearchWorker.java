@@ -47,11 +47,11 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
             SimulationResult result = new SimulationResult(structure, assignment, simulator.simulate(assignment));
             numSims ++;
 
-            if (simulator.getLastGrowth() >= 0.75) {
+            //if (simulator.getLastGrowth() >= 0.75) {
                 if (bestRes == null || (mapConfig.getOptimizationType().compare(bestRes.getScore(), result.getScore()))) {
                     bestRes = result;
                 }
-            }
+            //}
 
             do {
                 assignment = assigner.getNextAssignment();

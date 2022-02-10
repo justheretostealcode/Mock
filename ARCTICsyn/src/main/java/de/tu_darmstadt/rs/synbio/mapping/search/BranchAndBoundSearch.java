@@ -3,7 +3,6 @@ package de.tu_darmstadt.rs.synbio.mapping.search;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
@@ -32,8 +31,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private final Circuit[] subProblems;
     private final SimulatorInterface[] interfaces;
 
-    private final LogicGate[] logicGates;
-    private final LogicGate[] reversedLogicGates;
+    private final Gate[] logicGates;
+    private final Gate[] reversedLogicGates;
 
     private Assignment initialAssignment;
     private double initialBestScore;
@@ -135,22 +134,22 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         return array;
     }
 
-    private LogicGate[] getLogicGatesInTopologicalOrder(Circuit structure) {
-        ArrayList<LogicGate> gates = new ArrayList<>();
+    private Gate[] getLogicGatesInTopologicalOrder(Circuit structure) {
+        ArrayList<Gate> gates = new ArrayList<>();
         Iterator<Gate> iterator = new TopologicalOrderIterator<>(structure);
 
         while (iterator.hasNext()) {
             Gate g = iterator.next();
-            if (g instanceof LogicGate)
-                gates.add((LogicGate) g);
+            if (g.isLogicGate())
+                gates.add(g);
         }
-        LogicGate[] logicGates = new LogicGate[gates.size()];
+        Gate[] logicGates = new Gate[gates.size()];
         gates.toArray(logicGates);
         return logicGates;
     }
 
-    private LogicGate[] getReversedLogicGates(LogicGate[] logicGates) {
-        LogicGate[] reversedLogicGates = new LogicGate[logicGates.length];
+    private Gate[] getReversedLogicGates(Gate[] logicGates) {
+        Gate[] reversedLogicGates = new Gate[logicGates.length];
         for (int iX = 0; iX < logicGates.length; iX++) {
             reversedLogicGates[reversedLogicGates.length - 1 - iX] = logicGates[iX];
         }
@@ -207,7 +206,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         if (assignment == null || !assignment.isValid() || assignment.size() != reversedLogicGates.length)
             return;
 
-        for (LogicGate g : reversedLogicGates) {
+        for (Gate g : reversedLogicGates) {
             if (assignment.get(g) == null)
                 return;
         }
@@ -320,7 +319,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                         ref.highestScore = Math.max(ref.highestScore, val);
                         searchTreeVisualizer.addLeafNode(assignment, val, bestScore);
 
-                        double growth = interfaces[assignment.size() - 1].getLastGrowth();
+                        double growth = 1.0;//interfaces[assignment.size() - 1].getLastGrowth();
                         if (val > bestScore && growth >= 0.75) {   // Since the node is a terminal node (leave), one needs to check if it is better than the current best solution
                             bestScore = val;
                             bestAssignment = assignment;
@@ -402,7 +401,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      */
     private List<Assignment> branch(Assignment assignment) {
         int index = assignment.size();
-        LogicGate logicGate = reversedLogicGates[index];
+        Gate logicGate = reversedLogicGates[index];
         List<Assignment> assignments = new ArrayList<>();
 
         Set<String> usedGroups = assignment.values().stream().map(GateRealization::getGroup).collect(Collectors.toSet());
@@ -585,7 +584,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         long numberOfAvailableRealizations = 0;
         HashSet<String> usedGroups = new HashSet<>();
 
-        for (LogicGate gate : reversedLogicGates) {
+        for (Gate gate : reversedLogicGates) {
             numberOfAvailableRealizations = realizations.get(gate.getLogicType()).stream().filter(realization -> !usedGroups.contains(realization.getGroup())).count();
             min += numberOfAvailableRealizations;
 

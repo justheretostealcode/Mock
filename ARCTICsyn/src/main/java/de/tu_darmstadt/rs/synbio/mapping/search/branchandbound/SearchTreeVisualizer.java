@@ -1,6 +1,6 @@
 package de.tu_darmstadt.rs.synbio.mapping.search.branchandbound;
 
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
@@ -17,7 +17,7 @@ public class SearchTreeVisualizer {
     private final String initialNodeID = "EMPTY_INITIALISATION_NODE";
     private BufferedWriter writer;
     private int expansionIndex;
-    private final LogicGate[] reversedLogicGates;
+    private final Gate[] reversedLogicGates;
     private boolean bVisualize;
 
 
@@ -29,7 +29,7 @@ public class SearchTreeVisualizer {
      * @param reversedLogicGates    The gates of the structure in reversed topological order
      * @param bVisualize            Whether to visualize or not
      */
-    public SearchTreeVisualizer(String structureName, MappingConfiguration mappingConfiguration, LogicGate[] reversedLogicGates, boolean bVisualize) {
+    public SearchTreeVisualizer(String structureName, MappingConfiguration mappingConfiguration, Gate[] reversedLogicGates, boolean bVisualize) {
 
         this.reversedLogicGates = reversedLogicGates;
         this.bVisualize = bVisualize;
@@ -83,12 +83,12 @@ public class SearchTreeVisualizer {
         if (size == 0)
             return;
 
-        LogicGate gate = reversedLogicGates[size - 1];
+        Gate gate = reversedLogicGates[size - 1];
         GateRealization realization = assignment.get(gate);
         String sourceIdentifier = "";
         String targetIdentifier = initialNodeID;
         for (int iX = 0; iX < assignment.size(); iX++) {
-            LogicGate g = reversedLogicGates[iX];
+            Gate g = reversedLogicGates[iX];
             sourceIdentifier = targetIdentifier;
             targetIdentifier += "__" + getNodeIdentifier(g, assignment.get(g));
         }
@@ -108,7 +108,7 @@ public class SearchTreeVisualizer {
         expansionIndex++;
     }
 
-    private String getNodeIdentifier(LogicGate gate, GateRealization realization) {
+    private String getNodeIdentifier(Gate gate, GateRealization realization) {
         return gate.getIdentifier() + "_" + gate.getLogicType().toString() + "_" + realization.getIdentifier() + "_" + realization.getGroup();
     }
 

@@ -253,8 +253,13 @@ public class GateLibrary {
         return gateRealizations.get(type).size();
     }
 
-    public List<LogicType> getGateTypes() {
-        return new ArrayList<>(gateRealizations.keySet());
+    public List<LogicType> getLogicGateTypes() {
+
+        List<LogicType> types = new ArrayList<>(gateRealizations.keySet());
+        types.remove(LogicType.INPUT);
+        types.remove(LogicType.OUTPUT);
+
+        return types;
     }
 
     public Double[] getProxWeights() {

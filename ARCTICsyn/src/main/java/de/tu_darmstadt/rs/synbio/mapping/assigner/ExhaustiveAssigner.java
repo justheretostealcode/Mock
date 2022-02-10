@@ -2,7 +2,7 @@ package de.tu_darmstadt.rs.synbio.mapping.assigner;
 
 import de.tu_darmstadt.rs.synbio.common.*;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
@@ -20,7 +20,7 @@ public class ExhaustiveAssigner implements Assigner {
 
     // gates
     final private HashMap<LogicType, List<GateRealization>> availableGates;
-    final private LinkedHashMap<LogicType, List<LogicGate>> circuitGates; // linked for iteration order
+    final private LinkedHashMap<LogicType, List<Gate>> circuitGates; // linked for iteration order
 
     // permutation variables
     private final HashMap<LogicType, PermutationIterator<GateRealization>> permutationIterators;
@@ -42,7 +42,7 @@ public class ExhaustiveAssigner implements Assigner {
         this.circuitGates = new LinkedHashMap<>();
         this.numPermutations = new HashMap<>();
         for (LogicType type : availableGates.keySet()) {
-            ArrayList<LogicGate> gates = circuit.vertexSet().stream().filter(g -> g instanceof LogicGate).map(g -> (LogicGate) g).filter(g -> g.getLogicType().equals(type)).collect(Collectors.toCollection(ArrayList::new));
+            ArrayList<Gate> gates = circuit.vertexSet().stream().filter(Gate::isLogicGate).filter(g -> g.getLogicType() == type).collect(Collectors.toCollection(ArrayList::new));
             circuitGates.put(type, gates);
             numPermutations.put(type, getNumAssignments(type));
         }
@@ -134,7 +134,7 @@ public class ExhaustiveAssigner implements Assigner {
 
         for (LogicType type : circuitGates.keySet()) {
 
-            List<LogicGate> originalGates = circuitGates.get(type);
+            List<Gate> originalGates = circuitGates.get(type);
             List<GateRealization> replacements = assignedRealizations.get(type);
 
             for (int i = 0; i < originalGates.size(); i++) {

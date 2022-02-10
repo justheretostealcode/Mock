@@ -2,7 +2,7 @@ package de.tu_darmstadt.rs.synbio.mapping.assigner;
 
 import de.tu_darmstadt.rs.synbio.common.*;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
@@ -20,7 +20,7 @@ public class RandomAssigner implements Assigner {
 
     // gates
     final private HashMap<LogicType, List<GateRealization>> availableGates;
-    final private List<LogicGate> circuitGates;
+    final private List<Gate> circuitGates;
 
     public RandomAssigner(GateLibrary gateLib, Circuit circuit) {
 
@@ -28,7 +28,7 @@ public class RandomAssigner implements Assigner {
         this.availableGates = gateLib.getRealizations();
 
         // initialize circuit gate list
-        this.circuitGates = circuit.vertexSet().stream().filter(g -> g instanceof LogicGate).map(g -> (LogicGate) g).collect(Collectors.toList());
+        this.circuitGates = circuit.vertexSet().stream().filter(Gate::isLogicGate).collect(Collectors.toList());
 
         this.randomGenerator = new Random();
     }
@@ -38,7 +38,7 @@ public class RandomAssigner implements Assigner {
         Assignment assignment = new Assignment();
 
         do {
-            for (LogicGate gate : circuitGates) {
+            for (Gate gate : circuitGates) {
                 int rand = randomGenerator.nextInt(availableGates.get(gate.getLogicType()).size());
                 assignment.put(gate, availableGates.get(gate.getLogicType()).get(rand));
             }

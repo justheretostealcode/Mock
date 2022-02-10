@@ -5,13 +5,12 @@ import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.circuit.Wire;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
 
 import java.util.*;
 
 public class Assignment {
 
-    private final Map<LogicGate, GateRealization> map;
+    private final Map<Gate, GateRealization> map;
 
     public Assignment() {
         this.map = new HashMap<>();
@@ -21,15 +20,15 @@ public class Assignment {
         this.map = new HashMap<>(assignment.map);
     }
 
-    public void put(LogicGate circuitGate, GateRealization realization) {
+    public void put(Gate circuitGate, GateRealization realization) {
         map.put(circuitGate, realization);
     }
 
-    public Set<LogicGate> keySet() {
+    public Set<Gate> keySet() {
         return map.keySet();
     }
 
-    public GateRealization get(LogicGate circuitGate) {
+    public GateRealization get(Gate circuitGate) {
         return map.get(circuitGate);
     }
 
@@ -62,7 +61,7 @@ public class Assignment {
 
         Map<String, String> stringMap = new HashMap<>();
 
-        for (LogicGate circuitGate : map.keySet()) {
+        for (Gate circuitGate : map.keySet()) {
             stringMap.put(circuitGate.getIdentifier(), map.get(circuitGate).getIdentifier());
         }
 
@@ -95,19 +94,19 @@ public class Assignment {
 
     public boolean fulfilsConstraints(Circuit structure) {
 
-        for (LogicGate dest : keySet()) {
+        for (Gate dest : keySet()) {
 
-            if (!dest.getLogicType().equals(LogicType.NOR2))
+            if (dest.getLogicType() != LogicType.NOR2)
                 continue;
 
             Set<Wire> wires = structure.incomingEdgesOf(dest);
 
-            List<LogicGate> gates = new ArrayList<>();
+            List<Gate> gates = new ArrayList<>();
             for(Wire wire : wires) {
                 Gate gateSrc = structure.getEdgeSource(wire);
 
-                if (gateSrc instanceof LogicGate)
-                    gates.add((LogicGate)gateSrc);
+                if (gateSrc.isLogicGate())
+                    gates.add(gateSrc);
             }
 
             if (gates.size() == 2) {
@@ -131,11 +130,11 @@ public class Assignment {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("{");
-        map.entrySet().stream().forEach(logicGateGateRealizationEntry -> {
+        map.forEach((key, value) -> {
             builder.append("\"");
-            builder.append(logicGateGateRealizationEntry.getKey().getIdentifier());
+            builder.append(key.getIdentifier());
             builder.append(" : ");
-            builder.append(logicGateGateRealizationEntry.getValue().getIdentifier());
+            builder.append(value.getIdentifier());
             builder.append("\", ");
         });
         builder.append("}");

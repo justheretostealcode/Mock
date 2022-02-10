@@ -133,7 +133,7 @@
       {
         "name": "Tac",
         "associated_devices": [
-          "_input"
+          "input_1"
         ],
         "levels": {
           "off": 0.1,
@@ -143,7 +143,7 @@
       {
         "name": "Tet",
         "associated_devices": [
-          "_input"
+          "input_2"
         ],
         "levels": {
           "off": 0.1,
@@ -153,7 +153,7 @@
       {
         "name": "BAD",
         "associated_devices": [
-          "_input"
+          "input_3"
         ],
         "levels": {
           "off": 0.1,
@@ -163,7 +163,7 @@
       {
         "name": "YFP",
         "associated_devices": [
-          "_output"
+          "output_1"
         ],
         "levels": {
           "off": 0.1,
@@ -1078,7 +1078,7 @@
       {
         "name": "pTac",
         "associated_devices": [
-          "_input"
+          "input_1"
         ],
         "energies": {
           "tf_only": {
@@ -1123,7 +1123,7 @@
       {
         "name": "pTet",
         "associated_devices": [
-          "_input"
+          "input_2"
         ],
         "energies": {
           "tf_only": {
@@ -1168,7 +1168,7 @@
       {
         "name": "pBAD",
         "associated_devices": [
-          "_input"
+          "input_3"
         ],
         "energies": {
           "tf_only": {
@@ -1381,6 +1381,30 @@
         "functions": [
           "NOT",
           "NAND2"
+        ]
+      },
+      {
+        "name": "input_1",
+        "functions": [
+          "INPUT"
+        ]
+      },
+      {
+        "name": "input_2",
+        "functions": [
+          "INPUT"
+        ]
+      },
+      {
+        "name": "input_3",
+        "functions": [
+          "INPUT"
+        ]
+      },
+      {
+        "name": "output_1",
+        "functions": [
+          "OUTPUT"
         ]
       }
     ]

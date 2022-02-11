@@ -206,20 +206,6 @@ public class BranchAndBoundUtil {
     }
 
     /**
-     * Converts the substitutionList in an equivalent representation containing only identifiers.
-     *
-     * @param substitutionList
-     * @return
-     */
-    public static List<Map<String, List<String>>> substitutionListToString(List<Map<Gate, List<Gate>>> substitutionList) {
-        return substitutionList.stream().map(map -> {
-            Map<String, List<String>> newMap = new HashMap<>();
-            map.forEach((key, value) -> newMap.put(key.getIdentifier(), value.stream().map(Gate::getIdentifier).collect(Collectors.toList())));
-            return newMap;
-        }).collect(Collectors.toList());
-    }
-
-    /**
      * Returns the truth tables of the gates for which substitution is to perform. <br>
      * This feature is currently not used by the simulator.
      *
@@ -246,19 +232,6 @@ public class BranchAndBoundUtil {
 
         return truthTables;
     }
-
-    /**
-     * Converts the substitutionTruthTables in an equivalent representation containing only identifiers instead of gates.
-     *
-     * @param substitutionTruthTables
-     * @return
-     */
-    public static Map<String, String> substitutionTruthTablesToString(Map<Gate, String> substitutionTruthTables) {
-        Map<String, String> truthTables = new HashMap<>();
-        substitutionTruthTables.forEach((key, value) -> truthTables.put(key.getIdentifier(), value));
-        return truthTables;
-    }
-
 
     /**
      * Creates a custom input specification as required by the simulator.

@@ -59,7 +59,7 @@ public class Gate {
             /* this is for backwards compatibility with old structure files */
             if (map.containsKey("expression")) {
 
-                Formula expression = ExpressionParser.parse(map.get("expression").getValue());
+                //Formula expression = ExpressionParser.parse(map.get("expression").getValue());
                 String primitiveIdentifier = map.get("primitiveIdentifier").getValue();
 
                 switch (map.get("type").getValue()) {

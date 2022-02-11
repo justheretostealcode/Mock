@@ -388,6 +388,20 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         return newCircuit;
     }
 
+    private Map<Gate, TruthTable> getGateTruthTables() {
+
+        Map<Gate, TruthTable> truthTables = new HashMap<>();
+
+        List<org.logicng.datastructures.Assignment> assignments = TruthTable.getAllAssignments(this.getExpression().variables());
+
+        for (Gate gate : this.vertexSet()) {
+            truthTables.put(gate, new TruthTable(this.getExpression(gate), assignments));
+        }
+
+        return truthTables;
+    }
+
+
     /* comparators */
 
     private static class GateComparator implements Comparator<Gate> {
@@ -532,16 +546,23 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         try {
             Map<String, Object> jsonMap = new HashMap<>();
             jsonMap.put("graph", this);
-            jsonMap.put("truthtable", this.getTruthTable().toString());
+            jsonMap.put("truthtable", getTruthTable().toString());
             if (whitelist != null) {
-                jsonMap.put("whitelist", this.whitelist);
+                jsonMap.put("whitelist", whitelist);
             }
             if (substitutionsList != null) {
-                jsonMap.put("substitutions_list", BranchAndBoundUtil.substitutionListToString(this.substitutionsList));
+                jsonMap.put("substitutions_list", substitutionsList.stream().map(map -> {
+                    Map<String, List<String>> newMap = new HashMap<>();
+                    map.forEach((key, value) -> newMap.put(key.getIdentifier(), value.stream().map(Gate::getIdentifier).collect(Collectors.toList())));
+                    return newMap;
+                }).collect(Collectors.toList()));
             }
             if (substitutionTruthTables != null) {
-                jsonMap.put("substitution_truthtables", BranchAndBoundUtil.substitutionTruthTablesToString(this.substitutionTruthTables));
+                jsonMap.put("substitution_truthtables", substitutionTruthTables);
             }
+
+            jsonMap.put("gate_truthtables", getGateTruthTables());
+
             mapper.writerWithDefaultPrettyPrinter().writeValue(file, jsonMap);
 
         } catch (Exception e) {

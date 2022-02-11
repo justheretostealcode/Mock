@@ -55,7 +55,7 @@ public class CircuitSerializer extends StdSerializer<Circuit> {
 
             HashMap<String, Attribute> map = new HashMap<>();
 
-            if (true) { /* backwards compatibility */
+            if (false) { /* backwards compatibility */
                 map.put("primitiveIdentifier", new DefaultAttribute<>(gate.getLogicType().name(), AttributeType.STRING));
                 map.put("expression", new DefaultAttribute<>(gate.getExpression(), AttributeType.UNKNOWN));
                 String type;

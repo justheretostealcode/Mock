@@ -1,6 +1,7 @@
 package de.tu_darmstadt.rs.synbio;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
@@ -53,6 +54,12 @@ public class ARCTICsyn {
         final GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), new Double[]{0.9,0.1,0.0});
         //final GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), true);
         logger.info("Loaded gate library " + gateLib.getSourceFile() + ".");
+
+        if (inputTruthTable.getSupportSize() > gateLib.getNumAvailableGates(LogicType.INPUT)) {
+            logger.error("Number of available input gates (" + gateLib.getNumAvailableGates(LogicType.INPUT) +
+                    ") < number of input function support (" +inputTruthTable.getSupportSize() + ")." );
+            return;
+        }
 
         /* circuit enumeration */
 

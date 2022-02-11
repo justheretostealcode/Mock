@@ -3,6 +3,7 @@ package de.tu_darmstadt.rs.synbio.mapping.search;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Wire;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
@@ -15,10 +16,14 @@ import de.tu_darmstadt.rs.synbio.mapping.util.BranchAndBoundUtil;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
 import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
+import org.jgrapht.Graphs;
 import org.jgrapht.traverse.TopologicalOrderIterator;
+import org.logicng.formulas.FormulaFactory;
+import org.logicng.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,6 +34,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private final HashMap<LogicType, List<GateRealization>> realizations;
 
     private final Circuit[] subProblems;
+    private final Map<String, LogicType> replacedLogicTypes;
     private final SimulatorInterface[] interfaces;
 
     private final Gate[] logicGates;
@@ -65,7 +71,18 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
 
         // Bei n logic Gattern werden n-1 Teilprobleme erzeugt
-        subProblems = getSubProblems(this.structure);
+        Pair<Circuit[], Map<String, LogicType>> subProblemResult = getSubProblems(this.structure);
+        subProblems = subProblemResult.first();
+        replacedLogicTypes = subProblemResult.second();
+
+        structure.print(new File("structure.dot"));
+        int i = 0;
+        for(Circuit sp : subProblems) {
+            sp.print(new File("sb_" + i + ".dot"));
+            sp.save(new File("sb_" + i + ".json"));
+            i++;
+        }
+
         interfaces = getSubProblemInterfaces(this.structure, this.subProblems);
 
 
@@ -97,18 +114,87 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     }
 
     /**
-     * Derives the subproblems of the provided structure
+     * This method creates the subproblems belonging to the provided circuit.   <br>
+     * Each subproblem thereby contains one gate less than the previous subproblem.
      *
-     * @param structure The structure to consider
-     * @return An array of circuits
+     * @param structure The circuit to from which the subproblems shall be created
+     * @return A pair of: An array of subproblem circuits and a map of IDs of gate replacements and their replaced logic type
      */
-    private Circuit[] getSubProblems(Circuit structure) {
-        List<Circuit> subProblems = BranchAndBoundUtil.getSubProblems(structure);
+    private Pair<Circuit[], Map<String, LogicType>> getSubProblems(Circuit structure) {
+
+        Map<String, LogicType> replacedLogicTypes = new HashMap<>();
+
+        // Establish the reverse topological order of the logic gates
+        ArrayList<Gate> gatesInReversedOrder = new ArrayList<>();
+        Iterator<Gate> iterator = new TopologicalOrderIterator<>(structure);
+        while (iterator.hasNext()) {
+            Gate g = iterator.next();
+
+            if (g.isLogicGate() || g.getLogicType() == LogicType.INPUT)
+                gatesInReversedOrder.add(g);
+        }
+
+        Gate[] gateOrder = new Gate[gatesInReversedOrder.size()];
+        gatesInReversedOrder.toArray(gateOrder);
+
+        List<Gate> originalInputBuffers = structure.getInputBuffers();
+        List<Map<Gate, List<Gate>>> substitutionsList;
+        Map<Gate, String> substitutionTruthTables;
+        // Create sub problems
+        ArrayList<Circuit> subProblems = new ArrayList<>(gateOrder.length - 1);
+        Circuit subProblem = new Circuit("Subproblem");
+        Graphs.addGraph(subProblem, structure);
+        FormulaFactory factory = new FormulaFactory();
+        String structureIdentifier = structure.getIdentifier();
+        String subProblemIdentifier = structureIdentifier + "_subproblem_";
+
+        subProblems.add(subProblem.copy(subProblemIdentifier + 0));
+
+        Map<Gate, Gate> insertedInputBuffers = new HashMap<>();
+        for (int iX = 0; iX < gateOrder.length - 1; iX++) {
+            Gate g = gateOrder[iX];
+
+            // Remove Vertex
+            Set<Wire> wires = subProblem.outgoingEdgesOf(g);
+
+            // For each gate, which is removed, we need to add a new input to the circuit and connect this input to the following gates
+            // Next to this, we mark, that the node's truthtable values result from a gate which was previously in the circuit.
+            String inputIdentifier = "OUT_" + g.getIdentifier();    // Named "OUT", since it represents the output of the referenced gate
+            Gate newInputBuffer = new Gate(inputIdentifier, LogicType.INPUT);
+            replacedLogicTypes.putIfAbsent(inputIdentifier, g.getLogicType());
+            subProblem.addVertex(newInputBuffer);
+            insertedInputBuffers.put(newInputBuffer, g);
+            for (Wire w : wires) {
+                Gate target = subProblem.getEdgeTarget(w);
+                subProblem.addEdge(newInputBuffer, target, new Wire(factory.variable(w.getVariable().name())));
+            }
+
+            subProblem.removeVertex(g);
+            // Remove all Gates which do not contribute to the result
+            BranchAndBoundUtil.cleanCircuitFromNonContributingGates(subProblem);
+            subProblem.removeRedundantGates();
+
+            // Get the Whitelist for the resulting structure
+            String whiteList = BranchAndBoundUtil.determineWhitelist(structure, subProblem, insertedInputBuffers);
+            subProblem.setWhitelist(whiteList);
+
+            // Obtain substitutions list for the subproblem.
+            substitutionsList = BranchAndBoundUtil.determineSubstitutionList(subProblem, originalInputBuffers);
+            subProblem.setSubstitutionsList(substitutionsList);
+
+            // Substitution Truthtables are not used anymore
+            substitutionTruthTables = BranchAndBoundUtil.determineSubstitutionTruthTables(subProblem, substitutionsList, originalInputBuffers);
+            subProblem.setSubstitutionTruthTables(substitutionTruthTables);
+
+            subProblems.add(subProblem.copy(subProblemIdentifier + (iX + 1)));
+        }
+
         Collections.reverse(subProblems);   // Reverse the order to achieve, that the index corresponds to the distance from the source in the search tree
 
         Circuit[] subProblemsA = new Circuit[subProblems.size()];
         subProblems.toArray(subProblemsA);
-        return subProblemsA;
+
+        return new Pair<>(subProblemsA, replacedLogicTypes);
     }
 
     /**
@@ -140,7 +226,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         while (iterator.hasNext()) {
             Gate g = iterator.next();
-            if (g.isLogicGate())
+            if (g.isLogicGate() || g.getLogicType() == LogicType.INPUT)
                 gates.add(g);
         }
         Gate[] logicGates = new Gate[gates.size()];
@@ -459,6 +545,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         if (subProblemPointer == problemPointer)
             return " cis=0 ";
 
+        Map<String, Pair<Double, Double>> inputIntervals = new HashMap<>();
+
         /*
         Determine which input gates of the original circuit are present in the actual circuit.
          */
@@ -481,7 +569,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         double maxVal = Double.NEGATIVE_INFINITY;
         double minVal = Double.POSITIVE_INFINITY;
-        // Case differentiation for Input Specification Type
+        // Case differentiation for Input Specification Type //TODO: Unused --> tidy up
         if (babInputSpecificationType == MappingConfiguration.BAB_INPUT_SPECIFICATION_TYPE.INPRECISE) {
             maxVal = Math.pow(10, 12);  // Double.POSITIVE_INFINITY can not be transferred to the Simulator -> 10^12
             minVal = 0;
@@ -503,29 +591,34 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                 */
                 Set<String> usedGroups = assignment.values().stream().map(GateRealization::getGroup).collect(Collectors.toSet());
 
+                for (String inputId : artificialInputBufferIDs) {
+
+                    LogicType replacedLogicType = replacedLogicTypes.get(inputId);
                 /*
                 Set up the prerequisites for the maximization of input interval.
                  */
-                double yMax;
-                double yMin;
+                    double yMax;
+                    double yMin;
 
                 /*
                 Determine all realizations which belong to groups not already used.
                  */
-                List<GateRealization.GateCharacterization> availableRealizations = realizations.values().stream().flatMap(Collection::stream)
-                        .filter(realization -> !usedGroups.contains(realization.getGroup()) && realization.isCharacterized())
-                        .map(GateRealization::getCharacterization)
-                        .collect(Collectors.toList());
+                    List<GateRealization.GateCharacterization> availableRealizations = realizations.get(replacedLogicType).stream()
+                            .filter(realization -> !usedGroups.contains(realization.getGroup()) && realization.isCharacterized())
+                            .map(GateRealization::getCharacterization)
+                            .collect(Collectors.toList());
 
                 /*
                 Determine largest ymax and smallest ymin
                  */
-                yMax = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmax).max().orElse(Math.pow(10, 15));
-                yMin = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmin).min().orElse(0);
-                maxVal = Math.max(maxVal, yMax);
-                minVal = Math.min(minVal, yMin);
+                    yMax = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmax).max().orElse(Math.pow(10, 15));
+                    yMin = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmin).min().orElse(0);
+                    //maxVal = Math.max(maxVal, yMax);
+                    //minVal = Math.min(minVal, yMin);
 
-                // TODO: uncomment when implementing particle case
+                    inputIntervals.put(inputId, new Pair<>(yMin, yMax));
+
+                    // TODO: uncomment when implementing particle case
                 /*List<Double> yMaxParticles = new ArrayList<>();
                 List<Double> yMinParticles = new ArrayList<>();
                 for (int i = 0; i < 5000; i++) {
@@ -536,11 +629,12 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                     yMaxParticles.add(i, yMax);
                     yMinParticles.add(i, yMin);
                 }*/
+                }
             }
         }
 
         //TODO: implement additional args for particle case
-        additionalArgs = String.format(" substitute=%s use_custom_input_specification=1 cis=%s", bFastMode ? "0" : "1", BranchAndBoundUtil.createCustomInputSpecification(artificialInputBufferIDs, minVal, maxVal));
+        additionalArgs = String.format(" substitute=%s use_custom_input_specification=1 cis=%s", bFastMode ? "0" : "1", BranchAndBoundUtil.createCustomInputSpecification(inputIntervals));
         return additionalArgs;
     }
 

@@ -25,7 +25,7 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
     public ExhaustiveSearchWorker(ExhaustiveAssigner assigner, Circuit structure, MappingConfiguration mapConfig,
                                   SimulationConfiguration simConfig, GateLibrary gateLibrary) {
         this.mapConfig = mapConfig;
-        this.simulator = new SimulatorInterface(simConfig, gateLibrary.getSourceFile());
+        this.simulator = new SimulatorInterface(simConfig, gateLibrary);
         this.assigner = assigner;
         this.structure = structure;
     }

@@ -2,15 +2,14 @@ package de.tu_darmstadt.rs.synbio.common.library;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
-import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
-import org.logicng.formulas.Formula;
+import org.logicng.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GateLibrary {
 
@@ -18,31 +17,35 @@ public class GateLibrary {
 
     private final File sourceFile;
 
-    private final HashMap<LogicType, List<GateRealization>> gateRealizations = new HashMap<>();
+    private final Map<LogicType, List<GateRealization>> gateRealizations = new HashMap<>();
+    private final Map<String, Map<String, Double>> tfPromoterFactors = new HashMap<>();
 
-    private final Double[] proxNormalization;
-    private final Double[] proxWeights;
+    private Double[] proxNormalization = new Double[]{1.0, 1.0, 1.0};
+    private Double[] proxWeights = new Double[]{1.0, 1.0, 1.0};
+
+    private final Map<LogicType, Double> yMin;
+    private final Map<LogicType, Double> yMax;
 
     public GateLibrary(File libraryFile, boolean isThermo) {
 
         this.sourceFile = libraryFile;
-        this.proxNormalization = new Double[]{1.0, 1.0, 1.0};
-        this.proxWeights = new Double[]{1.0, 1.0, 1.0};
 
         if (isThermo) {
             loadThermoLibrary(libraryFile);
         } else {
             loadConvLibrary(libraryFile);
         }
+
+        Pair<Map<LogicType, Double>, Map<LogicType, Double>> maxPromoterLevels = getMaxPromoterLevels();
+        yMin = maxPromoterLevels.first();
+        yMax = maxPromoterLevels.second();
     }
 
     public GateLibrary(File libraryFile, Double[] proxWeights) {
 
-        this.sourceFile = libraryFile;
+        this(libraryFile, false);
+
         this.proxWeights = proxWeights;
-
-        loadConvLibrary(libraryFile);
-
         proxNormalization = calcProxNormalization();
     }
 
@@ -63,6 +66,9 @@ public class GateLibrary {
 
         JsonNode devices = null;
         JsonNode tfs = null;
+        JsonNode promoters = null;
+
+        /* get and check root nodes */
 
         for (int i = 0; i < content.size(); i++) {
 
@@ -71,12 +77,17 @@ public class GateLibrary {
 
             if (content.get(i).get("class").textValue().equals("transcription_factors"))
                 tfs = content.get(i).get("members");
+
+            if (content.get(i).get("class").textValue().equals("promoters"))
+                promoters = content.get(i).get("members");
         }
 
-        if (devices == null || tfs == null) {
+        if (devices == null || tfs == null || promoters == null) {
             logger.error("Invalid thermo library.");
             return;
         }
+
+        /* get logical functions of devices */
 
         Map<String, List<LogicType>> deviceFunctions = new HashMap<>();
 
@@ -93,17 +104,55 @@ public class GateLibrary {
             }
         }
 
+        /* get mapping of devices to promoters and maximum promoter levels */
+
+        Map<String, String> deviceToPromoter = new HashMap<>();
+        Map<String, Pair<Double, Double>> promoterLevels = new HashMap<>();
+
+        for (JsonNode promoter : promoters) {
+
+            String name = promoter.get("name").textValue();
+
+            if (!promoterLevels.containsKey(name))
+                promoterLevels.put(name, new Pair<>(promoter.get("levels").get("off").asDouble(), promoter.get("levels").get("on").asDouble()));
+
+            if (promoter.get("associated_devices").size() != 1) {
+                logger.error("Thermo library invalid: Promoter " + name + " has invalid number of associated devices.");
+                return;
+            }
+
+            String device = promoter.get("associated_devices").get(0).textValue();
+
+            if (!deviceToPromoter.containsKey(device))
+                deviceToPromoter.put(device, name);
+
+            /* fill tf <-> promoter factors */
+            Iterator<Map.Entry<String, JsonNode>> it = promoter.get("factors").get("tf_only").fields();
+            tfPromoterFactors.put(name, new HashMap<>());
+            it.forEachRemaining(e -> tfPromoterFactors.get(name).put(e.getKey(), e.getValue().doubleValue()));
+        }
+
+        /* add gate for each tf by getting its device and promoter */
+
         for (JsonNode tf : tfs) {
 
             String tfName = tf.get("name").textValue();
 
-            for (JsonNode promoter : tf.get("associated_devices")) {
+            for (JsonNode device : tf.get("associated_devices")) {
 
-                String promoterName = promoter.textValue();
+                String promoterName = deviceToPromoter.get(device.textValue());
 
-                for (LogicType function : deviceFunctions.get(promoterName)) {
+                for (LogicType function : deviceFunctions.get(device.textValue())) {
 
-                    GateRealization newGate = new GateRealization(promoterName, function, tfName);
+                    GateRealization newGate;
+
+                    if (function == LogicType.OUTPUT) {
+                        newGate = new GateRealization(tfName, function, tfName);
+                    } else {
+                        newGate = new GateRealization(promoterName, function, tfName,
+                                new GateRealization.GateCharacterization(promoterLevels.get(promoterName).second(),
+                                        promoterLevels.get(promoterName).first(), 0, 0, null));
+                    }
                     addGateRealization(newGate);
                 }
             }
@@ -180,6 +229,17 @@ public class GateLibrary {
 
             addGateRealization(newRealization);
         }
+
+        /* add input gates */
+
+        addGateRealization(new GateRealization("pTac", LogicType.INPUT, "pTac",
+                new GateRealization.GateCharacterization(2.8, 0.0034 , 0, 0, null)));
+
+        addGateRealization(new GateRealization("pTet", LogicType.INPUT, "pTet",
+                new GateRealization.GateCharacterization(4.4, 0.0013 , 0, 0, null)));
+
+        addGateRealization(new GateRealization("pBAD", LogicType.INPUT, "pBAD",
+                new GateRealization.GateCharacterization(2.5, 0.0082 , 0, 0, null)));
     }
 
     private void addGateRealization(GateRealization newGate) {
@@ -230,8 +290,47 @@ public class GateLibrary {
         return sourceFile;
     }
 
-    public HashMap<LogicType, List<GateRealization>> getRealizations() {
+    public Map<LogicType, List<GateRealization>> getRealizations() {
         return gateRealizations;
+    }
+
+    private Pair<Map<LogicType, Double>, Map<LogicType, Double>> getMaxPromoterLevels() {
+
+        Map<LogicType, Double> minPromoterLevels = new HashMap<>();
+        Map<LogicType, Double> maxPromoterLevels = new HashMap<>();
+
+        for (LogicType type : gateRealizations.keySet()) {
+
+            List<GateRealization> realizations = gateRealizations.get(type).stream()
+                    .filter(g -> g.getLogicType() == type)
+                    .filter(GateRealization::isCharacterized)
+                    .collect(Collectors.toList());
+
+            Optional<Double> yMin = realizations.stream()
+                    .map(g -> g.getCharacterization().getYmin())
+                    .min(Double::compareTo);
+
+            Optional<Double> yMax = realizations.stream()
+                    .map(g -> g.getCharacterization().getYmax())
+                    .max(Double::compareTo);
+
+            minPromoterLevels.put(type, yMin.orElse(0.0));
+            maxPromoterLevels.put(type, yMax.orElse(0.0));
+        }
+
+        return new Pair<>(minPromoterLevels, maxPromoterLevels);
+    }
+
+    public double getyMin(LogicType type) {
+        return yMin.get(type);
+    }
+
+    public double getyMax(LogicType type) {
+        return yMax.get(type);
+    }
+
+    public Map<String, Double> getTfFactorsForPromoter(String promoter) {
+        return tfPromoterFactors.get(promoter);
     }
 
     public void print() {

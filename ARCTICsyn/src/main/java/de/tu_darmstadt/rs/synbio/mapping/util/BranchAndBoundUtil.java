@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.*;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
+import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
+import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import org.logicng.datastructures.Assignment;
 import org.logicng.formulas.Variable;
 import org.logicng.util.Pair;
@@ -17,8 +19,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class BranchAndBoundUtil {
+
     private static final Logger logger = LoggerFactory.getLogger(BranchAndBoundUtil.class);
 
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static final String DEFAULT_INPUT_SPECIFICATION_ENTRY_FORMAT_STRING = "\"%s\" : {\"0\" : %s, \"1\" : %s}, ";
     public static final Map<String, Map<Boolean, Double>> CELLO_INPUT_SPECIFICATION = Map.ofEntries(
@@ -243,7 +247,7 @@ public class BranchAndBoundUtil {
         StringBuilder cis = new StringBuilder();
         cis.append("{");
 
-        /*CELLO_INPUT_SPECIFICATION.entrySet().stream().filter(stringMapEntry -> !missingInputBufferIDs.contains(stringMapEntry.getKey())).forEach(entry -> {
+        /*CELLO_INPUT_SPECIFICATION.entrySet().stream().filter(stringMapEntry -> !inputIntervals.containsKey(stringMapEntry.getKey())).forEach(entry -> {
             Map<Boolean, Double> value = entry.getValue();
             cis.append(String.format(DEFAULT_INPUT_SPECIFICATION_ENTRY_FORMAT_STRING, entry.getKey(), value.get(Boolean.FALSE), value.get(Boolean.TRUE)));
         });*/
@@ -273,4 +277,68 @@ public class BranchAndBoundUtil {
         cis.append("}");
         return cis.toString();
     }*/
+
+    public static Map<String, String> compileDummyInfos(GateLibrary library, Set<Gate> circuitGates, de.tu_darmstadt.rs.synbio.mapping.Assignment assignment) {
+
+        Map<String, String> output = new HashMap<>();
+
+        Set<Gate> dummyGates = new HashSet<>(circuitGates);
+        dummyGates.removeAll(assignment.keySet());
+
+        for (Gate dummy : dummyGates) {
+
+            Map<String, Map<?, ?>> dummyMap = new HashMap<>();
+            String dummyName = dummy.getIdentifier();
+
+            for (Gate gate : assignment.keySet()) {
+
+                if (gate.getLogicType() == LogicType.OUTPUT)
+                    continue;
+
+                String gateName = gate.getIdentifier();
+
+                /* list a contains promoter activity interval for given dummy logic type */
+                List<Double> a = Arrays.asList(library.getyMin(dummy.getLogicType()), library.getyMax(dummy.getLogicType()));
+                List<String> b = new ArrayList<>();
+
+                /*
+                    list b contains TFs with least/biggest binding factor to given gate
+                    factors corresponding to given gate promoter are streamed and their TFs are filtered to match dummy gate type
+                    the TF of the gate itself is excluded
+                 */
+                Optional<Map.Entry<String, Double>> minFactor = library.getTfFactorsForPromoter(assignment.get(gate).getIdentifier()).entrySet().stream()
+                        .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
+                        .filter(e -> !e.getKey().equals(assignment.get(gate).getGroup()))
+                        .min(Map.Entry.comparingByValue());
+
+                Optional<Map.Entry<String, Double>> maxFactor = library.getTfFactorsForPromoter(assignment.get(gate).getIdentifier()).entrySet().stream()
+                        .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
+                        .filter(e -> !e.getKey().equals(assignment.get(gate).getGroup()))
+                        .max(Map.Entry.comparingByValue());
+
+                if (minFactor.isEmpty() || maxFactor.isEmpty()) {
+                    logger.error("Unable to obtain TF factors for dummy gate.");
+                    return null;
+                }
+
+                b.add(minFactor.get().getKey());
+                b.add(maxFactor.get().getKey());
+
+                Map<String, List<?>> gateMap = new HashMap<>();
+                gateMap.put("a", a);
+                gateMap.put("b", b);
+
+                dummyMap.put(gateName, gateMap);
+            }
+
+            try {
+                output.put(dummyName, mapper.writeValueAsString(dummyMap));
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+                return null;
+            }
+        }
+
+        return output;
+    }
 }

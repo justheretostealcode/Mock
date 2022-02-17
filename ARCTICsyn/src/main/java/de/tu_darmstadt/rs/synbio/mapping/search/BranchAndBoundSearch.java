@@ -31,11 +31,12 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
     private static final Logger logger = LoggerFactory.getLogger(BranchAndBoundSearch.class);
 
-    private final HashMap<LogicType, List<GateRealization>> realizations;
+    private final Map<LogicType, List<GateRealization>> realizations;
 
     private final Circuit[] subProblems;
     private final Map<String, LogicType> replacedLogicTypes;
-    private final SimulatorInterface[] interfaces;
+    //private final SimulatorInterface[] interfaces;
+    private final SimulatorInterface simulator;
 
     private final Gate[] logicGates;
     private final Gate[] reversedLogicGates;
@@ -76,6 +77,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         replacedLogicTypes = subProblemResult.second();
 
         structure.print(new File("structure.dot"));
+        structure.save(new File("structure.json"));
         int i = 0;
         for(Circuit sp : subProblems) {
             sp.print(new File("sb_" + i + ".dot"));
@@ -83,8 +85,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             i++;
         }
 
-        interfaces = getSubProblemInterfaces(this.structure, this.subProblems);
-
+        //interfaces = getSubProblemInterfaces(this.structure, this.subProblems);
+        simulator = new SimulatorInterface(simConfig, gateLib);
+        simulator.initSimulation(structure);
 
         logicGates = getLogicGatesInTopologicalOrder(structure);
         reversedLogicGates = getReversedLogicGates(logicGates);
@@ -178,11 +181,11 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             String whiteList = BranchAndBoundUtil.determineWhitelist(structure, subProblem, insertedInputBuffers);
             subProblem.setWhitelist(whiteList);
 
-            // Obtain substitutions list for the subproblem.
+            // Obtain substitutions list for the subproblem. //TODO remove
             substitutionsList = BranchAndBoundUtil.determineSubstitutionList(subProblem, originalInputBuffers);
             subProblem.setSubstitutionsList(substitutionsList);
 
-            // Substitution Truthtables are not used anymore
+            // Substitution Truthtables are not used anymore //TODO remove
             substitutionTruthTables = BranchAndBoundUtil.determineSubstitutionTruthTables(subProblem, substitutionsList, originalInputBuffers);
             subProblem.setSubstitutionTruthTables(substitutionTruthTables);
 
@@ -210,7 +213,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         SimulatorInterface simulator;
         for (Circuit subProblem : subProblems) {
-            simulator = new SimulatorInterface(simConfig, gateLib.getSourceFile());
+            simulator = new SimulatorInterface(simConfig, gateLib);
             simulator.initSimulation(subProblem);
             interfaces.add(simulator);
         }
@@ -250,7 +253,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      *
      * @param set
      */
-    private void sortRealizations(HashMap<LogicType, List<GateRealization>> set) {
+    private void sortRealizations(Map<LogicType, List<GateRealization>> set) {
         MappingConfiguration.BAB_Sort_Order libraryOrder = mapConfig.getBabLibraryOrder();
         if (libraryOrder == MappingConfiguration.BAB_Sort_Order.UNSORTED)
             return;
@@ -371,7 +374,6 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             List<Assignment> childs;
 
             double val;
-
 
             if (bEagerBranchAndBound) {
                 /*
@@ -519,16 +521,17 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      */
     private double bound(Assignment assignment) {
         iNeededSimulations++;
-        int assignmentSize = assignment.size();
+        return simulator.simulate(assignment);
+        /*int assignmentSize = assignment.size();
         String additionalArgs;
 
 
         if (assignmentSize != interfaces.length)    // The assignment to simulate does not belong to a leaf node
             additionalArgs = getAdditionalSimArgs(assignment);  // Use optimistic values if not leaf node
         else
-            additionalArgs = " custom_input_specification=0 substitute=0 "; // Use default values if leaf node
+            additionalArgs = " --custom_input_specification=0 --substitute=0 "; // Use default values if leaf node
 
-        return interfaces[assignmentSize - 1].simulate(assignment, additionalArgs);
+        return interfaces[assignmentSize - 1].simulate(assignment, additionalArgs);*/
     }
 
     /**
@@ -543,7 +546,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         int subProblemPointer = assignment.size() - 1;
         int problemPointer = subProblems.length - 1;
         if (subProblemPointer == problemPointer)
-            return " cis=0 ";
+            return " --cis=0 ";
 
         Map<String, Pair<Double, Double>> inputIntervals = new HashMap<>();
 
@@ -634,7 +637,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         }
 
         //TODO: implement additional args for particle case
-        additionalArgs = String.format(" substitute=%s use_custom_input_specification=1 cis=%s", bFastMode ? "0" : "1", BranchAndBoundUtil.createCustomInputSpecification(inputIntervals));
+        additionalArgs = String.format(" --substitute=%s --use_custom_input_specification=1 --cis=%s", bFastMode ? "0" : "1", BranchAndBoundUtil.createCustomInputSpecification(inputIntervals));
         return additionalArgs;
     }
 
@@ -700,9 +703,10 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      * Shuts down the used interfaces
      */
     private void shutDownInterfaces() {
-        for (SimulatorInterface anInterface : interfaces) {
+        simulator.shutdown();
+        /*for (SimulatorInterface anInterface : interfaces) {
             if (anInterface != null)
                 anInterface.shutdown();
-        }
+        }*/
     }
 }

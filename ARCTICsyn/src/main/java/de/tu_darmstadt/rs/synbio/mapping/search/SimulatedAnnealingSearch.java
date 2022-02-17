@@ -25,7 +25,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
     private static final Logger logger = LoggerFactory.getLogger(SimulatedAnnealingSearch.class);
 
-    private HashMap<LogicType, List<GateRealization>> realizations;
+    private Map<LogicType, List<GateRealization>> realizations;
 
     public SimulatedAnnealingSearch(Circuit structure, GateLibrary lib, MappingConfiguration mapConfig, SimulationConfiguration simConfig) {
         super(structure, lib, mapConfig, simConfig);
@@ -73,7 +73,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
         // initialize simulator
 
-        SimulatorInterface simulator = new SimulatorInterface(simConfig, gateLib.getSourceFile());
+        SimulatorInterface simulator = new SimulatorInterface(simConfig, gateLib);
         simulator.initSimulation(structure);
 
         // get initial assignment

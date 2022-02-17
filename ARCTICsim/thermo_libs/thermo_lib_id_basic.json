@@ -1339,140 +1339,140 @@
         "name": "A1_AmtR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "B1_BM3R1",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "B2_BM3R1",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "B3_BM3R1",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "E1_BetI",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "F1_AmeR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "H1_HlyIIR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "I1_IcaRA",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "L1_LitR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "N1_LmrA",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "P1_PhlF",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "P2_PhlF",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "P3_PhlF",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "Q1_QacR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "Q2_QacR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "R1_PsrA",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "S1_SrpR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "S2_SrpR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "S3_SrpR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {
         "name": "S4_SrpR",
         "functions": [
           "NOT",
-          "NAND2"
+          "NOR2"
         ]
       },
       {

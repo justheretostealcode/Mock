@@ -1,0 +1,28 @@
+{
+  "a": "input_1",
+  "b": "input_2",
+  "c": "input_3",
+  "YFP": "output_1",
+  "P3_PhlF": {
+    "A1_AmtR": {
+      "a": ["0.001", "2.0"],
+      "b": ["S4_SrpR", "S4_SrpR"]
+    },
+    "H1_HlyIIR": {
+      "a": ["0.001", "2.0"],
+      "b": ["S4_SrpR", "S4_SrpR"]
+    },
+    "S4_SrpR": {
+      "a": ["0.001", "2.0"],
+      "b": ["S4_SrpR", "S4_SrpR"]
+    },
+    "E1_BetI": {
+      "a": ["0.001", "2.0"],
+      "b": ["S4_SrpR", "S4_SrpR"]
+    }
+  },
+  "A1_AmtR": "A1_AmtR",
+  "H1_HlyIIR": "H1_HlyIIR",
+  "S4_SrpR": "S4_SrpR",
+  "E1_BetI": "E1_BetI"
+}

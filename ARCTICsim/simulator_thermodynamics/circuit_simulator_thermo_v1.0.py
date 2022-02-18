@@ -158,7 +158,7 @@ def sim_run():
 def circuit_score(results):
     differences = results[0][:, None] - results[1]
     score = np.max(np.max(differences))
-    cli_io.writeline(str(score))
+    cli_io.writeline("score: " + str(score))
     return score
 
 # to add a command to the simulator, extend this list and add your function
@@ -201,6 +201,8 @@ if __name__ == "__main__":
     # check for autostart
     if settings['autostart']:
         cli_exec.call('start')
+
+    cli_io.writeline("ready")
 
     # run CLI loop
     while True:

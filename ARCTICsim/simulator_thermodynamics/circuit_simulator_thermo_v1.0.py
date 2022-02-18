@@ -188,6 +188,7 @@ if __name__ == "__main__":
         argp.add_argument('-' + k[0], '--' + k, required=False, type=type_dict[types[k]], help=comments[k])
     argp.add_argument('--autostart', required=False, action='store_true', default=False, help='if set, simulation starts immediately (no CLI beforehand)')
     argp.add_argument('--autoexit', required=False, action='store_true', default=False, help='if set, termination after immediately after first simulation (no CLI afterwards)')
+    argp.add_argument('--no_cli', required=False, action='store_true', default=False, help='if set, no CLI is called at all (immediate start, immediate exit)')
     settings.update({k: v for k, v in vars(argp.parse_args()).items() if v is not None})
 
     # setup communication interface
@@ -195,11 +196,11 @@ if __name__ == "__main__":
     cli_exec = sim.execution_wrapper({k: v[0] for k, v in command_dict.items()})
 
     # check for autoexit
-    if settings['autoexit']:
+    if settings['autoexit'] or settings['no_cli']:
         cli_exec.register_post('start', 'exit', compose=False)
 
     # check for autostart
-    if settings['autostart']:
+    if settings['autostart'] or settings['no_cli']:
         cli_exec.call('start')
 
     # run CLI loop

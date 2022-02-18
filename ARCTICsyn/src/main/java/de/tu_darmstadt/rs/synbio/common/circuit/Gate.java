@@ -19,11 +19,20 @@ public class Gate {
         this.type = type;
     }
 
+    private static final Map<String, Formula> inputExpressions = Map.of(
+            "a", ExpressionParser.parse("a"),
+            "b", ExpressionParser.parse("b"),
+            "c", ExpressionParser.parse("c"));
+
     public Formula getExpression() {
-        if (type == LogicType.INPUT)
-            return ExpressionParser.parse(identifier);
-        else
+        if (type == LogicType.INPUT) {
+            if (inputExpressions.containsKey(identifier))
+                return inputExpressions.get(identifier);
+            else
+                return ExpressionParser.parse(identifier);
+        } else {
             return type.getExpression();
+        }
     }
 
     public TruthTable getTruthTable() {

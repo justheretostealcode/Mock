@@ -113,7 +113,7 @@ def sim_exit():
 # This is somehow dirty. Change that
 def sim_update_settings(args):
     global settings, argp
-    settings.update({k: v for k, v in vars(argp.parse_args(shlex.split(args))).items() if v is not None})
+    settings.update({k: v for k, v in vars(argp.parse_args(shlex.split(args, posix=False))).items() if v is not None})
 
 # Print the current simulation settings. Again a little dirty
 def sim_print_settings():

@@ -338,7 +338,7 @@ class nor_circuit:
                     codebook[nidx, 0, 1] = self.p_idx[w['b'][0]]
                     codebook[nidx, 1, 1] = self.p_idx[w['b'][1]]
                 self.gates[self.node_idx[k]] = _dummy_gate(k, v, codebook)
-            elif len(self.dev_idx[v]) == 0:  # implicit or
+            elif v == 'OR_IMPL' or len(self.dev_idx[v]) == 0:  # implicit or
                 self.g_p[self.node_idx[k]] = -1
                 self.gates[self.node_idx[k]] = _implicit_or_gate(k, v)
             else:
@@ -369,11 +369,13 @@ class nor_circuit:
             self.set_solver(solver)
 
     def propagate(self, a):
-        new_a = np.zeros_like(a)
-        wa = np.dot(self.w.T, a)
-        p_a = np.zeros(self.p_idx)
+        new_a = np.copy(a)
+        wa = np.dot(self.w, a)
+        p_a = np.zeros(len(self.p_idx))
+        #print([(gate.node, self.node_idx[gate.node]) for gate in self.gates])
         for n in range(len(self.gates)):
-            p_a[self.g_p[n]] += wa[n]
+            if self.g_p[n] != -1:
+                p_a[self.g_p[n]] += wa[n]
         for n in range(len(self.gates)):
             if not self.mutable[n]:
                 continue
@@ -484,18 +486,18 @@ class circuit_structure:
                 self.gate_truthtables[k] = np.array(list(map(int, v)))
             self.internal_edges = set()
             self.outgoing_edges = set()
-            self.adjacency = {'in': dict_from_list(self.gates, set()), 'out': dict_from_list(self.gates, set())}
+            self.adjacency = {'in': dict_from_list(self.nodes, set()), 'out': dict_from_list(self.nodes, set())}
             for e in circ['graph']['edges']:
                 if e['source'] in self.gates and e['target'] in self.gates:
                     self.internal_edges.add(tuple((e['source'], e['target'])))
-                    self.adjacency['in'][e['target']].add(e['source'])
-                    self.adjacency['out'][e['source']].add(e['target'])
                 else:
                     self.outgoing_edges.add(tuple((e['source'], e['target'])))
-                    if e['source'] in self.inputs:
-                        self.adjacency['in'][e['target']].add(e['source'])
-                    elif e['target'] in self.outputs:
-                        self.adjacency['out'][e['source']].add(e['target'])
+                self.adjacency['in'][e['target']].add(e['source'])
+                self.adjacency['out'][e['source']].add(e['target'])
+                # if e['source'] in self.inputs:
+                #     self.adjacency['in'][e['target']].add(e['source'])
+                # elif e['target'] in self.outputs:
+                #     self.adjacency['out'][e['source']].add(e['target'])
             self.edges = set.union(self.internal_edges, self.outgoing_edges)
             #self.dprint('\n\t+ Circuit has truthtable {f}, {u} inputs, {y} outputs, {n} intermediate nodes as well as {e} internal and {o} outgoing edges.'.format(f=hl(self.truthtable), u=hl(self.stats['n_inputs']), y=hl(self.stats['n_outputs']), n=hl(self.stats['n_nodes']), e=hl(len(self.internal_edges)), o=hl(len(self.outgoing_edges))))
             self.valid = True

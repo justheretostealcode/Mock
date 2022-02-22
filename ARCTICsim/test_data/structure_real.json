@@ -1,0 +1,13 @@
+{
+  "truthtable" : "00000001",
+  "gate_truthtables" : {
+    "NOR2_0" : "00000001",
+    "NOR2_2" : "00010001",
+    "a" : "11110000",
+    "b" : "11001100",
+    "O" : "00000001",
+    "c" : "10101010",
+    "NOR2_1" : "00001110"
+  },
+  "graph" : {"creator":"JGraphT JSON Exporter","version":"1","nodes":[{"id":"O","type":"OUTPUT"},{"id":"NOR2_0","type":"NOR2"},{"id":"NOR2_1","type":"NOR2"},{"id":"NOR2_2","type":"NOR2"},{"id":"b","type":"INPUT"},{"id":"c","type":"INPUT"},{"id":"a","type":"INPUT"}],"edges":[{"id":"1","source":"b","target":"NOR2_2","variable":"x"},{"id":"2","source":"c","target":"NOR2_2","variable":"y"},{"id":"3","source":"NOR2_2","target":"NOR2_1","variable":"y"},{"id":"4","source":"a","target":"NOR2_1","variable":"x"},{"id":"5","source":"NOR2_1","target":"NOR2_0","variable":"y"},{"id":"6","source":"a","target":"NOR2_0","variable":"x"},{"id":"7","source":"NOR2_0","target":"O","variable":"x"}]}
+}

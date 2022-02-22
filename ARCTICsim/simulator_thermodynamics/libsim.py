@@ -185,8 +185,8 @@ class nor_circuit:
                     nidx = self.node_idx[l]
                     codebook[nidx, 0, 0] = float(w['a'][0])
                     codebook[nidx, 1, 0] = float(w['a'][1])
-                    codebook[nidx, 0, 1] = self.p_idx[w['b'][0]]
-                    codebook[nidx, 1, 1] = self.p_idx[w['b'][1]]
+                    codebook[nidx, 0, 1] = self.tf_idx[w['b'][0]][0]
+                    codebook[nidx, 1, 1] = self.tf_idx[w['b'][1]][0]
                 self.gates[self.node_idx[k]] = _dummy_gate(k, v, codebook)
             elif v == 'OR_IMPL' or len(self.dev_idx[v]) == 0:  # implicit or
                 self.g_p[self.node_idx[k]] = -1

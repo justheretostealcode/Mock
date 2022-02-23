@@ -38,6 +38,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     //private final SimulatorInterface[] interfaces;
     private final SimulatorInterface simulator;
 
+    private final Gate outputGate;
+    private final GateRealization outputRealization;
+
     private final Gate[] logicGates;
     private final Gate[] reversedLogicGates;
 
@@ -91,6 +94,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         logicGates = getLogicGatesInTopologicalOrder(structure);
         reversedLogicGates = getReversedLogicGates(logicGates);
+
+        outputGate = structure.getOutputBuffer();
+        outputRealization = gateLib.getOutputDevice();
 
         initialAssignment = null;
         initialBestScore = Double.NEGATIVE_INFINITY;
@@ -349,7 +355,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         SearchStrategy strategy = getSearchStrategy();
 
-        strategy.addInitialItemToQueue(Double.POSITIVE_INFINITY);
+        strategy.addInitialItemToQueue(new Assignment(outputGate, outputRealization), Double.POSITIVE_INFINITY);
 
         long numberOfItemsAddedAndSkipped = 0;
 
@@ -522,6 +528,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private double bound(Assignment assignment) {
         iNeededSimulations++;
         return simulator.simulate(assignment);
+
         /*int assignmentSize = assignment.size();
         String additionalArgs;
 

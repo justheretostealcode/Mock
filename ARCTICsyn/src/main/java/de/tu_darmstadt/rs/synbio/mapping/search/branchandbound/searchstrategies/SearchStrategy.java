@@ -1,5 +1,6 @@
 package de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.searchstrategies;
 
+import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.QueueItem;
 
 import java.util.List;
@@ -14,7 +15,7 @@ public interface SearchStrategy {
      * Adds an initial empty assignment with the corresponding value to the queue
      * @param val
      */
-    public void addInitialItemToQueue(double val) ;
+    public void addInitialItemToQueue(Assignment assignment, double val) ;
 
     /**
      * Adds a new QueueItem to the queue

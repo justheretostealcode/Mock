@@ -19,13 +19,15 @@ public class ExhaustiveAssigner implements Assigner {
     private static final Logger logger = LoggerFactory.getLogger(ExhaustiveAssigner.class);
 
     // gates
-    final private HashMap<LogicType, List<GateRealization>> availableGates;
-    final private LinkedHashMap<LogicType, List<Gate>> circuitGates; // linked for iteration order
+    private final Map<LogicType, List<GateRealization>> availableGates;
+    private final LinkedHashMap<LogicType, List<Gate>> circuitGates; // linked for iteration order
+    private final Gate outputGate;
+    private final GateRealization outputRealization;
 
     // permutation variables
     private final HashMap<LogicType, PermutationIterator<GateRealization>> permutationIterators;
-    final private HashMap<LogicType, Long> numPermutations;
-    final private long numTotalPermutations;
+    private final HashMap<LogicType, Long> numPermutations;
+    private final long numTotalPermutations;
     private long currentPermutation = 0;
 
     // assignment buffer
@@ -36,16 +38,20 @@ public class ExhaustiveAssigner implements Assigner {
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
 
         // initialize gate library
-        this.availableGates = gateLib.getRealizations();
+        this.availableGates = new HashMap<>(gateLib.getRealizations());
+        availableGates.remove(LogicType.OUTPUT);
 
         // initialize circuit gate map
         this.circuitGates = new LinkedHashMap<>();
         this.numPermutations = new HashMap<>();
         for (LogicType type : availableGates.keySet()) {
-            ArrayList<Gate> gates = circuit.vertexSet().stream().filter(Gate::isLogicGate).filter(g -> g.getLogicType() == type).collect(Collectors.toCollection(ArrayList::new));
+            ArrayList<Gate> gates = circuit.vertexSet().stream().filter(g -> g.getLogicType() == type).collect(Collectors.toCollection(ArrayList::new));
             circuitGates.put(type, gates);
             numPermutations.put(type, getNumAssignments(type));
         }
+
+        outputGate = circuit.getOutputBuffer();
+        outputRealization = gateLib.getOutputDevice();
 
         // initialize permutation iterators
         this.permutationIterators = new HashMap<>();
@@ -130,7 +136,7 @@ public class ExhaustiveAssigner implements Assigner {
         if (!nextAssignment())
             return null;
 
-        Assignment assignment = new Assignment();
+        Assignment assignment = new Assignment(outputGate, outputRealization);
 
         for (LogicType type : circuitGates.keySet()) {
 

@@ -18,7 +18,7 @@ public class GateLibrary {
     private final File sourceFile;
 
     private final Map<LogicType, List<GateRealization>> gateRealizations = new HashMap<>();
-    private final Map<String, Map<String, Double>> tfPromoterFactors = new HashMap<>();
+    private final Map<String, Map<String, Double>> devicePromoterFactors = new HashMap<>();
 
     private Double[] proxNormalization = new Double[]{1.0, 1.0, 1.0};
     private Double[] proxWeights = new Double[]{1.0, 1.0, 1.0};
@@ -117,7 +117,7 @@ public class GateLibrary {
                 promoterLevels.put(name, new Pair<>(promoter.get("levels").get("off").asDouble(), promoter.get("levels").get("on").asDouble()));
 
             if (promoter.get("associated_devices").size() != 1) {
-                logger.error("Thermo library invalid: Promoter " + name + " has invalid number of associated devices.");
+                logger.error("Thermo library invalid: Promoter " + name + " has invalid number (!= 1) of associated devices.");
                 return;
             }
 
@@ -126,10 +126,10 @@ public class GateLibrary {
             if (!deviceToPromoter.containsKey(device))
                 deviceToPromoter.put(device, name);
 
-            /* fill tf <-> promoter factors */
+            /* fill device <-> promoter factors */
             Iterator<Map.Entry<String, JsonNode>> it = promoter.get("factors").get("tf_only").fields();
-            tfPromoterFactors.put(name, new HashMap<>());
-            it.forEachRemaining(e -> tfPromoterFactors.get(name).put(e.getKey(), e.getValue().doubleValue()));
+            devicePromoterFactors.put(device, new HashMap<>());
+            it.forEachRemaining(e -> devicePromoterFactors.get(device).put(e.getKey(), e.getValue().doubleValue()));
         }
 
         /* add gate for each tf by getting its device and promoter */
@@ -141,15 +141,16 @@ public class GateLibrary {
             for (JsonNode device : tf.get("associated_devices")) {
 
                 String promoterName = deviceToPromoter.get(device.textValue());
+                String deviceName = device.textValue();
 
                 for (LogicType function : deviceFunctions.get(device.textValue())) {
 
                     GateRealization newGate;
 
                     if (function == LogicType.OUTPUT) {
-                        newGate = new GateRealization(tfName, function, tfName);
+                        newGate = new GateRealization(deviceName, function, tfName);
                     } else {
-                        newGate = new GateRealization(promoterName, function, tfName,
+                        newGate = new GateRealization(deviceName, function, tfName,
                                 new GateRealization.GateCharacterization(promoterLevels.get(promoterName).second(),
                                         promoterLevels.get(promoterName).first(), 0, 0, null));
                     }
@@ -294,6 +295,16 @@ public class GateLibrary {
         return gateRealizations;
     }
 
+    public GateRealization getOutputDevice() {
+
+        if (gateRealizations.get(LogicType.OUTPUT).size() != 1) {
+            logger.error("Unsupported number of output devices in library != 1.");
+            return null;
+        }
+
+        return gateRealizations.get(LogicType.OUTPUT).get(0);
+    }
+
     private Pair<Map<LogicType, Double>, Map<LogicType, Double>> getMaxPromoterLevels() {
 
         Map<LogicType, Double> minPromoterLevels = new HashMap<>();
@@ -329,8 +340,8 @@ public class GateLibrary {
         return yMax.get(type);
     }
 
-    public Map<String, Double> getTfFactorsForPromoter(String promoter) {
-        return tfPromoterFactors.get(promoter);
+    public Map<String, Double> getTfFactorsForDevice(String promoter) {
+        return devicePromoterFactors.get(promoter);
     }
 
     public void print() {

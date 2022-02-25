@@ -79,14 +79,14 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         subProblems = subProblemResult.first();
         replacedLogicTypes = subProblemResult.second();
 
-        structure.print(new File("structure.dot"));
+        /*structure.print(new File("structure.dot"));
         structure.save(new File("structure.json"));
         int i = 0;
         for(Circuit sp : subProblems) {
             sp.print(new File("sb_" + i + ".dot"));
             sp.save(new File("sb_" + i + ".json"));
             i++;
-        }
+        }*/
 
         //interfaces = getSubProblemInterfaces(this.structure, this.subProblems);
         simulator = new SimulatorInterface(simConfig, gateLib);

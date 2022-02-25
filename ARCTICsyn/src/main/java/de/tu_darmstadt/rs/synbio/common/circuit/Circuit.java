@@ -497,17 +497,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
         ComponentNameProvider<Gate> vertexIdProvider = Gate::getIdentifier;
 
-        ComponentNameProvider<Gate> vertexLabelProvider = gate -> {
-            if (gate.isLogicGate()) {
-                String altIdentifier = assignment.get(gate).getIdentifier();
-
-                if (!altIdentifier.equals(""))
-                    return gate.getLogicType() + "\n" + assignment.get(gate).getIdentifier();
-                else
-                    return gate.getLogicType().toString();
-            }
-            return gate.getIdentifier().toUpperCase();
-        };
+        ComponentNameProvider<Gate> vertexLabelProvider = gate -> gate.getIdentifier() + "\n" + assignment.get(gate).getIdentifier();
 
         ComponentNameProvider<Wire> edgeLabelProvider = wire -> "";
 

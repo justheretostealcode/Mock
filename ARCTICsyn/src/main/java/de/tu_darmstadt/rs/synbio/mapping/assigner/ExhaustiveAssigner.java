@@ -39,7 +39,8 @@ public class ExhaustiveAssigner implements Assigner {
 
         // initialize gate library
         this.availableGates = new HashMap<>(gateLib.getRealizations());
-        availableGates.remove(LogicType.OUTPUT);
+        availableGates.remove(LogicType.OUTPUT_BUFFER);
+        availableGates.remove(LogicType.OUTPUT_OR2);
 
         // initialize circuit gate map
         this.circuitGates = new LinkedHashMap<>();
@@ -50,8 +51,8 @@ public class ExhaustiveAssigner implements Assigner {
             numPermutations.put(type, getNumAssignments(type));
         }
 
-        outputGate = circuit.getOutputBuffer();
-        outputRealization = gateLib.getOutputDevice();
+        outputGate = circuit.getOutputGate();
+        outputRealization = gateLib.getOutputDevice(outputGate.getLogicType());
 
         // initialize permutation iterators
         this.permutationIterators = new HashMap<>();

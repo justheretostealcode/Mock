@@ -7,40 +7,37 @@ public enum LogicType {
 
     EMPTY,
     INPUT,
-    OUTPUT,
+    OUTPUT_BUFFER,
+    OUTPUT_OR2,
     NOT,
-    NOR2,
-    NAND2,
-    OR2;
+    NOR2;
 
     private static final Formula inputExpr = ExpressionParser.parse("x");
-    private static final Formula outputExpr = ExpressionParser.parse("x");
+    private static final Formula outputBufExpr = ExpressionParser.parse("x");
+    private static final Formula outputOr2Expr = ExpressionParser.parse("(x|y)");
     private static final Formula notExpr = ExpressionParser.parse("~x");
     private static final Formula nor2Expr = ExpressionParser.parse("~(x|y)");
-    private static final Formula nand2Expr = ExpressionParser.parse("~(x&y)");
-    private static final Formula or2Expr = ExpressionParser.parse("(x|y)");
 
     private static final String inputStr = inputExpr.toString();
-    private static final String outputStr = outputExpr.toString();
+    private static final String outputBufStr = outputBufExpr.toString();
+    private static final String outputOr2Str = outputOr2Expr.toString();
     private static final String notStr = notExpr.toString();
     private static final String nor2Str = nor2Expr.toString();
-    private static final String nand2Str = nand2Expr.toString();
-    private static final String or2Str = or2Expr.toString();
 
     public Formula getExpression() {
         switch (this) {
             case INPUT:
                 return inputExpr;
-            case OUTPUT:
-                return outputExpr;
+            case OUTPUT_BUFFER:
+                return outputBufExpr;
+            case OUTPUT_OR2:
+                return outputOr2Expr;
             case NOT:
                 return notExpr;
             case NOR2:
                 return nor2Expr;
-            case NAND2:
-                return nand2Expr;
             default:
-                return or2Expr;
+                return outputBufExpr;
         }
     }
 
@@ -48,16 +45,16 @@ public enum LogicType {
         switch (this) {
             case INPUT:
                 return inputStr;
-            case OUTPUT:
-                return outputStr;
+            case OUTPUT_BUFFER:
+                return outputBufStr;
+            case OUTPUT_OR2:
+                return outputOr2Str;
             case NOT:
                 return notStr;
             case NOR2:
                 return nor2Str;
-            case NAND2:
-                return nand2Str;
             default:
-                return or2Str;
+                return outputBufStr;
         }
     }
 
@@ -66,14 +63,15 @@ public enum LogicType {
             case EMPTY:
             case INPUT:
                 return 0;
-            case OUTPUT:
+            case OUTPUT_BUFFER:
             case NOT: return 1;
+            case OUTPUT_OR2:
             default: return 2;
         }
     }
 
     public int getWeight() {
-        if (this.equals(EMPTY) || this.equals(INPUT) || this.equals(OUTPUT))
+        if (this.equals(EMPTY) || this.equals(INPUT) || this.equals(OUTPUT_BUFFER) || this.equals(OUTPUT_OR2))
             return 0;
         else
             return 1;

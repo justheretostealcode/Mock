@@ -30,7 +30,6 @@ public class Enumerator {
 
     private final int numGroupsInLib;
 
-    private final Circuit templateCircuit;
     private int gateCounter;
     private final List<LogicType> gateTypes;
     private List<PrimitiveCircuit> intermediateCircuits;
@@ -63,11 +62,6 @@ public class Enumerator {
         this.gateTypes.addAll(gateLib.getLogicGateTypes());
 
         this.numGroupsInLib = gateLib.getGroups().size();
-
-        // init template circuit
-        templateCircuit = new Circuit();
-        Gate output = new Gate("O", LogicType.OUTPUT);
-        templateCircuit.addVertex(output);
     }
 
     /* helper functions for handling of primitive circuits */
@@ -234,7 +228,7 @@ public class Enumerator {
                 }
 
                 if (isCoveredByLibrary(row) && isNotEmpty(row))
-                    if (!(rowLength != 1 && row.contains(LogicType.OR2))) // limit OR gate to output row
+                    if (!(rowLength != 1 && (row.contains(LogicType.OUTPUT_OR2) || row.contains(LogicType.OUTPUT_BUFFER)))) // limit output gates to output row
                         lengthCombinations.add(row);
             }
         }
@@ -279,7 +273,8 @@ public class Enumerator {
             // iterate over rows with corresponding number of gates/entries
             for (int i = 0; i < combinations.get(numberOfInputs - 1).size(); i++) {
 
-                if (combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OR2)) // limit OR gate to output row
+                if (combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OUTPUT_OR2) ||
+                        combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OUTPUT_BUFFER))
                     continue;
 
                 PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);
@@ -535,14 +530,12 @@ public class Enumerator {
 
         /* build circuit */
         Circuit circuit = new Circuit();
-        Graphs.addGraph(circuit, templateCircuit);
 
-        // add first logic gate after output
+        // add first (output) gate
         LogicType type = mapEntryToRow(candidate.getEntry(0)).get(0);
         gateCounter = 0;
         Gate newGate = new Gate(type.name() + "_" + gateCounter, type);
         circuit.addVertex(newGate);
-        circuit.addEdge(newGate, circuit.getOutputBuffer(), new Wire(circuit.getOutputBuffer().getExpression().variables().first()));
 
         // add rows of gates and wire them
         List<Gate> prevRow = new ArrayList<>();

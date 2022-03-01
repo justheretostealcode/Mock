@@ -23,7 +23,6 @@ import org.logicng.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -95,8 +94,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         logicGates = getLogicGatesInTopologicalOrder(structure);
         reversedLogicGates = getReversedLogicGates(logicGates);
 
-        outputGate = structure.getOutputBuffer();
-        outputRealization = gateLib.getOutputDevice();
+        outputGate = structure.getOutputGate();
+        outputRealization = gateLib.getOutputDevice(outputGate.getLogicType());
 
         initialAssignment = null;
         initialBestScore = Double.NEGATIVE_INFINITY;

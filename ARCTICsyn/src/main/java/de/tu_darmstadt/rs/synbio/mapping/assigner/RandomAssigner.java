@@ -31,10 +31,13 @@ public class RandomAssigner implements Assigner {
         this.availableGates = gateLib.getRealizations();
 
         // initialize circuit gate list
-        this.circuitGates = circuit.vertexSet().stream().filter(g -> g.getLogicType() != LogicType.OUTPUT).collect(Collectors.toList());
+        this.circuitGates = circuit.vertexSet().stream()
+                .filter(g -> g.getLogicType() != LogicType.OUTPUT_BUFFER)
+                .filter(g -> g.getLogicType() != LogicType.OUTPUT_OR2)
+                .collect(Collectors.toList());
 
-        outputGate = circuit.getOutputBuffer();
-        outputRealization = gateLib.getOutputDevice();
+        outputGate = circuit.getOutputGate();
+        outputRealization = gateLib.getOutputDevice(outputGate.getLogicType());
 
         this.randomGenerator = new Random();
     }

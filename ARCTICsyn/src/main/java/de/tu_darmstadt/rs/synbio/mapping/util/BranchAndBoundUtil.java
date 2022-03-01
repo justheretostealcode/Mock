@@ -124,7 +124,7 @@ public class BranchAndBoundUtil {
      * @param structure The structure to clean.
      */
     public static void cleanCircuitFromNonContributingGates(Circuit structure) {
-        Gate output = structure.getOutputBuffer();
+        Gate output = structure.getOutputGate();
         ArrayList<Gate> visitedNodes = new ArrayList<>(structure.vertexSet().size());
         traverseCircuit(structure, output, visitedNodes);
 
@@ -165,7 +165,7 @@ public class BranchAndBoundUtil {
         // Determine the ancestors of the relevant logic gates
         HashMap<Gate, Set<Gate>> ancestorsMap = new HashMap<>();
         for (Gate g : logicGates) {
-            if (g.getLogicType() == LogicType.NOR2 || g.getLogicType() == LogicType.OR2) {
+            if (g.getLogicType() == LogicType.NOR2 || g.getLogicType() == LogicType.OUTPUT_OR2) {
                 Set<Gate> ancestorsSet = structure.edgesOf(g).stream().filter(edge -> structure.getEdgeTarget(edge) == g).map(structure::getEdgeSource).collect(Collectors.toSet());
                 ancestorsMap.put(g, ancestorsSet);
             }
@@ -185,7 +185,7 @@ public class BranchAndBoundUtil {
                 This Filtering step simplifies the following determination of substitution, since the output of the gate is known and thus at least one input needs to be HIGH.
                  */
                 if (type == LogicType.NOR2 && structure.getExpression(g).evaluate(assignment)
-                        || type == LogicType.OR2 && !structure.getExpression(g).evaluate(assignment))
+                        || type == LogicType.OUTPUT_OR2 && !structure.getExpression(g).evaluate(assignment))
                     continue;
 
                 Set<Gate> ancestors = ancestorsMap.get(g);
@@ -292,7 +292,7 @@ public class BranchAndBoundUtil {
 
             for (Gate gate : assignment.keySet()) {
 
-                if (gate.getLogicType() == LogicType.OUTPUT)
+                if (gate.getLogicType() == LogicType.OUTPUT_OR2 || gate.getLogicType() == LogicType.OUTPUT_BUFFER)
                     continue;
 
                 String gateName = gate.getIdentifier();

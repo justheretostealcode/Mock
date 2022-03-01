@@ -147,7 +147,7 @@ public class GateLibrary {
 
                     GateRealization newGate;
 
-                    if (function == LogicType.OUTPUT) {
+                    if (function == LogicType.OUTPUT_BUFFER || function == LogicType.OUTPUT_OR2) {
                         newGate = new GateRealization(deviceName, function, tfName);
                     } else {
                         newGate = new GateRealization(deviceName, function, tfName,
@@ -295,14 +295,14 @@ public class GateLibrary {
         return gateRealizations;
     }
 
-    public GateRealization getOutputDevice() {
+    public GateRealization getOutputDevice(LogicType type) {
 
-        if (gateRealizations.get(LogicType.OUTPUT).size() != 1) {
+        if (gateRealizations.get(type).size() != 1) {
             logger.error("Unsupported number of output devices in library != 1.");
             return null;
         }
 
-        return gateRealizations.get(LogicType.OUTPUT).get(0);
+        return gateRealizations.get(type).get(0);
     }
 
     private Pair<Map<LogicType, Double>, Map<LogicType, Double>> getMaxPromoterLevels() {
@@ -367,7 +367,8 @@ public class GateLibrary {
 
         List<LogicType> types = new ArrayList<>(gateRealizations.keySet());
         types.remove(LogicType.INPUT);
-        types.remove(LogicType.OUTPUT);
+        types.remove(LogicType.OUTPUT_BUFFER);
+        types.remove(LogicType.OUTPUT_OR2);
 
         return types;
     }

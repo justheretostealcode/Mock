@@ -50,7 +50,10 @@ public class SimulatorInterface {
         if (simProcess!= null && simProcess.isAlive())
             simProcess.destroy();
 
-        circuitGates = circuit.vertexSet().stream().filter(g -> g.getLogicType() != LogicType.OUTPUT).collect(Collectors.toSet());
+        circuitGates = circuit.vertexSet().stream()
+                .filter(g -> g.getLogicType() != LogicType.OUTPUT_BUFFER)
+                .filter(g -> g.getLogicType() != LogicType.OUTPUT_OR2)
+                .collect(Collectors.toSet());
 
         try {
             String structureFileName = "structure_" + circuit.getIdentifier() + "_tid" + Thread.currentThread().getId() + "_" + System.nanoTime() + ".json";
@@ -119,8 +122,7 @@ public class SimulatorInterface {
 
             String assignmentStr = mapper.writeValueAsString(assignmentMap);
 
-            //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("assignment_Tac_error.json"), assignmentMap);
-
+            //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("assignment_cello_01010111.json"), assignmentMap);
 
             writer.write("update_settings " + simArgs + additionalArgs + " --assignment=" + assignmentStr + "");
             writer.newLine();
@@ -150,6 +152,8 @@ public class SimulatorInterface {
             }*/
 
             output = output.substring(scorePrefix.length());
+
+            //logger.info(output + "," + assignmentStr);
 
             // relevant to correctly parse infinity as returned score
             score = output.equals("inf") ? Double.POSITIVE_INFINITY : Double.parseDouble(output);

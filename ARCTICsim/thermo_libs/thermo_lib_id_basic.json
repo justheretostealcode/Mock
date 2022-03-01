@@ -2393,7 +2393,8 @@
       {
         "name": "output_1",
         "functions": [
-          "OUTPUT"
+          "OUTPUT_BUFFER",
+          "OUTPUT_OR2"
         ]
       }
     ]

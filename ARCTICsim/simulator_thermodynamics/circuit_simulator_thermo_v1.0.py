@@ -135,10 +135,10 @@ def sim_run():
     prepare_simulation()
     bounding_mode = False
     whitelist = np.ones(len(inputs), dtype=int)
-    if len(circuit.assignment.dummys) > 0 or 'bounding_mode' in settings and settings['bounding_mode'] > 0:
+    if len(circuit.assignment.dummys) > 0 or 'propagation_mode' in settings and settings['propagation_mode'] > 0:
         bounding_mode = True
         heuristic_mode = False
-        if settings['bounding_mode'] > 1:
+        if settings['propagation_mode'] > 1:
             heuristic_mode = True
         circuit.solver.bounding_mode(bounding_mode, heuristic_mode)
         if 'whitelist' in settings:

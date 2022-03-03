@@ -253,13 +253,15 @@ class nor_circuit:
         return new_a
 
     # this will be sloooooow.....
-    def propagate_bound(self, a):
+    def propagate_bound(self, a, heuristic=False):
         new_a = np.copy(a)
+        if DEBUG_LEVEL > 1:
+            print('')
         for n in range(len(self.gates)):
             if not self.mutable[n] or self.gates[n].type == -1:
                 continue
             if DEBUG_LEVEL > 2:
-                print('\nPropagate: ' + hl(str(self.gates[n].node)) + '/' + hl(str(self.gates[n].dev)) + ', type = ' + str(self.gates[n].type) + ', env = ' + hl(str(self.bound_env[n])))
+                print('Propagate: ' + hl(str(self.gates[n].node)) + '/' + hl(str(self.gates[n].dev)) + ', type = ' + str(self.gates[n].type) + ', env = ' + hl(str(self.bound_env[n])))
             p_a = np.zeros(len(self.p_idx))
             # get extreme inputs
             a_x = np.zeros(len(self.gates))
@@ -287,6 +289,10 @@ class nor_circuit:
             # now associate the correct TF's
             if DEBUG_LEVEL > 2:
                 print('dummy TF\'s:')
+            force_env = False
+            in_env = np.sum(self.bound_env[np.nonzero(self.w[:, n])])
+            if in_env != np.sum(self.w[:, n]) and in_env != 0 and heuristic:
+                force_env = True
             for m in range(len(self.gates)):
                 if self.gates[m].type == -1 and self.w[m, n] == 0:  # dummy: choose weakest or strongest TF
                     pa_idx = self.gates[m].promoter(n, self.bound_env[n])
@@ -296,11 +302,21 @@ class nor_circuit:
                 elif self.gates[n].type != 1 or self.w[m, n] == 1:  # only accept crosstalk if not implicit OR
                     if self.w[m, n] == 1:
                         if DEBUG_LEVEL > 1:
-                            print(str(self.gates[m].node) + ' to ' + str(self.gates[n].node) + ' by wire with input ' + str(a[m]))
-                        p_a[self.g_p[m]] += a[m]
+                            print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by wire with value ' + hl(str(a[m])))
+                        if force_env and self.gates[m].type == 0 and self.bound_env[m] == self.bound_env[n]:
+                            forced_value = 0
+                            if self.bound_env[n] == 0:
+                                forced_value = self.bound_a_max[m]
+                            else:
+                                forced_value = self.bound_a_min[m]
+                            if DEBUG_LEVEL > 1:
+                                print('--> ' + head('forcing') + ' to ' + str(forced_value))
+                                p_a[self.g_p[m]] += forced_value
+                        else:
+                            p_a[self.g_p[m]] += a[m]
                     else:
                         if DEBUG_LEVEL > 1:
-                            print(str(self.gates[m].node) + ' to ' + str(self.gates[n].node) + ' by crosstalk with input ' + str(a[m]))
+                            print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by crosstalk with value ' + hl(str(a[m])))
                         p_a[self.g_p[m]] += wa[m]
             # propagate the artificial environment through the gate
             if DEBUG_LEVEL > 2:
@@ -555,7 +571,8 @@ class nor_circuit_solver_banach:
         self.bound = bound
     def set_initial_value(self, initial_value):
         self.values = initial_value
-    def bounding_mode(self, bound):
+    def bounding_mode(self, bound, heuristic=False):
+        self.heuristic = heuristic
         self.bound = bound
     def solve(self, tol=10**(-2), max_iter=100):
         # Iterate the points using Banach's fixed point theorem
@@ -563,7 +580,7 @@ class nor_circuit_solver_banach:
         err = np.inf
         run = 0
         if self.bound:
-            function = self.circuit.propagate_bound
+            function = (lambda a: self.circuit.propagate_bound(a, heuristic=self.heuristic))
         else:
             function = self.circuit.propagate
         vs = self.values

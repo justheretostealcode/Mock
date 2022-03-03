@@ -45,6 +45,7 @@ def load_settings(path):
     t = dict()
     for k, v in s.items():
         s[k], t[k], c[k] = tuple(map(str.strip, v.split('#', 2)))
+        s[k] = type_dict[t[k]](s[k])
     return s, t, c
 
 # an associated type dict (for safety we do not use eval)
@@ -195,6 +196,9 @@ if __name__ == "__main__":
     # setup communication interface
     cli_io = sim.communication_wrapper(None, None, prefix=':>')
     cli_exec = sim.execution_wrapper({k: v[0] for k, v in command_dict.items()})
+
+    # set verbosity level
+    sim.DEBUG_LEVEL = settings['verbosity']
 
     # check for autoexit
     if settings['autoexit'] or settings['no_cli']:

@@ -35,6 +35,11 @@ from copy import copy, deepcopy
 #             - library
 #         - functions:
 
+#____________________________________________________________________________
+#   Globals
+#____________________________________________________________________________
+
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -48,6 +53,11 @@ class bcolors:
 
 def hl(word):
     return bcolors.WARNING + str(word) + bcolors.ENDC
+
+def head(word):
+    return bcolors.OKCYAN + str(word) + bcolors.ENDC
+
+DEBUG_LEVEL = 0
 
 #____________________________________________________________________________
 #   Technology mapping interface related classes
@@ -183,10 +193,10 @@ class nor_circuit:
                 for l, w in self.assignment.dummys[v].items():
                     # TODO: this can be shorter
                     nidx = self.node_idx[l]
-                    codebook[nidx, 0, 0] = float(w['a'][0])
-                    codebook[nidx, 1, 0] = float(w['a'][1])
-                    codebook[nidx, 0, 1] = self.tf_idx[w['b'][0]][0]
-                    codebook[nidx, 1, 1] = self.tf_idx[w['b'][1]][0]
+                    codebook[nidx, 0, 0] = float(w['a'][1])
+                    codebook[nidx, 1, 0] = float(w['a'][0])
+                    codebook[nidx, 0, 1] = self.tf_idx[w['b'][1]][0]
+                    codebook[nidx, 1, 1] = self.tf_idx[w['b'][0]][0]
                 self.gates[self.node_idx[k]] = _dummy_gate(k, v, codebook)
             elif v == 'OR_IMPL' or len(self.dev_idx[v]) == 0:  # implicit or
                 self.g_p[self.node_idx[k]] = -1
@@ -200,13 +210,22 @@ class nor_circuit:
         for k in list(self.structure.outputs):
             self.g_p[self.node_idx[k]] = -1
             self.gates[self.node_idx[k]] = _implicit_or_gate(k, 'simulation_monitor')
+        # print all gates if debug level is above 0
+        if DEBUG_LEVEL > 0:
+            print('Gates comprising the circuit:')
+            for gate in self.gates:
+                print(hl(str(gate.node)) + '/' + hl(str(gate.dev)) + ', type = ' + str(gate.type))
 
         # generate the adjacency matrix w == g_g
+        if DEBUG_LEVEL > 0:
+            print('Drawing wires:')
         self.w = np.zeros([len(node_list), len(node_list)])
         for gate_in, v in self.structure.adjacency['in'].items():
-            f = self.node_idx[gate_in]
+            t = self.node_idx[gate_in]
             for gate_out in v:
-                t = self.node_idx[gate_out]
+                f = self.node_idx[gate_out]
+                if DEBUG_LEVEL > 0:
+                    print(hl(gate_out) + ' -> ' + hl(gate_in))
                 self.w[f, t] = 1
 
         # for bounding, get a vector of extreme values
@@ -220,7 +239,7 @@ class nor_circuit:
 
     def propagate(self, a):
         new_a = np.copy(a)
-        wa = np.dot(self.w, a)
+        wa = np.dot(self.w.T, a)
         p_a = np.zeros(len(self.p_idx))
         #print([(gate.node, self.node_idx[gate.node]) for gate in self.gates])
         for n in range(len(self.gates)):
@@ -239,6 +258,8 @@ class nor_circuit:
         for n in range(len(self.gates)):
             if not self.mutable[n] or self.gates[n].type == -1:
                 continue
+            if DEBUG_LEVEL > 2:
+                print('\nPropagate: ' + hl(str(self.gates[n].node)) + '/' + hl(str(self.gates[n].dev)) + ', type = ' + str(self.gates[n].type) + ', env = ' + hl(str(self.bound_env[n])))
             p_a = np.zeros(len(self.p_idx))
             # get extreme inputs
             a_x = np.zeros(len(self.gates))
@@ -246,19 +267,16 @@ class nor_circuit:
                 a_x = np.copy(self.bound_a_min)
             else:  # everything on maximum!
                 a_x = np.copy(self.bound_a_max)
+            if DEBUG_LEVEL > 2:
+                print('dummy wires:')
             for idx in self.dummy_idx:  # set the dummy gates optimally
                 a_x[idx] = self.gates[idx].out(n, self.bound_env[n])
+                if DEBUG_LEVEL > 2:
+                    print(':: ' + hl(str(a_x[idx])))
             # do the wiring
             wa = np.dot(self.w.T, a_x)
             # but unset the own wire because we reset it later
             wa[n] = 0
-            # now associate the correct TF's
-            for m in range(len(self.gates)):
-                if self.gates[m].type == -1:  # dummy: choose weakest or strongest TF
-                    pa_idx = self.gates[m].promoter(n, self.bound_env[n])
-                    p_a[pa_idx] += wa[m]
-                else:
-                    p_a[self.g_p[m]] += wa[m]
             # set the correct wire input
             for m in range(len(self.gates)):
                 if self.w[m, n] == 1:  # we have a an input, so set
@@ -266,7 +284,28 @@ class nor_circuit:
                         wa[n] += self.gates[m].out(n, self.bound_env[n])
                     else:
                         wa[n] += a[m]
+            # now associate the correct TF's
+            if DEBUG_LEVEL > 2:
+                print('dummy TF\'s:')
+            for m in range(len(self.gates)):
+                if self.gates[m].type == -1 and self.w[m, n] == 0:  # dummy: choose weakest or strongest TF
+                    pa_idx = self.gates[m].promoter(n, self.bound_env[n])
+                    if DEBUG_LEVEL > 2:
+                        print(':: ' + hl(pa_idx))
+                    p_a[pa_idx] += wa[m]
+                elif self.gates[n].type != 1 or self.w[m, n] == 1:  # only accept crosstalk if not implicit OR
+                    if self.w[m, n] == 1:
+                        if DEBUG_LEVEL > 1:
+                            print(str(self.gates[m].node) + ' to ' + str(self.gates[n].node) + ' by wire with input ' + str(a[m]))
+                        p_a[self.g_p[m]] += a[m]
+                    else:
+                        if DEBUG_LEVEL > 1:
+                            print(str(self.gates[m].node) + ' to ' + str(self.gates[n].node) + ' by crosstalk with input ' + str(a[m]))
+                        p_a[self.g_p[m]] += wa[m]
             # propagate the artificial environment through the gate
+            if DEBUG_LEVEL > 2:
+                print('p_a vector:')
+                print(p_a)
             new_a[n] = self.gates[n].out(p_a)
         return new_a
 
@@ -529,6 +568,8 @@ class nor_circuit_solver_banach:
             function = self.circuit.propagate
         vs = self.values
         while err > tol:
+            if (DEBUG_LEVEL > 0):
+                self._debug_step(vs, run, err)
             new_vs = function(vs)
             # error and max_iter updates
             err = np.max(np.abs(new_vs - vs))
@@ -536,8 +577,20 @@ class nor_circuit_solver_banach:
             run += 1
             if run >= max_iter:
                 break
+        if (DEBUG_LEVEL > 0):
+            self._debug_step(vs, run, err)
         self.values = vs
         return (vs, err, run)
+    def _debug_step(self, vs, run, err):
+        print('---------\n' + head('Outputs') + ' (run ' + hl(str(run)) + ', err < ' + hl(str(err)) + ', logic = ' + hl(str(self.circuit.bound_env[self.circuit.node_idx[list(self.circuit.structure.outputs)[0]]])) + '): ')
+        for k, v in self.circuit.node_idx.items():
+            if self.circuit.gates[self.circuit.node_idx[k]].type == 0:
+                print('{k:<30}'.format(k = hl(k) + ' (env = ' + str(self.circuit.bound_env[v]) + ')') + ': ' + hl(str(vs[v])))
+            elif self.circuit.gates[self.circuit.node_idx[k]].type == -1:
+                print('{k:<30}'.format(k = hl(k)) + ': dummy')
+            elif self.circuit.gates[self.circuit.node_idx[k]].type == 1:
+                print('{k:<30}'.format(k = hl(k) + ' (implicit or)') + ': ' + hl(str(vs[v])))
+
 
 # This solver uses Newton's method. Reliable and fast (quadratic convergence)
 class circuit_solver_newton:

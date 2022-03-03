@@ -157,7 +157,7 @@ def sim_run():
 # Just for now the only circuit score
 # This will anyway be exchanged with a proper post-processing later
 def circuit_score(results):
-    differences = results[0][:, None] - results[1]
+    differences = results[1][:, None] / results[0]
     score = np.max(np.max(differences))
     cli_io.writeline("score: " + str(score))
     return score

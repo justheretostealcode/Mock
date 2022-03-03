@@ -360,10 +360,10 @@ class circuit_structure:
             self.nodes = set()
             self.stats = {'n_inputs': 0, 'n_nodes': 0, 'n_outputs': 0}
             for n in circ['graph']['nodes']:
-                if n['type'] == 'INPUT':
+                if n['type'].startswith('INPUT'):
                     self.stats['n_inputs'] += 1
                     self.inputs.add(n['id'])
-                elif n['type'] == 'OUTPUT':
+                elif n['type'].startswith('OUTPUT'):
                     self.stats['n_outputs'] += 1
                     self.outputs.add(n['id'])
                 else:

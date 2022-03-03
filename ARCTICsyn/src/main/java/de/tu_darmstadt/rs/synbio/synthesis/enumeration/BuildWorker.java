@@ -57,7 +57,7 @@ public class BuildWorker implements Callable<List<PrimitiveCircuit>> {
             // iterate over rows with corresponding number of gates/entries
             for (int i = 0; i < enumerator.combinations.get(numberOfInputs - 1).size(); i++) {
 
-                if (enumerator.combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OR2)) // limit OR gate to output row
+                if (enumerator.combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OUTPUT_OR2)) // limit or gate to output row
                     continue;
 
                 PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);

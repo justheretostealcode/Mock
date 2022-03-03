@@ -33,8 +33,8 @@ public class DepthFirstSearch implements SearchStrategy {
     }
 
     @Override
-    public void addInitialItemToQueue(double val) {
-        QueueItem item = new QueueItem(new Assignment(), val);
+    public void addInitialItemToQueue(Assignment assignment, double val) {
+        QueueItem item = new QueueItem(assignment, val);
         queue.add(0, item);
 
         updateStatistics();

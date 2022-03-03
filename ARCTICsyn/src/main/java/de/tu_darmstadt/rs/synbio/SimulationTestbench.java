@@ -172,8 +172,8 @@ public class SimulationTestbench {
 
                     logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + result.getAssignment().getIdentifierMap());
 
-                    //result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
-                    //        "result_" + child.getName() + ".dot"), result.getAssignment());
+                    result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
+                            "result_" + child.getName() + ".dot"), result.getAssignment());
 
                     //result.getStructure().saveGml(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
                     //        "result_" + child.getName() + "_" + i + ".gml"), result.getAssignment());

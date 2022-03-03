@@ -271,7 +271,7 @@ public class CompatibilityChecker {
         List<String> extractedGates = new ArrayList<>();
 
         for (Gate gate : structure.vertexSet()) {
-            if (gate.isLogicGate() && gate.getLogicType() != LogicType.OR2) {
+            if (gate.isLogicGate()) {
                 extractedGates.add(gate.getIdentifier());
             }
         }
@@ -287,14 +287,11 @@ public class CompatibilityChecker {
             if (!gate.isLogicGate())
                 continue;
 
-            if (gate.getLogicType() == LogicType.OR2)
-                continue;
-
             for (Wire wire : circuit.outgoingEdgesOf(gate)) {
 
                 Gate target = circuit.getEdgeTarget(wire);
 
-                if (target.isLogicGate() && target.getLogicType() != LogicType.OR2) {
+                if (target.isLogicGate()) {
                     pairs.putIfAbsent(gate.getIdentifier(), new HashSet<>());
                     pairs.get(gate.getIdentifier()).add(target.getIdentifier());
                 }

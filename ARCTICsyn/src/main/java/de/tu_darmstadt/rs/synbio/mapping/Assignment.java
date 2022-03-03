@@ -12,8 +12,9 @@ public class Assignment {
 
     private final Map<Gate, GateRealization> map;
 
-    public Assignment() {
+    public Assignment(Gate outputGate, GateRealization outputRealization) {
         this.map = new HashMap<>();
+        map.put(outputGate, outputRealization);
     }
 
     public Assignment(Assignment assignment) {
@@ -37,7 +38,7 @@ public class Assignment {
     }
 
     public int size() {
-        return map.size();
+        return map.size() - 1; // accounts for output gate
     }
 
     @Override

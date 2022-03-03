@@ -52,7 +52,7 @@ public class Gate {
     }
 
     public boolean isLogicGate() {
-        return type != LogicType.INPUT && type != LogicType.OUTPUT;
+        return type != LogicType.INPUT && type != LogicType.OUTPUT_BUFFER && type != LogicType.OUTPUT_OR2;
     }
 
     @Override
@@ -68,16 +68,18 @@ public class Gate {
             /* this is for backwards compatibility with old structure files */
             if (map.containsKey("expression")) {
 
-                //Formula expression = ExpressionParser.parse(map.get("expression").getValue());
                 String primitiveIdentifier = map.get("primitiveIdentifier").getValue();
 
                 switch (map.get("type").getValue()) {
                     case "INPUT":
                         return new Gate(s, LogicType.INPUT);
                     case "OUTPUT":
-                        return new Gate(s, LogicType.OUTPUT);
+                        return new Gate(s, LogicType.OUTPUT_BUFFER);
                     default:
-                        return new Gate(s, LogicType.valueOf(primitiveIdentifier));
+                        if (primitiveIdentifier.equals("OR2"))
+                            return new Gate(s, LogicType.OUTPUT_OR2);
+                        else
+                            return new Gate(s, LogicType.valueOf(primitiveIdentifier));
                 }
             } else {
                 return new Gate(s, LogicType.valueOf(map.get("type").getValue()));

@@ -3,10 +3,8 @@ package de.tu_darmstadt.rs.synbio.common.circuit;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
-import de.tu_darmstadt.rs.synbio.mapping.util.BranchAndBoundUtil;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import org.jgrapht.GraphPath;
 import org.jgrapht.Graphs;
@@ -49,31 +47,10 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         this.substitutionTruthTables = null;
     }
 
-    public Circuit(GateRealization realization, String identifier) {
-        super(Wire.class);
-        this.identifier = identifier;
-        this.whitelist = null;
-        this.substitutionsList = null;
-        this.substitutionTruthTables = null;
 
-        Gate gate = new Gate(realization.getIdentifier(), realization.getLogicType());
-
-        Gate outputBuffer = new Gate("F", LogicType.OUTPUT);
-        this.addVertex(gate);
-        this.addVertex(outputBuffer);
-        this.addEdge(gate, outputBuffer, new Wire(outputBuffer.getExpression().variables().first()));
-
-        Gate inputBuffer;
-
-        for (Variable inputVar : gate.getExpression().variables()) {
-            inputBuffer = new Gate(inputVar.name(), LogicType.INPUT);
-            this.addVertex(inputBuffer);
-            this.addEdge(inputBuffer, gate, new Wire(inputVar));
-        }
-    }
-
-    public Gate getOutputBuffer() {
-        return vertexSet().stream().filter(gate -> gate.getLogicType() == LogicType.OUTPUT).findFirst().get();
+    public Gate getOutputGate() {
+        return vertexSet().stream().filter(gate -> gate.getLogicType() == LogicType.OUTPUT_BUFFER || gate.getLogicType() == LogicType.OUTPUT_OR2)
+                .findFirst().get();
     }
 
     public List<Gate> getInputBuffers() {
@@ -89,7 +66,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
     }
 
     public Formula getExpression() {
-        return getExpression(getOutputBuffer());
+        return getExpression(getOutputGate());
     }
 
     public Formula getExpression(Gate startNode) {
@@ -159,7 +136,8 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
         }
 
-        for (Gate gate : vertexSet().stream().filter(gate -> gate.getLogicType() != LogicType.OUTPUT).collect(Collectors.toList())) {
+        for (Gate gate : vertexSet().stream().filter(gate -> !(gate.getLogicType() == LogicType.OUTPUT_BUFFER || gate.getLogicType() == LogicType.OUTPUT_OR2))
+                .collect(Collectors.toList())) {
 
             // test if gate output is connected
             if (outgoingEdgesOf(gate).isEmpty())
@@ -314,7 +292,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
         AllDirectedPaths<Gate, Wire> allPaths = new AllDirectedPaths<>(this);
 
-        Gate output = getOutputBuffer();
+        Gate output = getOutputGate();
         List<Gate> inputs = getInputBuffers();
 
         int depth = 0;
@@ -407,17 +385,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
     private static class GateComparator implements Comparator<Gate> {
         @Override
         public int compare(Gate first, Gate second) {
-
-            if (first.getLogicType() != second.getLogicType())
-                return 1;
-
-            switch (first.getLogicType()) {
-                case INPUT:
-                case OUTPUT:
-                    return 0;
-                default:
-                    return first.getLogicType().compareTo(second.getLogicType());
-            }
+            return first.getLogicType().compareTo(second.getLogicType());
         }
     }
 
@@ -471,13 +439,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
         ComponentNameProvider<Gate> vertexIdProvider = Gate::getIdentifier;
 
-        ComponentNameProvider<Gate> vertexLabelProvider = gate -> {
-
-            if (gate.isLogicGate()) {
-                return gate.getIdentifier();
-            }
-            return gate.getLogicType() + " " + gate.getIdentifier();
-        };
+        ComponentNameProvider<Gate> vertexLabelProvider = gate -> gate.getLogicType() + "\n" + gate.getIdentifier();
 
         ComponentNameProvider<Wire> edgeLabelProvider = wire -> "";
 
@@ -497,17 +459,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
         ComponentNameProvider<Gate> vertexIdProvider = Gate::getIdentifier;
 
-        ComponentNameProvider<Gate> vertexLabelProvider = gate -> {
-            if (gate.isLogicGate()) {
-                String altIdentifier = assignment.get(gate).getIdentifier();
-
-                if (!altIdentifier.equals(""))
-                    return gate.getLogicType() + "\n" + assignment.get(gate).getIdentifier();
-                else
-                    return gate.getLogicType().toString();
-            }
-            return gate.getIdentifier().toUpperCase();
-        };
+        ComponentNameProvider<Gate> vertexLabelProvider = gate -> gate.getIdentifier() + "\n" + assignment.get(gate).getIdentifier();
 
         ComponentNameProvider<Wire> edgeLabelProvider = wire -> "";
 

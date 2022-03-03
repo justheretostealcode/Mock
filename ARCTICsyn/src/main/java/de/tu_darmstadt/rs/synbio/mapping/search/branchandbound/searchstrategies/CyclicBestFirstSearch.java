@@ -48,8 +48,8 @@ public class CyclicBestFirstSearch implements SearchStrategy {
     }
 
     @Override
-    public void addInitialItemToQueue(double val) {
-        QueueItem item = new QueueItem(new Assignment(), val);
+    public void addInitialItemToQueue(Assignment assignment, double val) {
+        QueueItem item = new QueueItem(assignment, val);
         queues[0].add(item);
 
         updateStatistics();

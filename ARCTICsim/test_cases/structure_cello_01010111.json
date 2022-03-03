@@ -1,0 +1,12 @@
+{
+  "truthtable" : "01010111",
+  "gate_truthtables" : {
+    "A1_AmtR" : "01010101",
+    "b" : "11001100",
+    "c" : "10101010",
+    "P1_PhlF" : "00000011",
+    "YFP" : "01010111",
+    "a" : "11110000"
+  },
+  "graph" : {"creator":"JGraphT JSON Exporter","version":"1","nodes":[{"id":"a","type":"INPUT"},{"id":"b","type":"INPUT"},{"id":"c","type":"INPUT"},{"id":"YFP","type":"OUTPUT_OR2"},{"id":"A1_AmtR","type":"NOT"},{"id":"P1_PhlF","type":"NOR2"}],"edges":[{"id":"1","source":"c","target":"A1_AmtR","variable":"x"},{"id":"2","source":"A1_AmtR","target":"YFP","variable":"x"},{"id":"3","source":"P1_PhlF","target":"YFP","variable":"y"},{"id":"4","source":"b","target":"P1_PhlF","variable":"x"},{"id":"5","source":"a","target":"P1_PhlF","variable":"y"}]}
+}

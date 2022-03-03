@@ -23,7 +23,6 @@ import org.logicng.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +36,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private final Map<String, LogicType> replacedLogicTypes;
     //private final SimulatorInterface[] interfaces;
     private final SimulatorInterface simulator;
+
+    private final Gate outputGate;
+    private final GateRealization outputRealization;
 
     private final Gate[] logicGates;
     private final Gate[] reversedLogicGates;
@@ -76,14 +78,14 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         subProblems = subProblemResult.first();
         replacedLogicTypes = subProblemResult.second();
 
-        structure.print(new File("structure.dot"));
+        /*structure.print(new File("structure.dot"));
         structure.save(new File("structure.json"));
         int i = 0;
         for(Circuit sp : subProblems) {
             sp.print(new File("sb_" + i + ".dot"));
             sp.save(new File("sb_" + i + ".json"));
             i++;
-        }
+        }*/
 
         //interfaces = getSubProblemInterfaces(this.structure, this.subProblems);
         simulator = new SimulatorInterface(simConfig, gateLib);
@@ -91,6 +93,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         logicGates = getLogicGatesInTopologicalOrder(structure);
         reversedLogicGates = getReversedLogicGates(logicGates);
+
+        outputGate = structure.getOutputGate();
+        outputRealization = gateLib.getOutputDevice(outputGate.getLogicType());
 
         initialAssignment = null;
         initialBestScore = Double.NEGATIVE_INFINITY;
@@ -349,7 +354,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         SearchStrategy strategy = getSearchStrategy();
 
-        strategy.addInitialItemToQueue(Double.POSITIVE_INFINITY);
+        strategy.addInitialItemToQueue(new Assignment(outputGate, outputRealization), Double.POSITIVE_INFINITY);
 
         long numberOfItemsAddedAndSkipped = 0;
 
@@ -522,6 +527,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private double bound(Assignment assignment) {
         iNeededSimulations++;
         return simulator.simulate(assignment);
+
         /*int assignmentSize = assignment.size();
         String additionalArgs;
 

@@ -171,7 +171,7 @@ public class SearchStatsLogger {
                 put("NUMBER_OF_INPUT_BUFFERS", structure.getInputBuffers().size());
                 put("NUMBER_OF_LOGIC_GATES", structure.getLogicGates().size());
                 put("NUMBER_OF_OUTPUT_BUFFERS", 1);
-                put("OR_GATE_COUNT", structure.getLogicGates().stream().filter(logicGate -> logicGate.getLogicType() == LogicType.OR2).count());
+                put("OR_GATE_COUNT", structure.getLogicGates().stream().filter(logicGate -> logicGate.getLogicType() == LogicType.OUTPUT_OR2).count());
                 put("NOR_GATE_COUNT", structure.getLogicGates().stream().filter(logicGate -> logicGate.getLogicType() == LogicType.NOR2).count());
                 put("NOT_GATE_COUNT", structure.getLogicGates().stream().filter(logicGate -> logicGate.getLogicType() == LogicType.NOT).count());
                 put("ESTIMATED_CIRCUIT_COMPLEXITY", structure.estimateCircuitComplexity());

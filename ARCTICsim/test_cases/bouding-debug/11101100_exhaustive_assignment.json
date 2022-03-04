@@ -1,0 +1,12 @@
+{
+  "valid" : true,
+  "identifierMap" : {
+    "a" : "input_3",
+    "b" : "input_1",
+    "c" : "input_2",
+    "NOR2_1" : "S1_SrpR",
+    "NOR2_0" : "F1_AmeR",
+    "NOR2_2" : "N1_LmrA",
+    "O" : "output_1"
+  }
+}

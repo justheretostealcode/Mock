@@ -150,12 +150,14 @@ class nor_circuit:
         # p_idx creates a dict of indices associated with the specific promoters
         # tf_idx creates a dict of index tuples associated with the specific tf's
         self.p_idx = dict(zip(self.lib.parts['promoters'].keys(), list(range(len(self.lib.parts['promoters'])))))
-        self.tf_idx = dict({k: None for k in self.lib.parts['tfs'].keys()})
+        self.tf_idx = dict({k: tuple() for k in self.lib.parts['tfs'].keys()})
         self.dev_idx = dict({k: None for k in self.lib.devices.keys()})
         for dev, parts in self.lib.devices.items():
             for tf in parts['tfs']:
-                self.tf_idx[tf] = tuple(self.p_idx[p] for p in parts['promoters'])
+                self.tf_idx[tf] += tuple(self.p_idx[p] for p in parts['promoters'])
+                #print('tf idx for ' + tf + ': ' + str(self.tf_idx[tf]))
             self.dev_idx[dev] = tuple(self.p_idx[p] for p in parts['promoters'])
+            #print('device idx for ' + dev + ': ' + str(self.dev_idx[dev]))
 
         # get factors for all possible promoters
         self.factors = np.zeros([2, len(self.p_idx), len(self.p_idx)])
@@ -164,8 +166,9 @@ class nor_circuit:
             self.extremes[self.p_idx[p], 1] = float(d['typical']['on'])
             self.extremes[self.p_idx[p], 0] = float(d['typical']['off'])
             for tf in self.tf_idx.keys():
-                self.factors[0, self.p_idx[p], self.tf_idx[tf]] = float(d['f']['rnap'])*float(d['f']['tf_rnap'][tf])
-                self.factors[1, self.p_idx[p], self.tf_idx[tf]] = float(d['f']['tf_only'][tf])
+                #print(tf + ' at ' + str(self.tf_idx[tf][0]) + ' associated with ' + p + ' at ' + str(self.p_idx[p]))
+                self.factors[0, self.p_idx[p], self.tf_idx[tf][0]] = float(d['f']['rnap'])*float(d['f']['tf_rnap'][tf])
+                self.factors[1, self.p_idx[p], self.tf_idx[tf][0]] = float(d['f']['tf_only'][tf])
 
         # create now a total order of all locally available gates
         node_list = list(self.structure.nodes)
@@ -184,6 +187,7 @@ class nor_circuit:
         self.dummy_idx = np.zeros(len(self.assignment.dummys), dtype=int)
         self.gates = np.array([None for _ in range(len(node_list))])  # array of objects
         for k, v in self.assignment.map_gtod.items():
+            #print('node/device: ' + hl(str(k)) + '/' + hl(str(v)) + ', node idx = ' + hl(str(self.node_idx[k])) + ', device idx = ' + hl(str(self.dev_idx[v][0])))
             if v[0] == '_':  # dummy gate
                 self.g_p[self.node_idx[k]] = -1
                 self.dummy_idx[int(v[1])] = self.node_idx[k]
@@ -198,18 +202,21 @@ class nor_circuit:
                     codebook[nidx, 0, 1] = self.tf_idx[w['b'][1]][0]
                     codebook[nidx, 1, 1] = self.tf_idx[w['b'][0]][0]
                 self.gates[self.node_idx[k]] = _dummy_gate(k, v, codebook)
-            elif v == 'OR_IMPL' or len(self.dev_idx[v]) == 0:  # implicit or
-                self.g_p[self.node_idx[k]] = -1
-                self.gates[self.node_idx[k]] = _implicit_or_gate(k, v)
+            elif v.startswith('output'):  # implicit or / reporter TF
+                self.g_p[self.node_idx[k]] = self.dev_idx[v][0]
+                self.p_g[self.dev_idx[v][0]] = self.node_idx[k]
+                or_factors = np.zeros(len(self.p_idx))
+                or_factors[self.dev_idx[v][0]] = 1.0
+                self.gates[self.node_idx[k]] = _implicit_or_gate(k, v, or_factors)
             else:
                 self.g_p[self.node_idx[k]] = self.dev_idx[v][0]
                 self.p_g[self.dev_idx[v][0]] = self.node_idx[k]
                 # Find better solution to recognize YFP
                 self.gates[self.node_idx[k]] = _nor_gate(k, v, self.factors[:, self.dev_idx[v][0], :], self.extremes[self.dev_idx[v][0], :], self.lib.env['reservoir'])
         # also always create the artificial output gates (which are not in assignment)
-        for k in list(self.structure.outputs):
-            self.g_p[self.node_idx[k]] = -1
-            self.gates[self.node_idx[k]] = _implicit_or_gate(k, 'simulation_monitor')
+        #for k in list(self.structure.outputs):
+        #    self.g_p[self.node_idx[k]] = -1
+        #    self.gates[self.node_idx[k]] = _implicit_or_gate(k, 'simulation_monitor')
         # print all gates if debug level is above 0
         if DEBUG_LEVEL > 0:
             print('Gates comprising the circuit:')
@@ -249,6 +256,9 @@ class nor_circuit:
             if not self.mutable[n]:
                 continue
             gate = self.gates[n]
+            if DEBUG_LEVEL > 2:
+                print('p_a vector for ' + hl(str(gate.node)) + ' of type ' + hl(str(gate.type)) + ':')
+                print(p_a)
             new_a[n] = self.gates[n].out(p_a)
         return new_a
 
@@ -311,9 +321,9 @@ class nor_circuit:
                                 forced_value = self.bound_a_min[m]
                             if DEBUG_LEVEL > 1:
                                 print('--> ' + head('forcing') + ' to ' + str(forced_value) + ' bc. in env = ' + str(self.bound_env[m]) + ', out env = ' + str(self.bound_env[n]))
-                                p_a[self.g_p[m]] += forced_value
+                                p_a[self.g_p[n]] += forced_value
                         else:
-                            p_a[self.g_p[m]] += a[m]
+                            p_a[self.g_p[n]] += a[m]
                     else:
                         if DEBUG_LEVEL > 1:
                             print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by crosstalk with value ' + hl(str(a[m])))
@@ -521,6 +531,8 @@ class _nor_gate:
         self.c = c
         self.type = 0
     def out(self, wa):
+        #print(str(self.c + np.sum(wa*self.bepj)) + '/' + str(self.c + np.sum(wa*self.bef)) + ' = ' + str((self.c + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef))))
+        #print(self.bef)
         return (self.c + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef))
     def __str__(self):
         return self.name + ': ' + str(self.e)
@@ -529,14 +541,15 @@ class _nor_gate:
 # The implicit OR gate is just a pseudo-gate, which outputs the YFP RPU
 class _implicit_or_gate:
     # represents a NOR gate in the circuit
-    def __init__(self, node, dev):
+    def __init__(self, node, dev, factors):
         self.node = node
         self.dev = dev
         self.type = 1
         self.min = 0
         self.max = 0
+        self.b = factors.astype(bool)
     def out(self, wa):
-        return np.sum(wa)
+        return np.sum(wa[self.b])
     def __str__(self):
         return self.name + ': None (implicit OR)'
 
@@ -585,7 +598,7 @@ class nor_circuit_solver_banach:
             function = self.circuit.propagate
         vs = self.values
         while err > tol:
-            if (DEBUG_LEVEL > 0):
+            if (DEBUG_LEVEL > 1):
                 self._debug_step(vs, run, err)
             new_vs = function(vs)
             # error and max_iter updates

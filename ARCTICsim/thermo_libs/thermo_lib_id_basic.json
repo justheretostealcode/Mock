@@ -176,6 +176,94 @@
     "class": "promoters",
     "members": [
       {
+        "name": "fake_pYFP",
+        "associated_devices": [
+          "output_1"
+        ],
+        "levels": {
+          "off": 0.00,
+          "on": 0.00
+        },
+        "energies": {
+          "tf_only": {
+            "AmtR": 0,
+            "BM3R1": 0,
+            "BetI": 0,
+            "AmeR": 0,
+            "HlyIIR": 0,
+            "IcaRA": 0,
+            "LitR": 0,
+            "LmrA": 0,
+            "PhlF": 0,
+            "QacR": 0,
+            "PsrA": 0,
+            "SrpR": 0,
+            "Tac": 0,
+            "Tet": 0,
+            "BAD": 0,
+            "YFP": 0
+          },
+          "tf_rnap": {
+            "AmtR": 0,
+            "BM3R1": 0,
+            "BetI": 0,
+            "AmeR": 0,
+            "HlyIIR": 0,
+            "IcaRA": 0,
+            "LitR": 0,
+            "LmrA": 0,
+            "PhlF": 0,
+            "QacR": 0,
+            "PsrA": 0,
+            "SrpR": 0,
+            "Tac": 0,
+            "Tet": 0,
+            "BAD": 0,
+            "YFP": 0
+          },
+          "rnap": 0
+        },
+        "factors": {
+          "tf_only": {
+            "AmtR": 0,
+            "BM3R1": 0,
+            "BetI": 0,
+            "AmeR": 0,
+            "HlyIIR": 0,
+            "IcaRA": 0,
+            "LitR": 0,
+            "LmrA": 0,
+            "PhlF": 0,
+            "QacR": 0,
+            "PsrA": 0,
+            "SrpR": 0,
+            "Tac": 0,
+            "Tet": 0,
+            "BAD": 0,
+            "YFP": 0
+          },
+          "tf_rnap": {
+            "AmtR": 0,
+            "BM3R1": 0,
+            "BetI": 0,
+            "AmeR": 0,
+            "HlyIIR": 0,
+            "IcaRA": 0,
+            "LitR": 0,
+            "LmrA": 0,
+            "PhlF": 0,
+            "QacR": 0,
+            "PsrA": 0,
+            "SrpR": 0,
+            "Tac": 0,
+            "Tet": 0,
+            "BAD": 0,
+            "YFP": 0
+          },
+          "rnap": 0
+        }
+      },
+      {
         "name": "A1_AmtR",
         "associated_devices": [
           "A1_AmtR"

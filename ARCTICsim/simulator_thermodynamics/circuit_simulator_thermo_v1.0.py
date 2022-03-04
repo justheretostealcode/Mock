@@ -150,9 +150,7 @@ def sim_run():
     used_inputs = [(inputs[n], circuit.structure.truthtable[n], n) for n in range(len(inputs)) if whitelist[n] == 1]
     c = np.zeros(2, dtype=int)
     for real_input, bool_output, ttix in used_inputs:
-        circuit.set_initial_value(real_input)
-        if bounding_mode:
-            circuit.set_dummy_mode(ttix)
+        circuit.set_initial_value(real_input, ttix)
         output, err, iter = circuit.solve(tol=np.float(settings['err']), max_iter=np.int(settings['max_iter']))
         results[bool_output][c[bool_output]] = output
         c[bool_output] += 1

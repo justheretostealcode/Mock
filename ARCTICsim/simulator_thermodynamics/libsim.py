@@ -36,7 +36,7 @@ from copy import copy, deepcopy
 #         - functions:
 
 #____________________________________________________________________________
-#   Globals
+#   Globals and general purpose short-cuts
 #____________________________________________________________________________
 
 
@@ -291,7 +291,7 @@ class nor_circuit:
                 print('dummy TF\'s:')
             force_env = False
             in_env = np.sum(self.bound_env[np.nonzero(self.w[:, n])])
-            if in_env != np.sum(self.w[:, n]) and in_env != 0 and heuristic:
+            if in_env != np.sum(self.w[:, n]) and in_env != 0 and not heuristic:
                 force_env = True
             for m in range(len(self.gates)):
                 if self.gates[m].type == -1 and self.w[m, n] == 0:  # dummy: choose weakest or strongest TF
@@ -303,14 +303,14 @@ class nor_circuit:
                     if self.w[m, n] == 1:
                         if DEBUG_LEVEL > 1:
                             print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by wire with value ' + hl(str(a[m])))
-                        if force_env and self.gates[m].type == 0 and self.bound_env[m] == self.bound_env[n]:
+                        if force_env and self.gates[m].type == 0 and ((self.gates[n].type == 0 and self.bound_env[m] == self.bound_env[n]) or (self.gates[n].type == 1 and self.bound_env[m] != self.bound_env[n])):
                             forced_value = 0
-                            if self.bound_env[n] == 0:
+                            if (self.bound_env[n] == self.gates[n].type): # either NOR gate and 0-env or implicit OR gate and 1-env
                                 forced_value = self.bound_a_max[m]
                             else:
                                 forced_value = self.bound_a_min[m]
                             if DEBUG_LEVEL > 1:
-                                print('--> ' + head('forcing') + ' to ' + str(forced_value))
+                                print('--> ' + head('forcing') + ' to ' + str(forced_value) + ' bc. in env = ' + str(self.bound_env[m]) + ', out env = ' + str(self.bound_env[n]))
                                 p_a[self.g_p[m]] += forced_value
                         else:
                             p_a[self.g_p[m]] += a[m]

@@ -496,12 +496,17 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private List<Assignment> branch(Assignment assignment) {
 
         Gate logicGate = reversedLogicGates[assignment.size()];
-        List<Assignment> assignments = new ArrayList<>();
+
+        long leftGatesOfType = Arrays.stream(reversedLogicGates)
+                .filter(g -> !assignment.keySet().contains(g))
+                .filter(g -> g.getLogicType() == logicGate.getLogicType()).count();
 
         Set<String> usedGroups = assignment.values().stream().map(GateRealization::getGroup).collect(Collectors.toSet());
 
         List<GateRealization> availableRealizations = realizations.get(logicGate.getLogicType()).stream()
                 .filter(r -> !usedGroups.contains(r.getGroup())).collect(Collectors.toList());
+
+        List<Assignment> assignments = new ArrayList<>();
 
         for (GateRealization realization : availableRealizations) {
 
@@ -510,7 +515,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             a.put(logicGate, realization);
 
             /* if second last mapping determines mapping of last one --> jump straight to leaf nodes/complete assignments */
-            if (availableRealizations.size() == 2) {
+            if (leftGatesOfType == 2 && availableRealizations.size() == 2) {
                 assignments.addAll(branch(a));
             } else {
                 if (a.fulfilsConstraints(structure)) {

@@ -62,7 +62,7 @@ public class SimulatorInterface {
 
             List<String> arguments = new ArrayList<>();
             arguments.addAll(Arrays.asList(pythonBinary, simScript, "-s=" + structureFileName, "-l=" + library.getSourceFile().getAbsolutePath()));
-            arguments.addAll( Arrays.asList(simInitArgs.split(" ")));
+            arguments.addAll(Arrays.asList(simInitArgs.split(" ")));
 
             ProcessBuilder pb = new ProcessBuilder(arguments.toArray(new String[0]));
             pb.directory(simulatorPath);
@@ -98,12 +98,12 @@ public class SimulatorInterface {
         Map<String, Object> assignmentMap = new HashMap<>();
 
         Map<String, String> assignmentIdentifiers = assignment.getIdentifierMap();
-        String additionalArgs = "--bounding_mode=0";
+        String additionalArgs = "--propagation_mode=0";
 
         /* handle incomplete assignments of B&B */
         if (assignment.keySet().size() < circuitGates.size() + 1) {
             Map<String, Map<?, ?>> dummyInfos = BranchAndBoundUtil.compileDummyInfos(library, circuitGates, assignment);
-            additionalArgs = "--bounding_mode=1";
+            additionalArgs = "--propagation_mode=1";
             if (dummyInfos != null)
                 assignmentMap.putAll(dummyInfos);
         }
@@ -122,7 +122,8 @@ public class SimulatorInterface {
 
             String assignmentStr = mapper.writeValueAsString(assignmentMap);
 
-            //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("assignment_cello_01010111.json"), assignmentMap);
+            //if (assignmentIdentifiers.toString().equals("{NOR2_1=S1_SrpR, NOR2_0=F1_AmeR, NOR2_2=N1_LmrA, O=output_1}"))
+            //    mapper.writerWithDefaultPrettyPrinter().writeValue(new File("11101100_partial_assignment.json"), assignmentMap);
 
             writer.write("update_settings " + simArgs + additionalArgs + " --assignment=" + assignmentStr + "");
             writer.newLine();

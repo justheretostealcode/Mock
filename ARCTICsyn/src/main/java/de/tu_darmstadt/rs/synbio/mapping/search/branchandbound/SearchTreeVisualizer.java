@@ -58,22 +58,22 @@ public class SearchTreeVisualizer {
         return this.bVisualize;
     }
 
-    public void addLeafNode(Assignment assignment, double val, double currentBound) {
+    public void addLeafNode(Assignment assignment, double val, double currentBound, boolean skipParent) {
         if (!bVisualize)
             return;
 
         QueueItem item = QueueItem.getQueueItem(assignment, val);
-        add(item, currentBound);
+        add(item, currentBound, skipParent);
     }
 
     public void addIntermediateNode(QueueItem item, double currentBound) {
         if (!bVisualize)
             return;
 
-        add(item, currentBound);
+        add(item, currentBound, false);
     }
 
-    public void add(QueueItem item, double currentBound) {
+    public void add(QueueItem item, double currentBound, boolean skipParent) {
         if (!bVisualize)
             return;
 
@@ -89,17 +89,14 @@ public class SearchTreeVisualizer {
         String targetIdentifier = initialNodeID;
         for (int iX = 0; iX < assignment.size(); iX++) {
             Gate g = reversedLogicGates[iX];
-            sourceIdentifier = targetIdentifier;
+            if (!(skipParent && iX == (assignment.size() - 1)))
+                sourceIdentifier = targetIdentifier;
             targetIdentifier += "__" + getNodeIdentifier(g, assignment.get(g));
         }
 
         String targetLabel = String.format("%s (%d)\n[%f | %f]", realization.getIdentifier(), expansionIndex, value, currentBound);
         try {
             writer.write(String.format("%s [label=\"%s\", shape=rect];\n", targetIdentifier, targetLabel));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
             writer.write(String.format("%s -> %s;\n", sourceIdentifier, targetIdentifier));
         } catch (IOException e) {
             e.printStackTrace();

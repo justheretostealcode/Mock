@@ -364,7 +364,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         long iteration = 0;
         while ((currentItem = strategy.getNext()) != null) {    // Get the next element from queue and repeat until the queue is empty
 
-            searchTreeVisualizer.add(currentItem, bestScore);
+            searchTreeVisualizer.add(currentItem, bestScore, false);
 
             //if (iteration % 100 == 0)  // Only update every hundred iterations
             //    System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
@@ -385,12 +385,13 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                 Eager Branch and Bound
                 */
                 childs = branch(currentAssignment);
+                int childSize = childs.get(0).size();
 
                 var ref = new Object() {
                     double highestScore = Double.NEGATIVE_INFINITY;
                 };
 
-                if (currentAssignment.size() < logicGates.length - 1) {    // The child assignments are intermediate nodes (no leaves)
+                if (childSize < logicGates.length - 1) {    // The child assignments are intermediate nodes (no leaves)
 
                     double finalBestScore = bestScore;
                     List<QueueItem> queueItems = childs.stream()
@@ -410,7 +411,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                     for (Assignment assignment : childs) {
                         val = bound(assignment);
                         ref.highestScore = Math.max(ref.highestScore, val);
-                        searchTreeVisualizer.addLeafNode(assignment, val, bestScore);
+                        searchTreeVisualizer.addLeafNode(assignment, val, bestScore, true);
 
                         double growth = 1.0;//interfaces[assignment.size() - 1].getLastGrowth();
                         if (val > bestScore && growth >= 0.75) {   // Since the node is a terminal node (leave), one needs to check if it is better than the current best solution
@@ -493,23 +494,30 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      * @return
      */
     private List<Assignment> branch(Assignment assignment) {
-        int index = assignment.size();
-        Gate logicGate = reversedLogicGates[index];
+
+        Gate logicGate = reversedLogicGates[assignment.size()];
         List<Assignment> assignments = new ArrayList<>();
 
         Set<String> usedGroups = assignment.values().stream().map(GateRealization::getGroup).collect(Collectors.toSet());
 
-        List<GateRealization> availableRealizations = realizations.get(logicGate.getLogicType());
+        List<GateRealization> availableRealizations = realizations.get(logicGate.getLogicType()).stream()
+                .filter(r -> !usedGroups.contains(r.getGroup())).collect(Collectors.toList());
 
-        availableRealizations.stream()
-                .filter(gateRealization -> !usedGroups.contains(gateRealization.getGroup()))
-                .forEach(gateRealization -> {
-                    Assignment a = new Assignment(assignment);
-                    a.put(logicGate, gateRealization);
+        for (GateRealization realization : availableRealizations) {
 
-                    if (a.fulfilsConstraints(structure))
-                        assignments.add(a);
-                });
+            Assignment a = new Assignment(assignment);
+
+            a.put(logicGate, realization);
+
+            /* if second last mapping determines mapping of last one --> jump straight to leaf nodes/complete assignments */
+            if (availableRealizations.size() == 2) {
+                assignments.addAll(branch(a));
+            } else {
+                if (a.fulfilsConstraints(structure)) {
+                    assignments.add(a);
+                }
+            }
+        }
 
         if (mapConfig.getBabChildrenOrder() == MappingConfiguration.BAB_Sort_Order.SHUFFLED)
             Collections.shuffle(assignments);

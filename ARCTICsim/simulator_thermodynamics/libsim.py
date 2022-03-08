@@ -324,13 +324,13 @@ class nor_circuit:
                                 p_a[self.g_p[n]] += forced_value
                         else:
                             p_a[self.g_p[n]] += a[m]
-                    else:
+                    elif m != n:
                         if DEBUG_LEVEL > 1:
                             print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by crosstalk with value ' + hl(str(a[m])))
                         p_a[self.g_p[m]] += wa[m]
             # propagate the artificial environment through the gate
             if DEBUG_LEVEL > 2:
-                print('p_a vector:')
+                print('p_a vector for ' + hl(str(self.gates[n].node)) + ' of type ' + hl(str(self.gates[n].type)) + ':')
                 print(p_a)
             new_a[n] = self.gates[n].out(p_a)
         return new_a
@@ -531,8 +531,10 @@ class _nor_gate:
         self.c = c
         self.type = 0
     def out(self, wa):
-        #print(str(self.c + np.sum(wa*self.bepj)) + '/' + str(self.c + np.sum(wa*self.bef)) + ' = ' + str((self.c + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef))))
-        #print(self.bef)
+        if DEBUG_LEVEL > 2:
+            print(str(self.c + np.sum(wa*self.bepj)) + '/' + str(self.c + np.sum(wa*self.bef)) + ' = ' + hl(str((self.c + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef)))))
+            print(wa*self.bepj)
+            print(wa*self.bef)
         return (self.c + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef))
     def __str__(self):
         return self.name + ': ' + str(self.e)

@@ -14,7 +14,7 @@ import java.io.IOException;
  * A class to visualize the branch and bound search tree
  */
 public class SearchTreeVisualizer {
-    private final String initialNodeID = "EMPTY_INITIALISATION_NODE";
+    private final String initialNodeID = "ROOT";
     private BufferedWriter writer;
     private int expansionIndex;
     private final Gate[] reversedLogicGates;

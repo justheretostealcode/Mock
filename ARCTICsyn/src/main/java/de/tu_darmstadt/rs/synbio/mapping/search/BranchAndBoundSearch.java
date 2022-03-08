@@ -515,7 +515,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             a.put(logicGate, realization);
 
             /* if second last mapping determines mapping of last one --> jump straight to leaf nodes/complete assignments */
-            if (leftGatesOfType == 2 && availableRealizations.size() == 2) {
+            if ((leftGatesOfType == 2) && (availableRealizations.size() == 2) && (assignment.size() == reversedLogicGates.length - 2)) {
                 assignments.addAll(branch(a));
             } else {
                 if (a.fulfilsConstraints(structure)) {

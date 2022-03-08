@@ -302,7 +302,8 @@ public class BranchAndBoundUtil {
 
                 /* list a contains promoter activity interval for given dummy logic type */
 
-                List<Double> a = new ArrayList<>(); //Arrays.asList(library.getyMin(dummy.getLogicType()), library.getyMax(dummy.getLogicType()));
+                List<Double> a = new ArrayList<>();
+                //List<Double> a = Arrays.asList(library.getyMin(dummy.getLogicType()), library.getyMax(dummy.getLogicType()));
 
                 Optional<Double> minActivity = library.getRealizations().get(dummy.getLogicType()).stream()
                         .filter(r -> !usedGroups.contains(r.getGroup()))
@@ -349,7 +350,6 @@ public class BranchAndBoundUtil {
                 Map<String, List<?>> gateMap = new HashMap<>();
                 gateMap.put("a", a);
                 gateMap.put("b", b);
-
 
                 dummyMap.put(gateName, gateMap);
             }

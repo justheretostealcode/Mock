@@ -161,10 +161,12 @@ class nor_circuit:
 
         # get factors for all possible promoters
         self.factors = np.zeros([2, len(self.p_idx), len(self.p_idx)])
+        self.affinities = np.zeros(len(self.p_idx))
         self.extremes = np.zeros([len(self.p_idx), 2])
         for p, d in self.lib.parts['promoters'].items():
             self.extremes[self.p_idx[p], 1] = float(d['typical']['on'])
             self.extremes[self.p_idx[p], 0] = float(d['typical']['off'])
+            self.affinities[self.p_idx[p]] = float(d['f']['rnap'])
             for tf in self.tf_idx.keys():
                 #print(tf + ' at ' + str(self.tf_idx[tf][0]) + ' associated with ' + p + ' at ' + str(self.p_idx[p]))
                 self.factors[0, self.p_idx[p], self.tf_idx[tf][0]] = float(d['f']['rnap'])*float(d['f']['tf_rnap'][tf])
@@ -212,7 +214,7 @@ class nor_circuit:
                 self.g_p[self.node_idx[k]] = self.dev_idx[v][0]
                 self.p_g[self.dev_idx[v][0]] = self.node_idx[k]
                 # Find better solution to recognize YFP
-                self.gates[self.node_idx[k]] = _nor_gate(k, v, self.factors[:, self.dev_idx[v][0], :], self.extremes[self.dev_idx[v][0], :], self.lib.env['reservoir'])
+                self.gates[self.node_idx[k]] = _nor_gate(k, v, self.factors[:, self.dev_idx[v][0], :], self.affinities[self.dev_idx[v][0]], self.extremes[self.dev_idx[v][0], :], self.lib.env['reservoir'])
         # also always create the artificial output gates (which are not in assignment)
         #for k in list(self.structure.outputs):
         #    self.g_p[self.node_idx[k]] = -1
@@ -521,21 +523,22 @@ class library:
 # The NOR gate is a simple, modular gate structure independent of input wiring
 class _nor_gate:
     # represents a NOR gate in the circuit
-    def __init__(self, node, dev, factors, extreme, c):
+    def __init__(self, node, dev, factors, affinity, extreme, c):
         self.node = node
         self.dev = dev
         self.min = extreme[0]
         self.max = extreme[1]
         self.bepj = factors[0]
         self.bef = factors[1]
+        self.bep = affinity
         self.c = c
         self.type = 0
     def out(self, wa):
         if DEBUG_LEVEL > 2:
-            print(str(self.c + np.sum(wa*self.bepj)) + '/' + str(self.c + np.sum(wa*self.bef)) + ' = ' + hl(str((self.c + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef)))))
+            print(str(self.c*self.bep + np.sum(wa*self.bepj)) + '/' + str(self.c + np.sum(wa*self.bef)) + ' = ' + hl(str((self.c + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef)))))
             print(wa*self.bepj)
             print(wa*self.bef)
-        return (self.c + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef))
+        return (self.c*self.bep + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef))
     def __str__(self):
         return self.name + ': ' + str(self.e)
 

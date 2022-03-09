@@ -539,18 +539,15 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      */
     private double bound(Assignment assignment) {
         iNeededSimulations++;
-        return simulator.simulate(assignment);
 
-        /*int assignmentSize = assignment.size();
-        String additionalArgs;
+        SimulatorInterface.PropagationMode mode;
 
-
-        if (assignmentSize != interfaces.length)    // The assignment to simulate does not belong to a leaf node
-            additionalArgs = getAdditionalSimArgs(assignment);  // Use optimistic values if not leaf node
+        if (assignment.size() == logicGates.length)
+            mode = SimulatorInterface.PropagationMode.EXACT;
         else
-            additionalArgs = " --custom_input_specification=0 --substitute=0 "; // Use default values if leaf node
+            mode = SimulatorInterface.PropagationMode.BOUNDING;
 
-        return interfaces[assignmentSize - 1].simulate(assignment, additionalArgs);*/
+        return simulator.simulate(assignment, mode);
     }
 
     /**

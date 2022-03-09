@@ -44,7 +44,8 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
         long numSims = 0;
 
         while (assignment != null && !Thread.interrupted()) {
-            SimulationResult result = new SimulationResult(structure, assignment, simulator.simulate(assignment));
+            SimulationResult result = new SimulationResult(structure, assignment, simulator.simulate(assignment, SimulatorInterface.PropagationMode.EXACT));
+
             numSims ++;
 
             //if (simulator.getLastGrowth() >= 0.75) {

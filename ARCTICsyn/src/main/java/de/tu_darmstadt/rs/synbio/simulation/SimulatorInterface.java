@@ -36,6 +36,12 @@ public class SimulatorInterface {
 
     private Set<Gate> circuitGates;
 
+    public enum PropagationMode {
+        EXACT,
+        BOUNDING,
+        HEURISTIC
+    }
+
     public SimulatorInterface(SimulationConfiguration config, GateLibrary gateLibrary) {
         pythonBinary = config.getPythonBinary();
         simulatorPath = config.getSimPath();
@@ -59,6 +65,7 @@ public class SimulatorInterface {
             String structureFileName = "structure_" + circuit.getIdentifier() + "_tid" + Thread.currentThread().getId() + "_" + System.nanoTime() + ".json";
             structureFile = new File(simulatorPath, structureFileName);
             circuit.save(structureFile);
+            //circuit.print(new File("test.dot"));
 
             List<String> arguments = new ArrayList<>();
             arguments.addAll(Arrays.asList(pythonBinary, simScript, "-s=" + structureFileName, "-l=" + library.getSourceFile().getAbsolutePath()));
@@ -93,17 +100,16 @@ public class SimulatorInterface {
         }
     }
 
-    public Double simulate(Assignment assignment) { //TODO: handle null return value
+    public Double simulate(Assignment assignment, PropagationMode mode) { //TODO: handle null return value
 
         Map<String, Object> assignmentMap = new HashMap<>();
 
         Map<String, String> assignmentIdentifiers = assignment.getIdentifierMap();
-        String additionalArgs = "--propagation_mode=0";
+        String additionalArgs = "--propagation_mode=" + mode.ordinal();
 
         /* handle incomplete assignments of B&B */
         if (assignment.keySet().size() < circuitGates.size() + 1) {
             Map<String, Map<?, ?>> dummyInfos = BranchAndBoundUtil.compileDummyInfos(library, circuitGates, assignment);
-            additionalArgs = "--propagation_mode=1";
             if (dummyInfos != null)
                 assignmentMap.putAll(dummyInfos);
         }
@@ -125,7 +131,7 @@ public class SimulatorInterface {
             //if (assignmentIdentifiers.toString().equals("{NOR2_1=S1_SrpR, NOR2_0=F1_AmeR, NOR2_2=N1_LmrA, O=output_1}"))
             //    mapper.writerWithDefaultPrettyPrinter().writeValue(new File("11101100_partial_assignment.json"), assignmentMap);
 
-            writer.write("update_settings " + simArgs + additionalArgs + " --assignment=" + assignmentStr + "");
+            writer.write("update_settings " + simArgs + additionalArgs + " --assignment=" + assignmentStr);
             writer.newLine();
             writer.flush();
             writer.write("start");
@@ -153,6 +159,7 @@ public class SimulatorInterface {
             }*/
 
             output = output.substring(scorePrefix.length());
+            //logger.info(output);
 
             //logger.info(output + "," + assignmentStr);
 

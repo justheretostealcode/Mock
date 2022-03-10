@@ -33,6 +33,8 @@ public class Assignment {
         return map.get(circuitGate);
     }
 
+    public GateRealization remove(Gate circuitGate) { return map.remove(circuitGate); }
+
     public Collection<GateRealization> values() {
         return map.values();
     }

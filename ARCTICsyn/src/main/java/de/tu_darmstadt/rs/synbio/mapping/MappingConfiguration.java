@@ -35,7 +35,7 @@ public class MappingConfiguration {
     private BAB_INPUT_SPECIFICATION_TYPE babInputSpecificationType;
 
     public enum SearchAlgorithm {
-        EXHAUSTIVE, ANNEALING, BRANCH_AND_BOUND
+        EXHAUSTIVE, ANNEALING, BRANCH_AND_BOUND, ASSIGNMENT_COUNTER, BOUNDING_VALIDATOR
     }
 
     public enum OptimizationType {
@@ -99,6 +99,12 @@ public class MappingConfiguration {
                 break;
             case "BRANCH_AND_BOUND":
                 searchAlgorithm = SearchAlgorithm.BRANCH_AND_BOUND;
+                break;
+            case "ASSIGNMENT_COUNTER":
+                searchAlgorithm = SearchAlgorithm.ASSIGNMENT_COUNTER;
+                break;
+            case "BOUNDING_VALIDATOR":
+                searchAlgorithm = SearchAlgorithm.BOUNDING_VALIDATOR;
                 break;
             default:
                 throw new IOException("Unknown search algorithm! (Available algorithms: " + Arrays.toString(SearchAlgorithm.values()) + ")");
@@ -262,6 +268,10 @@ public class MappingConfiguration {
                 return new SimulatedAnnealingSearch(structure, lib, this, simConfig);
             case BRANCH_AND_BOUND:
                 return new BranchAndBoundSearch(structure, lib, this, simConfig);
+            case ASSIGNMENT_COUNTER:
+                return new AssignmentCounter(structure, lib, this, simConfig);
+            case BOUNDING_VALIDATOR:
+                return new BoundingValidator(structure, lib, this, simConfig);
             default:
                 return new ExhaustiveSearch(structure, lib, this, simConfig);
         }

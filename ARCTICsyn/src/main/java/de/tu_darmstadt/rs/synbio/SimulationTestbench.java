@@ -168,15 +168,24 @@ public class SimulationTestbench {
                     long stop = System.nanoTime();
                     long duration = stop - start;
 
-                    neededSims += result.getNeededSimulations();
+                    if (result != null) {
 
-                    logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + result.getAssignment().getIdentifierMap());
+                        neededSims += result.getNeededSimulations();
 
-                    result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
-                            "result_" + child.getName() + ".dot"), result.getAssignment());
+                        if (result.getStructure() != null && result.getAssignment() != null) {
+                            logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + result.getAssignment().getIdentifierMap());
 
-                    //result.getStructure().saveGml(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
-                    //        "result_" + child.getName() + "_" + i + ".gml"), result.getAssignment());
+                    /*AssignmentCounter counter = new AssignmentCounter(structure, gateLib, mapConfig, simConfig);
+                    long maxAssignments = counter.assign().getNeededSimulations();
+                    logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");*/
+
+                            //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("11101100_exhaustive_assignment.json"), result.getAssignment());
+
+                            //result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
+                            //        "result_" + child.getName() + ".dot"), result.getAssignment());
+
+                            //result.getStructure().saveGml(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
+                            //        "result_" + child.getName() + "_" + i + ".gml"), result.getAssignment());
 
                     /*try {
                         mapper.writerWithDefaultPrettyPrinter().writeValue(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(), "result_" + result.getStructure().getTruthTable() + "_" + i + "_assignment.json"), result.getAssignment());
@@ -184,18 +193,20 @@ public class SimulationTestbench {
                         e.printStackTrace();
                     }*/
 
-                    try {
-                        out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getScore() + "," + result.getAssignment().getIdentifierMap());
-                        out.flush();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                            try {
+                                out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getScore() + "," + result.getAssignment().getIdentifierMap());
+                                out.flush();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
 
-                    if (mapConfig.getStatistics()) {
-                        SearchStatsLogger logger = new SearchStatsLogger(structure, mapConfig, simConfig);
-                        logger.setResult(result);
-                        logger.setDuration(duration);
-                        logger.save("testbench_statistics/statistics_" + structure.getIdentifier() + "_" + mapConfig.toString().hashCode() + "_" + i + "_" + System.currentTimeMillis() + ".json");
+                            if (mapConfig.getStatistics()) {
+                                SearchStatsLogger logger = new SearchStatsLogger(structure, mapConfig, simConfig);
+                                logger.setResult(result);
+                                logger.setDuration(duration);
+                                logger.save("testbench_statistics/statistics_" + structure.getIdentifier() + "_" + mapConfig.toString().hashCode() + "_" + i + "_" + System.currentTimeMillis() + ".json");
+                            }
+                        }
                     }
                 }
 

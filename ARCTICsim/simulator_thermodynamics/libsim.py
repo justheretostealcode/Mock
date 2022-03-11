@@ -169,8 +169,9 @@ class nor_circuit:
             self.affinities[self.p_idx[p]] = float(d['f']['rnap'])
             for tf in self.tf_idx.keys():
                 #print(tf + ' at ' + str(self.tf_idx[tf][0]) + ' associated with ' + p + ' at ' + str(self.p_idx[p]))
-                self.factors[0, self.p_idx[p], self.tf_idx[tf][0]] = float(d['f']['rnap'])*float(d['f']['tf_rnap'][tf])
-                self.factors[1, self.p_idx[p], self.tf_idx[tf][0]] = float(d['f']['tf_only'][tf])
+                for pix in self.tf_idx[tf]:
+                    self.factors[0, self.p_idx[p], pix] = float(d['f']['rnap'])*float(d['f']['tf_rnap'][tf])
+                    self.factors[1, self.p_idx[p], pix] = float(d['f']['tf_only'][tf])
 
         # create now a total order of all locally available gates
         node_list = list(self.structure.nodes)
@@ -271,7 +272,11 @@ class nor_circuit:
             print('')
         for n in range(len(self.gates)):
             if not self.mutable[n] or self.gates[n].type == -1:
+                if DEBUG_LEVEL > 1:
+                    print('Skipping immutable or dummy node: ' + hl(self.gates[n].node))
                 continue
+            if DEBUG_LEVEL > 1:
+                print('Looking at node: ' + hl(self.gates[n].node))
             if DEBUG_LEVEL > 2:
                 print('Propagate: ' + hl(str(self.gates[n].node)) + '/' + hl(str(self.gates[n].dev)) + ', type = ' + str(self.gates[n].type) + ', env = ' + hl(str(self.bound_env[n])))
             p_a = np.zeros(len(self.p_idx))
@@ -313,22 +318,30 @@ class nor_circuit:
                     p_a[pa_idx] += wa[m]
                 elif self.gates[n].type != 1 or self.w[m, n] == 1:  # only accept crosstalk if not implicit OR
                     if self.w[m, n] == 1:
-                        if DEBUG_LEVEL > 1:
-                            print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by wire with value ' + hl(str(a[m])))
+                        val = 0
+                        forced = False
                         if force_env and self.gates[m].type == 0 and ((self.gates[n].type == 0 and self.bound_env[m] == self.bound_env[n]) or (self.gates[n].type == 1 and self.bound_env[m] != self.bound_env[n])):
                             forced_value = 0
                             if (self.bound_env[n] == self.gates[n].type): # either NOR gate and 0-env or implicit OR gate and 1-env
                                 forced_value = self.bound_a_max[m]
                             else:
                                 forced_value = self.bound_a_min[m]
-                            if DEBUG_LEVEL > 1:
-                                print('--> ' + head('forcing') + ' to ' + str(forced_value) + ' bc. in env = ' + str(self.bound_env[m]) + ', out env = ' + str(self.bound_env[n]))
-                                p_a[self.g_p[n]] += forced_value
+                            val = forced_value
+                            forced = True
                         else:
-                            p_a[self.g_p[n]] += a[m]
+                            if self.gates[m].type != -1:
+                                val = a[m]
+                            else:
+                                val = self.gates[m].out(n, self.bound_env[n])
+                        if DEBUG_LEVEL > 1:
+                            if forced:
+                                print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by wire with ' + head('forced') + ' value ' + hl(str(val)))
+                            else:
+                                print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by wire with value ' + hl(str(val)))
+                        p_a[self.g_p[n]] += val
                     elif m != n:
                         if DEBUG_LEVEL > 1:
-                            print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by crosstalk with value ' + hl(str(a[m])))
+                            print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by crosstalk with value ' + hl(str(wa[m])))
                         p_a[self.g_p[m]] += wa[m]
             # propagate the artificial environment through the gate
             if DEBUG_LEVEL > 2:
@@ -531,14 +544,18 @@ class _nor_gate:
         self.bepj = factors[0]
         self.bef = factors[1]
         self.bep = affinity
+        #self.dim = np.shape(factors[0])[1]
         self.c = c
         self.type = 0
     def out(self, wa):
+        #iwa = np.cumprod(np.repeat(wa[:, np.newaxis], self.dim, axis=1), axis=1)
+        iwa = wa
         if DEBUG_LEVEL > 2:
-            print(str(self.c*self.bep + np.sum(wa*self.bepj)) + '/' + str(self.c + np.sum(wa*self.bef)) + ' = ' + hl(str((self.c + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef)))))
-            print(wa*self.bepj)
-            print(wa*self.bef)
-        return (self.c*self.bep + np.sum(wa*self.bepj))/(self.c + np.sum(wa*self.bef))
+            print(str(self.c*self.bep + np.sum(iwa*self.bepj)) + '/' + str(self.c + np.sum(iwa*self.bef)) + ' = ' + hl(str((self.c + np.sum(iwa*self.bepj))/(self.c + np.sum(iwa*self.bef)))))
+            if self.node == 'NOR2_2':
+                print(self.bepj)
+                print(self.bef)
+        return (self.c*self.bep + np.sum(iwa*self.bepj))/(self.c + np.sum(iwa*self.bef))
     def __str__(self):
         return self.name + ': ' + str(self.e)
 
@@ -676,3 +693,11 @@ def dict_like(d, fill=None):
 
 def dict_from_list(l, fill=None):
     return dict({k: copy(fill) for k in l})
+
+# JIT friendly version of integer power
+def __power(bases, exponents):
+    for n in range(len(bases)):
+        b = bases[n]
+        e = exponents[n] - 1
+        for m in range(e):
+            bases[n] *= b

@@ -151,7 +151,7 @@ def sim_run():
     c = np.zeros(2, dtype=int)
     for real_input, bool_output, ttix in used_inputs:
         circuit.set_initial_value(real_input, ttix)
-        output, err, iter = circuit.solve(tol=np.float(settings['err']), max_iter=np.int(settings['max_iter']))
+        output, err, iter = circuit.solve(tol=float(settings['err']), max_iter=int(settings['max_iter']))
         results[bool_output][c[bool_output]] = output
         c[bool_output] += 1
     return circuit_score(results)

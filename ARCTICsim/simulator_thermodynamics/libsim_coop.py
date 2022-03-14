@@ -131,7 +131,14 @@ class communication_wrapper:
 #____________________________________________________________________________
 
 # input encoding dict
-_input_encoding = dict({
+input_encoding = dict({
+    0: 'a',
+    1: 'b',
+    2: 'c'
+})
+
+# reverse input encoding dict
+reverse_input_encoding = dict({
     'a': 0,
     'b': 1,
     'c': 2
@@ -361,7 +368,7 @@ class nor_circuit:
     def set_initial_value(self, values, ttix=-1):
         val = np.zeros(len(self.node_idx))
         for input in self.structure.inputs:
-            val[self.node_idx[input]] = values[_input_encoding[input]]
+            val[self.node_idx[input]] = values[reverse_input_encoding[input]]
         self.solver.set_initial_value(val)
         if ttix != -1:
             self.set_dummy_mode(ttix)

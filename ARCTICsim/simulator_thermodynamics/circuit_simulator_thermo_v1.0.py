@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 import os.path
 import itertools
 import shlex
-import libsim as sim
+import libsim_coop as sim
 
 # standard configuration path
 version = '1.0'

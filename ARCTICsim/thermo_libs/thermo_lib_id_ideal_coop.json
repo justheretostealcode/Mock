@@ -5142,6 +5142,7 @@
     "name": "ideal",
     "beta": 1,
     "non_specific_reservoir": 100,
+    "max_coop_level": 5,
     "env_tfs": {},
     "reservoir_energies": {
       "rnap_background": 10,

@@ -174,7 +174,6 @@ class nor_circuit:
             self.extremes[self.p_idx[p], 1] = float(d['typical']['on'])
             self.extremes[self.p_idx[p], 0] = float(d['typical']['off'])
             self.affinities[self.p_idx[p]] = float(d['f']['rnap'])
-            print(self.affinities[self.p_idx[p]])
             for tf in self.tf_idx.keys():
                 #print(tf + ' at ' + str(self.tf_idx[tf][0]) + ' associated with ' + p + ' at ' + str(self.p_idx[p]))
                 for pix in self.tf_idx[tf]:

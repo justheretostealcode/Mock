@@ -173,7 +173,7 @@ def sim_run():
 # This will anyway be exchanged with a proper post-processing later
 def circuit_score(results):
     differences = results[1][:, None] / results[0]
-    score = round_to_magnitude(np.min(np.min(differences)), 2*settings['err'])
+    score = round(np.min(np.min(differences)), int(settings['final_precision']))
     cli_io.writeline("score: " + str(score))
     return score
 

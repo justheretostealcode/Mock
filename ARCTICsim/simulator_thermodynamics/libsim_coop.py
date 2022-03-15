@@ -319,7 +319,7 @@ class nor_circuit:
             if in_env != np.sum(self.w[:, n]) and in_env != 0 and not heuristic:
                 force_env = True
             for m in range(len(self.gates)):
-                if self.gates[m].type == -1 and self.w[m, n] == 0:  # dummy: choose weakest or strongest TF
+                if self.gates[n].type != 1 and self.gates[m].type == -1 and self.w[m, n] == 0:  # dummy: choose weakest or strongest TF
                     pa_idx = self.gates[m].promoter(n, self.bound_env[n])
                     if DEBUG_LEVEL > 2:
                         print(':: ' + hl(pa_idx))

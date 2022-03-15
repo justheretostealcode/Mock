@@ -86,7 +86,7 @@ def round_to_magnitude(r, b):
     while int(f % 10) == 0:
         m += 1
         f *= 10
-    return round(r, m - 1)
+    return round(r, m)
 
 
 #____________________________________________________________________________
@@ -173,7 +173,7 @@ def sim_run():
 # This will anyway be exchanged with a proper post-processing later
 def circuit_score(results):
     differences = results[1][:, None] / results[0]
-    score = np.min(np.min(differences))
+    score = round_to_magnitude(np.min(np.min(differences)), 2*settings['err'])
     cli_io.writeline("score: " + str(score))
     return score
 

@@ -66,14 +66,18 @@ def check_load_and_create(input, file, cluss):
     # demarshall the object
     return cluss(json)
 
-def real_from_logic_input_matrix(linputs, library):
+def real_from_logic_input_matrix(linputs, library, circuit):
     n_ins = len(linputs[0])
     on_off = ['off', 'on']
     inputs = np.zeros([len(linputs), n_ins])
     for n in range(len(linputs)):
         for m in range(n_ins):
-            pr = library.devices['input_' + str(m + 1)]['promoters'][0]
-            inputs[n][m] = library.parts['promoters'][pr]['typical'][on_off[int(not bool(linputs[n][m]))]]
+            lin_to_rin = circuit.gates[circuit.node_idx[sim.input_encoding[m]]].dev
+            if not lin_to_rin.startswith('_'):
+                pr = library.devices[lin_to_rin]['promoters'][0]
+                inputs[n][m] = library.parts['promoters'][pr]['typical'][on_off[int(not bool(linputs[n][m]))]]
+            else:  # dummy
+                inputs[n][m] = 0.
     return inputs
 
 #____________________________________________________________________________
@@ -97,7 +101,7 @@ def prepare_simulation():
     # we further assume, the inputs are numerated in an alphabethical order
     n_ins = int(round(math.log(len(circuit.structure.truthtable), 2)))
     linputs = np.array(list(map(list, itertools.product([0, 1], repeat=n_ins))))
-    inputs = real_from_logic_input_matrix(linputs, library)
+    inputs = real_from_logic_input_matrix(linputs, library, circuit)
     # Done with preparation. Ready for simulation now
 
 

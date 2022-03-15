@@ -340,7 +340,7 @@ class nor_circuit:
                             if self.gates[m].type != -1:
                                 val = a[m]
                             else:
-                                val = self.gates[m].out(n, self.bound_env[n])
+                                val = self.gates[m].out(n, int(bool(self.gates[n].type) != bool(self.bound_env[n])))
                         if DEBUG_LEVEL > 1:
                             if forced:
                                 print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by wire with ' + head('forced') + ' value ' + hl(str(val)))

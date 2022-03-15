@@ -323,20 +323,20 @@ public class BranchAndBoundUtil {
 
                 /*
                     list b contains TFs with least/biggest binding factor to given gate
-                    factors corresponding to given gate promoter are streamed and their TFs are filtered to match dummy gate type
-                    the TF of the gate itself is excluded
+                    - factors corresponding to given gate promoter are streamed and their TFs are filtered to match dummy gate type
+                    - TFs used in assignment are excluded
                  */
 
                 List<String> b = new ArrayList<>();
 
                 Optional<Map.Entry<String, Double>> minFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
                         .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
-                        .filter(e -> !e.getKey().equals(assignment.get(gate).getGroup()))
+                        .filter(e -> !usedGroups.contains(e.getKey()))
                         .min(Map.Entry.comparingByValue());
 
                 Optional<Map.Entry<String, Double>> maxFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
                         .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
-                        .filter(e -> !e.getKey().equals(assignment.get(gate).getGroup()))
+                        .filter(e -> !usedGroups.contains(e.getKey()))
                         .max(Map.Entry.comparingByValue());
 
                 if (minFactor.isEmpty() || maxFactor.isEmpty()) {

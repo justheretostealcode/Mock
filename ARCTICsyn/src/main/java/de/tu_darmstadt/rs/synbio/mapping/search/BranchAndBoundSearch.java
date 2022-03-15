@@ -369,7 +369,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             //if (iteration % 100 == 0)  // Only update every hundred iterations
             //    System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
 
-            if (currentItem.val < bestScore) {
+            if (currentItem.val <= bestScore) {
                 // Removes item if the best score has changed after this queue item has been added to the queue
                 numberOfItemsAddedAndSkipped++;
                 continue;
@@ -402,7 +402,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                                 ref.highestScore = Math.max(ref.highestScore, dVal);
                                 return QueueItem.getQueueItem(assignment, dVal);
                             })
-                            .filter(item -> bVisualize || item.val >= finalBestScore)              // Filter the assignments which do not have sufficient score (Filtering is skipped if visualisation is turned on, in order to result obtain complete Search Trees)
+                            .filter(item -> bVisualize || item.val > finalBestScore)              // Filter the assignments which do not have sufficient score (Filtering is skipped if visualisation is turned on, in order to result obtain complete Search Trees)
                             .sorted(comparator)// Ensures, that the search strategy visits the best node first
                             .collect(Collectors.toList());
                     strategy.addToQueue(queueItems);
@@ -543,9 +543,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         SimulatorInterface.PropagationMode mode;
 
         if (assignment.size() == logicGates.length)
-            mode = SimulatorInterface.PropagationMode.EXACT;
+             mode = SimulatorInterface.PropagationMode.EXACT;
         else
-            mode = SimulatorInterface.PropagationMode.BOUNDING;
+            mode = mapConfig.getBabFast() ? SimulatorInterface.PropagationMode.HEURISTIC : SimulatorInterface.PropagationMode.BOUNDING;
 
         return simulator.simulate(assignment, mode);
     }

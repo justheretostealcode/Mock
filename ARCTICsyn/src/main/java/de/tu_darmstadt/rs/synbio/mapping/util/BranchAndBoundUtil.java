@@ -293,33 +293,29 @@ public class BranchAndBoundUtil {
             Map<String, Map<?, ?>> dummyMap = new HashMap<>();
             String dummyName = dummy.getIdentifier();
 
+            /* list a contains promoter activity interval for given dummy logic type */
+
+            List<Double> a = new ArrayList<>();
+
+            Optional<Double> minActivity = library.getRealizations().get(dummy.getLogicType()).stream()
+                    .filter(r -> !usedGroups.contains(r.getGroup()))
+                    .map(r -> r.getCharacterization().getYmin()).min(Double::compareTo);
+
+            Optional<Double> maxActivity = library.getRealizations().get(dummy.getLogicType()).stream()
+                    .filter(r -> !usedGroups.contains(r.getGroup()))
+                    .map(r -> r.getCharacterization().getYmax()).max(Double::compareTo);
+
+            if (minActivity.isEmpty() || maxActivity.isEmpty()) {
+                logger.error("Unable to obtain activities for dummy gate.");
+                return null;
+            }
+
+            a.add(minActivity.get());
+            a.add(maxActivity.get());
+
             for (Gate gate : assignment.keySet()) {
 
-                if (gate.getLogicType() == LogicType.OUTPUT_OR2 || gate.getLogicType() == LogicType.OUTPUT_BUFFER)
-                    continue;
-
                 String gateName = gate.getIdentifier();
-
-                /* list a contains promoter activity interval for given dummy logic type */
-
-                List<Double> a = new ArrayList<>();
-                //List<Double> a = Arrays.asList(library.getyMin(dummy.getLogicType()), library.getyMax(dummy.getLogicType()));
-
-                Optional<Double> minActivity = library.getRealizations().get(dummy.getLogicType()).stream()
-                        .filter(r -> !usedGroups.contains(r.getGroup()))
-                        .map(r -> r.getCharacterization().getYmin()).min(Double::compareTo);
-
-                Optional<Double> maxActivity = library.getRealizations().get(dummy.getLogicType()).stream()
-                        .filter(r -> !usedGroups.contains(r.getGroup()))
-                        .map(r -> r.getCharacterization().getYmax()).max(Double::compareTo);
-
-                if (minActivity.isEmpty() || maxActivity.isEmpty()) {
-                    logger.error("Unable to obtain activities for dummy gate.");
-                    return null;
-                }
-
-                a.add(minActivity.get());
-                a.add(maxActivity.get());
 
                 /*
                     list b contains TFs with least/biggest binding factor to given gate
@@ -329,23 +325,32 @@ public class BranchAndBoundUtil {
 
                 List<String> b = new ArrayList<>();
 
-                Optional<Map.Entry<String, Double>> minFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
-                        .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
-                        .filter(e -> !usedGroups.contains(e.getKey()))
-                        .min(Map.Entry.comparingByValue());
+                /* if gate is YFP -> add YFP as TFs dummy-wise */
+                if (gate.getLogicType() == LogicType.OUTPUT_OR2 || gate.getLogicType() == LogicType.OUTPUT_BUFFER) {
 
-                Optional<Map.Entry<String, Double>> maxFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
-                        .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
-                        .filter(e -> !usedGroups.contains(e.getKey()))
-                        .max(Map.Entry.comparingByValue());
+                    b.add(assignment.get(gate).getGroup());
+                    b.add(assignment.get(gate).getGroup());
 
-                if (minFactor.isEmpty() || maxFactor.isEmpty()) {
-                    logger.error("Unable to obtain TF factors for dummy gate.");
-                    return null;
+                } else {
+
+                    Optional<Map.Entry<String, Double>> minFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
+                            .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
+                            .filter(e -> !usedGroups.contains(e.getKey()))
+                            .min(Map.Entry.comparingByValue());
+
+                    Optional<Map.Entry<String, Double>> maxFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
+                            .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
+                            .filter(e -> !usedGroups.contains(e.getKey()))
+                            .max(Map.Entry.comparingByValue());
+
+                    if (minFactor.isEmpty() || maxFactor.isEmpty()) {
+                        logger.error("Unable to obtain TF factors for dummy gate.");
+                        return null;
+                    }
+
+                    b.add(minFactor.get().getKey());
+                    b.add(maxFactor.get().getKey());
                 }
-
-                b.add(minFactor.get().getKey());
-                b.add(maxFactor.get().getKey());
 
                 Map<String, List<?>> gateMap = new HashMap<>();
                 gateMap.put("a", a);

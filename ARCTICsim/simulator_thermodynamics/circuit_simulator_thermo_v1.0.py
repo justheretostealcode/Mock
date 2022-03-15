@@ -80,6 +80,15 @@ def real_from_logic_input_matrix(linputs, library, circuit):
                 inputs[n][m] = 0.
     return inputs
 
+def round_to_magnitude(r, b):
+    f = (b % 1)*10
+    m = 1
+    while int(f % 10) == 0:
+        m += 1
+        f *= 10
+    return round(r, m - 1)
+
+
 #____________________________________________________________________________
 #   Functions related to executing the actual simulation
 #____________________________________________________________________________
@@ -156,7 +165,7 @@ def sim_run():
     for real_input, bool_output, ttix in used_inputs:
         circuit.set_initial_value(real_input, ttix)
         output, err, iter = circuit.solve(tol=float(settings['err']), max_iter=int(settings['max_iter']))
-        results[bool_output][c[bool_output]] = output
+        results[bool_output][c[bool_output]] = round_to_magnitude(output, 2*settings['err'])
         c[bool_output] += 1
     return circuit_score(results)
 

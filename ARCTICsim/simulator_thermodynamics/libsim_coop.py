@@ -328,12 +328,15 @@ class nor_circuit:
                     if self.w[m, n] == 1:
                         val = 0
                         forced = False
-                        if force_env and self.gates[m].type == 0 and ((self.gates[n].type == 0 and self.bound_env[m] == self.bound_env[n]) or (self.gates[n].type == 1 and self.bound_env[m] != self.bound_env[n])):
+                        if force_env and self.gates[m].type != 1 and ((self.gates[n].type == 0 and self.bound_env[m] == self.bound_env[n]) or (self.gates[n].type == 1 and self.bound_env[m] != self.bound_env[n])):
                             forced_value = 0
-                            if (self.bound_env[n] == self.gates[n].type): # either NOR gate and 0-env or implicit OR gate and 1-env
-                                forced_value = self.bound_a_max[m]
+                            if self.gates[m].type == -1:
+                                forced_value = self.gates[m].out(n, int(bool(self.gates[n].type) != bool(self.bound_env[n])))
                             else:
-                                forced_value = self.bound_a_min[m]
+                                if (self.bound_env[n] == self.gates[n].type): # either NOR gate and 0-env or implicit OR gate and 1-env
+                                    forced_value = self.bound_a_max[m]
+                                else:
+                                    forced_value = self.bound_a_min[m]
                             val = forced_value
                             forced = True
                         else:
@@ -362,8 +365,7 @@ class nor_circuit:
     def set_dummy_mode(self, ttix=0):
         # this mode must be set at least once if dummy gates are present
         for n in range(len(self.gates)):
-            if self.gates[n].type != -1:  # no dummy
-                self.bound_env[n] = self.structure.gate_truthtables[self.gates[n].node][ttix]
+            self.bound_env[n] = self.structure.gate_truthtables[self.gates[n].node][ttix]
 
     def set_initial_value(self, values, ttix=-1):
         val = np.zeros(len(self.node_idx))

@@ -1,6 +1,4 @@
 {
-  "valid" : true,
-  "identifierMap" : {
     "a" : "input_1",
     "b" : "input_2",
     "c" : "input_3",
@@ -10,5 +8,4 @@
     "NOR2_3" : "F1_AmeR",
     "O" : "output_1",
     "NOR2_4" : "H1_HlyIIR"
-  }
-}
+ }

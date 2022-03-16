@@ -3,6 +3,7 @@ package de.tu_darmstadt.rs.synbio;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
+import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentCounter;
 import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.CircuitDeserializer;
@@ -175,9 +176,9 @@ public class SimulationTestbench {
                         if (result.getStructure() != null && result.getAssignment() != null) {
                             logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + result.getAssignment().getIdentifierMap());
 
-                    /*AssignmentCounter counter = new AssignmentCounter(structure, gateLib, mapConfig, simConfig);
-                    long maxAssignments = counter.assign().getNeededSimulations();
-                    logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");*/
+                        AssignmentCounter counter = new AssignmentCounter(structure, gateLib, mapConfig, simConfig);
+                        long maxAssignments = counter.assign().getNeededSimulations();
+                        logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");
 
                             //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("11101100_exhaustive_assignment.json"), result.getAssignment());
 

@@ -358,6 +358,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         long numberOfItemsAddedAndSkipped = 0;
 
+        double errorThreshold = 0.0;
+
         QueueItem currentItem;
         Assignment currentAssignment;
         //System.out.print("Iteration: " + 0);
@@ -366,10 +368,10 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
             searchTreeVisualizer.add(currentItem, bestScore, false);
 
-            //if (iteration % 100 == 0)  // Only update every hundred iterations
-            //    System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
+            if (iteration % 100 == 0)  // Only update every hundred iterations
+                System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
 
-            if (currentItem.val <= bestScore) {
+            if (currentItem.val <= bestScore - errorThreshold) {
                 // Removes item if the best score has changed after this queue item has been added to the queue
                 numberOfItemsAddedAndSkipped++;
                 continue;
@@ -402,7 +404,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                                 ref.highestScore = Math.max(ref.highestScore, dVal);
                                 return QueueItem.getQueueItem(assignment, dVal);
                             })
-                            .filter(item -> bVisualize || item.val > finalBestScore)              // Filter the assignments which do not have sufficient score (Filtering is skipped if visualisation is turned on, in order to result obtain complete Search Trees)
+                            .filter(item -> bVisualize || item.val > finalBestScore - errorThreshold)              // Filter the assignments which do not have sufficient score (Filtering is skipped if visualisation is turned on, in order to result obtain complete Search Trees)
                             .sorted(comparator)// Ensures, that the search strategy visits the best node first
                             .collect(Collectors.toList());
                     strategy.addToQueue(queueItems);

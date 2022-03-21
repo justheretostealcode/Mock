@@ -358,11 +358,11 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         long numberOfItemsAddedAndSkipped = 0;
 
-        double errorThreshold = 0.0;
+        double errorThreshold = mapConfig.getBabFast() ? 0.0 : 0.001;
 
         QueueItem currentItem;
         Assignment currentAssignment;
-        //System.out.print("Iteration: " + 0);
+
         long iteration = 0;
         while ((currentItem = strategy.getNext()) != null) {    // Get the next element from queue and repeat until the queue is empty
 
@@ -371,7 +371,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             if (iteration % 100 == 0)  // Only update every hundred iterations
                 System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
 
-            if (currentItem.val <= bestScore - errorThreshold) {
+            if (currentItem.val <= bestScore * (1.0 - errorThreshold)) {
                 // Removes item if the best score has changed after this queue item has been added to the queue
                 numberOfItemsAddedAndSkipped++;
                 continue;
@@ -395,7 +395,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
                 if (childSize < logicGates.length - 1) {    // The child assignments are intermediate nodes (no leaves)
 
-                    double finalBestScore = bestScore;
+                    double finalBestScore = bestScore  * (1.0 - errorThreshold);
                     List<QueueItem> queueItems = childs.stream()
                             .map(assignment -> {                                    // Map to QueueItem
 
@@ -404,7 +404,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                                 ref.highestScore = Math.max(ref.highestScore, dVal);
                                 return QueueItem.getQueueItem(assignment, dVal);
                             })
-                            .filter(item -> bVisualize || item.val > finalBestScore - errorThreshold)              // Filter the assignments which do not have sufficient score (Filtering is skipped if visualisation is turned on, in order to result obtain complete Search Trees)
+                            .filter(item -> bVisualize || item.val > finalBestScore)              // Filter the assignments which do not have sufficient score (Filtering is skipped if visualisation is turned on, in order to result obtain complete Search Trees)
                             .sorted(comparator)// Ensures, that the search strategy visits the best node first
                             .collect(Collectors.toList());
                     strategy.addToQueue(queueItems);
@@ -415,10 +415,10 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                         ref.highestScore = Math.max(ref.highestScore, val);
                         searchTreeVisualizer.addLeafNode(assignment, val, bestScore, true);
 
-                        double growth = 1.0;//interfaces[assignment.size() - 1].getLastGrowth();
-                        if (val > bestScore && growth >= 0.75) {   // Since the node is a terminal node (leave), one needs to check if it is better than the current best solution
+                        if (val > bestScore) {   // Since the node is a terminal node (leave), one needs to check if it is better than the current best solution
                             bestScore = val;
                             bestAssignment = assignment;
+                            logger.info("new best score: " + bestScore);
                             searchStatsLogger.notifyNewBestAssignment(iteration, iNeededSimulations);
                         }
                     }

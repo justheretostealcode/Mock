@@ -128,8 +128,8 @@ public class SimulatorInterface {
 
             String assignmentStr = mapper.writeValueAsString(assignmentMap);
 
-            //if (assignmentIdentifiers.toString().equals("{NOR2_1=S1_SrpR, NOR2_0=F1_AmeR, NOR2_2=N1_LmrA, O=output_1}"))
-            //    mapper.writerWithDefaultPrettyPrinter().writeValue(new File("11101100_partial_assignment.json"), assignmentMap);
+            //if (mode == PropagationMode.BOUNDING)
+            //    logger.info("\t"+assignmentStr);
 
             writer.write("update_settings " + simArgs + additionalArgs + " --assignment=" + assignmentStr);
             writer.newLine();
@@ -150,24 +150,19 @@ public class SimulatorInterface {
 
             } while (output == null || !output.startsWith(scorePrefix));
 
-            //String scoreStr = reader.readLine();
-            //String growthString = reader.readLine();
-
-            /*if (scoreStr == null || !scoreStr.startsWith("O ")) {
-                logger.error("Simulator did not return legal score value.\n" + getError());
-                return null;
-            }*/
-
             output = output.substring(scorePrefix.length());
-            //logger.info(output);
 
-            //logger.info(output + "," + assignmentStr);
+            //if (assignmentStr.contains("\"NOR2_1\":\"L1_LitR\""))
+                //logger.info(output + "," + assignmentStr);
 
             // relevant to correctly parse infinity as returned score
-            score = output.equals("inf") ? Double.POSITIVE_INFINITY : Double.parseDouble(output);
+            try {
+                score = output.equals("inf") ? Double.POSITIVE_INFINITY : Double.parseDouble(output);
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+            }
 
-            //growthString = growthString.substring(7);
-            //growth = Double.parseDouble(growthString);
+            //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("assignment_cello_00000110_partial.json"), assignmentMap);
 
         } catch (Exception e) {
             e.printStackTrace();

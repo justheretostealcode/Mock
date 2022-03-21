@@ -14,7 +14,6 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -53,14 +52,14 @@ public class BoundingValidator extends AssignmentSearchAlgorithm {
 
         do {
             assignment = assigner.getNextAssignment();
-        } while(assignment != null && !assignment.fulfilsConstraints(structure));
+        } while (assignment != null && !assignment.fulfilsConstraints(structure));
 
         while (assignment != null) {
 
             Assignment completeAssignment = new Assignment(assignment);
             double exactScore = simulator.simulate(completeAssignment, SimulatorInterface.PropagationMode.EXACT);
 
-            for (int i = 0; i < gates.size() - 1; i ++) {
+            for (int i = 0; i < gates.size() - 1; i++) {
 
                 Gate gate = gates.get(i);
 
@@ -76,12 +75,12 @@ public class BoundingValidator extends AssignmentSearchAlgorithm {
                     return null;
                 }
 
-                numSims ++;
+                numSims++;
             }
 
             do {
                 assignment = assigner.getNextAssignment();
-            } while(assignment != null && !assignment.fulfilsConstraints(structure));
+            } while (assignment != null && !assignment.fulfilsConstraints(structure));
         }
 
         simulator.shutdown();

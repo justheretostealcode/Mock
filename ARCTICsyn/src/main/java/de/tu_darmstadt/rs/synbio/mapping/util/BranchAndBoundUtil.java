@@ -292,16 +292,17 @@ public class BranchAndBoundUtil {
 
             Map<String, Map<?, ?>> dummyMap = new HashMap<>();
             String dummyName = dummy.getIdentifier();
+            LogicType dummyType = dummy.getLogicType();
 
-            /* list a contains promoter activity interval for given dummy logic type */
+            /* list a contains widest promoter activity interval for given dummy logic type */
 
             List<Double> a = new ArrayList<>();
 
-            Optional<Double> minActivity = library.getRealizations().get(dummy.getLogicType()).stream()
+            Optional<Double> minActivity = library.getRealizations().get(dummyType).stream()
                     .filter(r -> !usedGroups.contains(r.getGroup()))
                     .map(r -> r.getCharacterization().getYmin()).min(Double::compareTo);
 
-            Optional<Double> maxActivity = library.getRealizations().get(dummy.getLogicType()).stream()
+            Optional<Double> maxActivity = library.getRealizations().get(dummyType).stream()
                     .filter(r -> !usedGroups.contains(r.getGroup()))
                     .map(r -> r.getCharacterization().getYmax()).max(Double::compareTo);
 
@@ -312,6 +313,29 @@ public class BranchAndBoundUtil {
 
             a.add(minActivity.get());
             a.add(maxActivity.get());
+
+            /* list i contains narrowest promoter activity interval for given dummy logic type */
+
+            List<Double> i = new ArrayList<>();
+
+            if (dummyType == LogicType.INPUT) {
+
+                Optional<Double> maxOffActivity = library.getRealizations().get(dummyType).stream()
+                        .filter(r -> !usedGroups.contains(r.getGroup()))
+                        .map(r -> r.getCharacterization().getYmin()).max(Double::compareTo);
+
+                Optional<Double> minOnActivity = library.getRealizations().get(dummyType).stream()
+                        .filter(r -> !usedGroups.contains(r.getGroup()))
+                        .map(r -> r.getCharacterization().getYmax()).min(Double::compareTo);
+
+                if (maxOffActivity.isEmpty() || minOnActivity.isEmpty()) {
+                    logger.error("Unable to obtain activities for dummy gate.");
+                    return null;
+                }
+
+                i.add(minOnActivity.get());
+                i.add(maxOffActivity.get());
+            }
 
             for (Gate gate : assignment.keySet()) {
 
@@ -334,12 +358,12 @@ public class BranchAndBoundUtil {
                 } else {
 
                     Optional<Map.Entry<String, Double>> minFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
-                            .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
+                            .filter(e -> library.getRealizations().get(dummyType).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
                             .filter(e -> !usedGroups.contains(e.getKey()))
                             .min(Map.Entry.comparingByValue());
 
                     Optional<Map.Entry<String, Double>> maxFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
-                            .filter(e -> library.getRealizations().get(dummy.getLogicType()).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
+                            .filter(e -> library.getRealizations().get(dummyType).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
                             .filter(e -> !usedGroups.contains(e.getKey()))
                             .max(Map.Entry.comparingByValue());
 
@@ -355,6 +379,9 @@ public class BranchAndBoundUtil {
                 Map<String, List<?>> gateMap = new HashMap<>();
                 gateMap.put("a", a);
                 gateMap.put("b", b);
+
+                if (dummyType == LogicType.INPUT)
+                    gateMap.put("i", i);
 
                 dummyMap.put(gateName, gateMap);
             }

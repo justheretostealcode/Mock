@@ -204,14 +204,20 @@ class nor_circuit:
                 self.dummy_idx[int(v[1])] = self.node_idx[k]
                 # translate the dict describing the dummys behaviour into index notation
                 # gate_idx -> env -> a_out, p_idx
-                codebook = np.zeros([len(node_list), 2, 2])
+                codebook = np.zeros([len(node_list), 2, 3])
                 for l, w in self.assignment.dummys[v].items():
                     # TODO: this can be shorter
                     nidx = self.node_idx[l]
                     codebook[nidx, 0, 0] = float(w['a'][1])
                     codebook[nidx, 1, 0] = float(w['a'][0])
-                    codebook[nidx, 0, 1] = self.tf_idx[w['b'][1]][0]
-                    codebook[nidx, 1, 1] = self.tf_idx[w['b'][0]][0]
+                    if 'i' in w:
+                        codebook[nidx, 0, 1] = float(w['i'][1])
+                        codebook[nidx, 1, 1] = float(w['i'][0])
+                    else:
+                        codebook[nidx, 0, 1] = float(0)
+                        codebook[nidx, 1, 1] = float(0)
+                    codebook[nidx, 0, 2] = self.tf_idx[w['b'][1]][0]
+                    codebook[nidx, 1, 2] = self.tf_idx[w['b'][0]][0]
                 self.gates[self.node_idx[k]] = _dummy_gate(k, v, codebook)
             elif v.startswith('output'):  # implicit or / reporter TF
                 self.g_p[self.node_idx[k]] = self.dev_idx[v][0]
@@ -328,10 +334,13 @@ class nor_circuit:
                     if self.w[m, n] == 1:
                         val = 0
                         forced = False
-                        if force_env and self.gates[m].type != 1 and ((self.gates[n].type == 0 and self.bound_env[m] == self.bound_env[n]) or (self.gates[n].type == 1 and self.bound_env[m] != self.bound_env[n])):
+                        if force_env and (self.mutable[m] or self.gates[m].type == -1) and self.gates[m].type != 1 and ((self.gates[n].type == 0 and self.bound_env[m] == self.bound_env[n]) or (self.gates[n].type == 1 and self.bound_env[m] != self.bound_env[n])):
                             forced_value = 0
                             if self.gates[m].type == -1:
-                                forced_value = self.gates[m].out(n, int(bool(self.gates[n].type) != bool(self.bound_env[n])))
+                                if not self.mutable[m]:
+                                    forced_value = self.gates[m].alt_out(n, int(bool(self.gates[n].type) != bool(self.bound_env[n])))
+                                else:
+                                    forced_value = self.gates[m].out(n, int(bool(self.gates[n].type) != bool(self.bound_env[n])))
                             else:
                                 if (self.bound_env[n] == self.gates[n].type): # either NOR gate and 0-env or implicit OR gate and 1-env
                                     forced_value = self.bound_a_max[m]
@@ -598,8 +607,10 @@ class _dummy_gate:
         self.max = 0
     def out(self, g_idx, env):
         return self.codebook[g_idx, env, 0]
+    def alt_out(self, g_idx, env):
+        return self.codebook[g_idx, env, 1]
     def promoter(self, g_idx, env):
-        return int(self.codebook[g_idx, env, 1])
+        return int(self.codebook[g_idx, env, 2])
     def __str__(self):
         return self.name + ': None (dummy gate, codebook size: ' + len(self.codebook[:, 0, 0]) + ')'
 

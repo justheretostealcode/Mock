@@ -373,6 +373,10 @@ class nor_circuit:
 
     def set_dummy_mode(self, ttix=0):
         # this mode must be set at least once if dummy gates are present
+        if self.structure.gate_truthtables is None:
+            if DEBUG_LEVEL > 0:
+                print('Warning: ' + hl('no gate truthtables') + ' found! Bounding mode will most likely produce errors!')
+            return
         for n in range(len(self.gates)):
             self.bound_env[n] = self.structure.gate_truthtables[self.gates[n].node][ttix]
 
@@ -431,9 +435,11 @@ class circuit_structure:
                     self.stats['n_nodes'] += 1
                     self.gates.add(n['id'])
             self.nodes = self.inputs | self.gates | self.outputs
-            self.gate_truthtables = dict()
-            for k, v in circ['gate_truthtables'].items():
-                self.gate_truthtables[k] = np.array(list(map(int, v)))
+            self.gate_truthtables = None
+            if 'gate_truthtables' in circ:
+                self.gate_truthtables = dict()
+                for k, v in circ['gate_truthtables'].items():
+                    self.gate_truthtables[k] = np.array(list(map(int, v)))
             self.internal_edges = set()
             self.outgoing_edges = set()
             self.adjacency = {'in': dict_from_list(self.nodes, set()), 'out': dict_from_list(self.nodes, set())}

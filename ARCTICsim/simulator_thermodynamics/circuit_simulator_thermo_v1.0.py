@@ -10,7 +10,9 @@ import math
 import numpy as np
 from configparser import ConfigParser
 from argparse import ArgumentParser
-import os.path
+import os.path as op
+import os
+import inspect
 import itertools
 import shlex
 import libsim_coop as sim
@@ -18,6 +20,9 @@ import libsim_coop as sim
 # standard configuration path
 version = '1.0'
 settings_config_path = './settings_config.cfg'
+
+# pwd
+here = op.dirname(op.abspath(inspect.getfile(inspect.currentframe())))
 
 #____________________________________________________________________________
 #   Global variables to share among threads written only beforehand
@@ -58,7 +63,7 @@ type_dict = dict({
 
 def check_load_and_create(input, file, cluss):
     # check if what we got is a file or a marshalled json object
-    if os.path.exists(input):
+    if op.exists(input):
         file = sim.json_file(input)
         json = file.content
     else:
@@ -105,7 +110,7 @@ def prepare_simulation():
     # check and load assignment
     assignment = check_load_and_create(settings['assignment'], assignment_file, sim.circuit_assignment)
     # build the circuit
-    circuit = sim.nor_circuit(structure, assignment, library, solver=sim.nor_circuit_solver_banach)
+    circuit = sim.nor_circuit(structure, assignment, library, solver=sim.nor_circuit_solver_powell)
     # generate the inputs (I assume, I have a valid truthtable given)
     # we further assume, the inputs are numerated in an alphabethical order
     n_ins = int(round(math.log(len(circuit.structure.truthtable), 2)))
@@ -194,6 +199,9 @@ command_dict = dict({
 
 
 if __name__ == "__main__":
+
+    # change working directory to here
+    os.chdir(here)
 
     # load default settings first
     settings, types, comments = load_settings(settings_config_path)

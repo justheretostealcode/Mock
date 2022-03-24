@@ -6,6 +6,7 @@ Created on Mon Oct 12 13:52:04 2020
 """
 
 import numpy as np
+import numpy.linalg as nla
 import csv
 import math
 import matplotlib.pyplot as plt
@@ -13,6 +14,7 @@ import json
 import time
 import os
 import sys
+import scipy.optimize as so
 from copy import copy, deepcopy
 
 # The interfacing in the simulator methods and marshalling and demarshalling
@@ -382,11 +384,11 @@ class nor_circuit:
 
     def set_initial_value(self, values, ttix=-1):
         val = np.zeros(len(self.node_idx))
+        if ttix != -1:
+            self.set_dummy_mode(ttix)
         for input in self.structure.inputs:
             val[self.node_idx[input]] = values[reverse_input_encoding[input]]
         self.solver.set_initial_value(val)
-        if ttix != -1:
-            self.set_dummy_mode(ttix)
 
     def set_solver(self, solver_class):
         self.solver = solver_class(self, None, False)
@@ -460,10 +462,26 @@ class circuit_structure:
     def combinational_order(self):
         if self.order is None:
             self.order = list()
-            for gate in self.gates:
-                for n in range(len(self.order)):
-                    if self.order[n] in self.adjacency['out'][gate]:
-                        self.order.insert(n, gate)
+            node_list = list(self.nodes)
+            visited = dict(zip(list(self.nodes), [False for _ in range(len(self.nodes))]))
+            while len(node_list) > 0:
+                nix = 0
+                for node in node_list:
+                    good = True
+                    for target in self.adjacency['out'][node]:
+                        if not visited[target]:
+                            good = False
+                            break
+                    if not good:
+                        nix += 1
+                        continue
+                    self.order.insert(0, node)
+                    visited[node] = True
+                    node_list.pop(nix)
+                    break
+            if DEBUG_LEVEL > 1:
+                print('Combinational order:')
+                print(' -> '.join(list(map(hl, self.order))))
         return self.order
     # return the JSON representation of this graph
     def __str__(self):
@@ -660,7 +678,7 @@ class nor_circuit_solver_banach:
         self.values = vs
         return (vs, err, run)
     def _debug_step(self, vs, run, err):
-        print('---------\n' + head('Outputs') + ' (run ' + hl(str(run)) + ', err < ' + hl(str(err)) + ', logic = ' + hl(str(self.circuit.bound_env[self.circuit.node_idx[list(self.circuit.structure.outputs)[0]]])) + '): ')
+        print('---------\n' + head('Outputs') + ' (run = ' + hl(str(run)) + ', err < ' + hl(str(err)) + ', logic = ' + hl(str(self.circuit.bound_env[self.circuit.node_idx[list(self.circuit.structure.outputs)[0]]])) + '): ')
         for k, v in self.circuit.node_idx.items():
             if self.circuit.gates[self.circuit.node_idx[k]].type == 0:
                 print('{k:<30}'.format(k = hl(k) + ' (env = ' + str(self.circuit.bound_env[v]) + ')') + ': ' + hl(str(vs[v])))
@@ -670,10 +688,72 @@ class nor_circuit_solver_banach:
                 print('{k:<30}'.format(k = hl(k) + ' (implicit or)') + ': ' + hl(str(vs[v])))
 
 
-# This solver uses Newton's method. Reliable and fast (quadratic convergence)
-class circuit_solver_newton:
-    def __init__(self, inputs, tfs, gates):
-        pass
+# Initial guess using combinatorial order and then use scipy's root solver
+class nor_circuit_solver_powell:
+    def __init__(self, circuit, values, bound=False):
+        self.circuit = circuit
+        if values is not None:
+            self.values = np.copy(values)
+        else:
+            self.values = np.zeros(len(self.circuit))
+        self.bound = bound
+    def set_initial_value(self, initial_value):
+        self.values = initial_value
+        # create initial guess from crosstalk-free combinational solution
+        order = self.circuit.structure.combinational_order()
+        for node in order:
+            gix = self.circuit.node_idx[node]
+            if not self.circuit.mutable[gix]:
+                continue
+            p_a = np.zeros(len(self.circuit.p_idx))
+            p_a[self.circuit.g_p[gix]] = np.sum(self.values[self.circuit.w[:, gix].astype(bool)])
+            self.values[gix] = self.circuit.gates[gix].out(p_a)
+            #print(p_a)
+        # debug print the initial guess
+        if (DEBUG_LEVEL > 1):
+            self._debug_step(self.values, 'initial guess', 'unknown')
+    def bounding_mode(self, bound, heuristic=False):
+        self.heuristic = heuristic
+        self.bound = bound
+    def solve(self, tol=10**(-2), max_iter=100):
+        # Iterate the points using Banach's fixed point theorem
+        # to estimate the error, compare old and new node values
+        err = np.inf
+        run = 0
+        if self.bound:
+            function = (lambda a: self.circuit.propagate_bound(a, heuristic=self.heuristic))
+        else:
+            function = self.circuit.propagate
+        vs = self.values
+        mutix = self.circuit.mutable.astype(bool)
+        immutix = np.invert(mutix)
+        def fp(v, mutix, immutix, v_im, N):
+            r = np.empty(N)
+            r[mutix] = v
+            r[immutix] = v_im
+            s = function(r) - r
+            return s[mutix]
+        def callback(x, f, r):
+            if (DEBUG_LEVEL > 1):
+                self._debug_step(x, r[0], 'unknown')
+            r[0] += 1
+        obj = (lambda v, mutix=mutix, immutix=immutix, v_im=vs[immutix], N=len(vs): fp(v, mutix, immutix, v_im, N))
+        result = so.root(obj, np.copy(vs[mutix]), tol=tol, method='hybr')#, callback=(lambda x, f, r=[run]: callback))
+        vs[mutix] = result.x
+        err = nla.norm(result.fun)
+        if (DEBUG_LEVEL > 0):
+            self._debug_step(vs, result.nfev, err)
+        self.values = vs
+        return (vs, 'unknown', run)
+    def _debug_step(self, vs, run, err):
+        print('---------\n' + head('Outputs') + ' (run = ' + hl(str(run)) + ', err < ' + hl(str(err)) + ', logic = ' + hl(str(self.circuit.bound_env[self.circuit.node_idx[list(self.circuit.structure.outputs)[0]]])) + '): ')
+        for k, v in self.circuit.node_idx.items():
+            if self.circuit.gates[self.circuit.node_idx[k]].type == 0:
+                print('{k:<30}'.format(k = hl(k) + ' (env = ' + str(self.circuit.bound_env[v]) + ')') + ': ' + hl(str(vs[v])))
+            elif self.circuit.gates[self.circuit.node_idx[k]].type == -1:
+                print('{k:<30}'.format(k = hl(k)) + ': dummy')
+            elif self.circuit.gates[self.circuit.node_idx[k]].type == 1:
+                print('{k:<30}'.format(k = hl(k) + ' (implicit or)') + ': ' + hl(str(vs[v])))
 
 #____________________________________________________________________________
 #   File interfacing classes

@@ -129,7 +129,7 @@ public class GateLibrary {
             /* fill device <-> promoter factors */
             Iterator<Map.Entry<String, JsonNode>> it = promoter.get("factors").get("tf_only").fields();
             devicePromoterFactors.put(device, new HashMap<>());
-            it.forEachRemaining(e -> devicePromoterFactors.get(device).put(e.getKey(), e.getValue().doubleValue()));
+            it.forEachRemaining(e -> devicePromoterFactors.get(device).put(e.getKey(), e.getValue().get(e.getValue().size() - 1).doubleValue()));
         }
 
         /* add gate for each tf by getting its device and promoter */

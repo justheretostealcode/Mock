@@ -180,7 +180,8 @@ public class SimulationTestbench {
                         long maxAssignments = counter.assign().getNeededSimulations();
                         logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");
 
-                            //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("11101100_exhaustive_assignment.json"), result.getAssignment());
+                        //structure.save(new File(structure.getIdentifier() + ".json"));
+                        //mapper.writerWithDefaultPrettyPrinter().writeValue(new File(structure.getIdentifier() + "_assignment.json"), result.getAssignment().getIdentifierMap());
 
                             //result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
                             //        "result_" + child.getName() + ".dot"), result.getAssignment());

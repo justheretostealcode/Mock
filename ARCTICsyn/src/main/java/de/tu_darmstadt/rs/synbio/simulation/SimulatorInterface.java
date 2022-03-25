@@ -144,6 +144,7 @@ public class SimulatorInterface {
 
                 if (!simProcess.isAlive()) {
                     logger.error("Simulator exited during simulation: " + getError());
+                    //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("last.json"), assignmentMap);
                     shutdown();
                     return null;
                 }
@@ -162,7 +163,13 @@ public class SimulatorInterface {
                 logger.error(e.getMessage());
             }
 
-            //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("assignment_cello_00000110_partial.json"), assignmentMap);
+            /*logger.info(score+"");
+            if (mode==PropagationMode.BOUNDING)
+                mapper.writerWithDefaultPrettyPrinter().writeValue(new File("partial.json"), assignmentMap);*/
+            //if (score == 1.0)
+                //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("full.json"), assignmentMap);
+
+
 
         } catch (Exception e) {
             e.printStackTrace();

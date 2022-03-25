@@ -708,7 +708,7 @@ class nor_circuit_solver_powell:
             p_a = np.zeros(len(self.circuit.p_idx))
             p_a[self.circuit.g_p[gix]] = np.sum(self.values[self.circuit.w[:, gix].astype(bool)])
             if self.circuit.gates[gix].type == -1:
-                self.values[gix] = self.circuit.gates[gix].out(p_a, self.bound_env[gix])
+                self.values[gix] = self.circuit.gates[gix].out(p_a, self.circuit.bound_env[gix])
             else:
                 self.values[gix] = self.circuit.gates[gix].out(p_a)
             #print(p_a)

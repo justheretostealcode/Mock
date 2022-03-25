@@ -627,12 +627,16 @@ class _dummy_gate:
         self.dev = dev
         self.codebook = codebook
         self.type = -1
-        self.min = 0
-        self.max = 0
+        self.min = np.min(codebook[:, 1, 0])
+        self.max = np.max(codebook[:, 0, 0])
     def out(self, g_idx, env):
         return self.codebook[g_idx, env, 0]
     def alt_out(self, g_idx, env):
         return self.codebook[g_idx, env, 1]
+    def extremes(self, env):
+        if not env:
+            return self.max
+        return self.min
     def promoter(self, g_idx, env):
         return int(self.codebook[g_idx, env, 2])
     def __str__(self):
@@ -708,7 +712,7 @@ class nor_circuit_solver_powell:
             p_a = np.zeros(len(self.circuit.p_idx))
             p_a[self.circuit.g_p[gix]] = np.sum(self.values[self.circuit.w[:, gix].astype(bool)])
             if self.circuit.gates[gix].type == -1:
-                self.values[gix] = self.circuit.gates[gix].out(p_a, self.circuit.bound_env[gix])
+                self.values[gix] = self.circuit.gates[gix].extremes(self.circuit.bound_env[gix])
             else:
                 self.values[gix] = self.circuit.gates[gix].out(p_a)
             #print(p_a)

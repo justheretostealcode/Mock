@@ -707,7 +707,10 @@ class nor_circuit_solver_powell:
                 continue
             p_a = np.zeros(len(self.circuit.p_idx))
             p_a[self.circuit.g_p[gix]] = np.sum(self.values[self.circuit.w[:, gix].astype(bool)])
-            self.values[gix] = self.circuit.gates[gix].out(p_a)
+            if self.circuit.gates[gix].type == -1:
+                self.values[gix] = self.circuit.gates[gix].out(p_a, self.bound_env[gix])
+            else:
+                self.values[gix] = self.circuit.gates[gix].out(p_a)
             #print(p_a)
         # debug print the initial guess
         if (DEBUG_LEVEL > 1):

@@ -288,6 +288,10 @@ public class BranchAndBoundUtil {
         Set<String> usedGroups = new HashSet<>();
         assignment.values().forEach(r -> usedGroups.add(r.getGroup()));
 
+        /* sets of used TFs for dummy gates for each agate */
+        Map<Gate, Set<String>> setMinFactors = new HashMap<>();
+        Map<Gate, Set<String>> setMaxFactors = new HashMap<>();
+
         for (Gate dummy : dummyGates) {
 
             Map<String, Map<?, ?>> dummyMap = new HashMap<>();
@@ -341,10 +345,14 @@ public class BranchAndBoundUtil {
 
                 String gateName = gate.getIdentifier();
 
+                setMinFactors.putIfAbsent(gate, new HashSet<>());
+                setMaxFactors.putIfAbsent(gate, new HashSet<>());
+
                 /*
                     list b contains TFs with least/biggest binding factor to given gate
                     - factors corresponding to given gate promoter are streamed and their TFs are filtered to match dummy gate type
                     - TFs used in assignment are excluded
+                    - TFs used in other dummy gates for current gate are excluded
                  */
 
                 List<String> b = new ArrayList<>();
@@ -360,11 +368,13 @@ public class BranchAndBoundUtil {
                     Optional<Map.Entry<String, Double>> minFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
                             .filter(e -> library.getRealizations().get(dummyType).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
                             .filter(e -> !usedGroups.contains(e.getKey()))
+                            .filter(e -> !setMinFactors.get(gate).contains(e.getKey()))
                             .min(Map.Entry.comparingByValue());
 
                     Optional<Map.Entry<String, Double>> maxFactor = library.getTfFactorsForDevice(assignment.get(gate).getIdentifier()).entrySet().stream()
                             .filter(e -> library.getRealizations().get(dummyType).stream().map(GateRealization::getGroup).collect(Collectors.toList()).contains(e.getKey()))
                             .filter(e -> !usedGroups.contains(e.getKey()))
+                            .filter(e -> !setMaxFactors.get(gate).contains(e.getKey()))
                             .max(Map.Entry.comparingByValue());
 
                     if (minFactor.isEmpty() || maxFactor.isEmpty()) {
@@ -374,6 +384,9 @@ public class BranchAndBoundUtil {
 
                     b.add(minFactor.get().getKey());
                     b.add(maxFactor.get().getKey());
+
+                    setMinFactors.get(gate).add(minFactor.get().getKey());
+                    setMaxFactors.get(gate).add(maxFactor.get().getKey());
                 }
 
                 Map<String, List<?>> gateMap = new HashMap<>();

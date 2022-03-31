@@ -93,7 +93,7 @@ public class CompatibilityChecker {
             for (String destination : deviceToTf.keySet()) {
 
                 double randomNumber = rand.nextDouble();
-                matrix.addEntry(source, destination, null, randomNumber > 0.8);
+                matrix.addEntry(source, destination, null, randomNumber > 0.5);
 
                 for (String secondSource : deviceToTf.keySet()) {
 
@@ -101,7 +101,7 @@ public class CompatibilityChecker {
                         matrix.addEntry(source, destination, secondSource, false);
                     } else {
                         randomNumber = rand.nextDouble();
-                        matrix.addEntry(source, destination, secondSource, randomNumber > 0.8);
+                        matrix.addEntry(source, destination, secondSource, randomNumber > 0.5);
                     }
                 }
             }
@@ -155,7 +155,7 @@ public class CompatibilityChecker {
             }
         }
 
-        /* Clause 2: Every promoter and its group members must be assigned maximally once */
+        /* Clause 2: Every device and its group members must be assigned maximally once */
 
         for (String deviceId : deviceToTf.keySet()) {
 
@@ -163,7 +163,7 @@ public class CompatibilityChecker {
 
             for (Gate gate : gates) {
 
-                builder.append(gate + "_" + deviceId + "& ~(");
+                builder.append("(" + gate + "_" + deviceId + "& ~(");
 
                 for (Gate gate2 : gates) {
 
@@ -176,15 +176,13 @@ public class CompatibilityChecker {
                 }
 
                 builder.deleteCharAt(builder.length() - 1);
-                builder.append(")|");
+                builder.append("))|");
             }
 
             builder.append("(");
             for (Gate gate : gates) {
 
-                for (String groupMember : tfToDevice.get(deviceToTf.get(deviceId))) {
-                    builder.append("~" + gate + "_" + groupMember + "&");
-                }
+                builder.append("~" + gate + "_" + deviceId + "&");
             }
 
             builder.deleteCharAt(builder.length() - 1);
@@ -218,7 +216,6 @@ public class CompatibilityChecker {
                 logger.error(e.getMessage());
             }
         }
-
 
         /* Clause 4: All triples of devices have to be compatible */
 
@@ -272,9 +269,9 @@ public class CompatibilityChecker {
         /* solve SAT */
 
         Tristate result = miniSat.sat();
-        org.logicng.datastructures.Assignment ass = miniSat.model();
 
-        /*if (ass != null) {
+        /*org.logicng.datastructures.Assignment ass = miniSat.model();
+        if (ass != null) {
             logger.info("SAT model:");
             for (Variable pos : ass.positiveLiterals()) {
                 if (!pos.name().startsWith("@"))

@@ -8,6 +8,7 @@ import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
+import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityChecker;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.QueueItem;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.SearchStatsLogger;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.SearchTreeVisualizer;
@@ -36,6 +37,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private final Map<String, LogicType> replacedLogicTypes;
     //private final SimulatorInterface[] interfaces;
     private final SimulatorInterface simulator;
+
+    private final CompatibilityChecker checker;
 
     private final Gate outputGate;
     private final GateRealization outputRealization;
@@ -77,6 +80,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         Pair<Circuit[], Map<String, LogicType>> subProblemResult = getSubProblems(this.structure);
         subProblems = subProblemResult.first();
         replacedLogicTypes = subProblemResult.second();
+
+        checker = new CompatibilityChecker(gateLib, structure);
 
         /*structure.print(new File("structure.dot"));
         structure.save(new File("structure.json"));
@@ -387,6 +392,10 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                 Eager Branch and Bound
                 */
                 childs = branch(currentAssignment);
+
+                if (childs.size() == 0)
+                    continue;
+
                 int childSize = childs.get(0).size();
 
                 var ref = new Object() {
@@ -469,6 +478,12 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             iteration++;
         }
 
+        if (bestAssignment == null)
+            return null;
+
+        if (!checker.verify(bestAssignment))
+            logger.warn("Resulting assignment contains incompatible device combinations!");
+
         SimulationResult result = new SimulationResult(structure, bestAssignment, bestScore);
         result.setNeededSimulations(iNeededSimulations);
         result.setMinimumBranchAndBoundSimulations(minimalNumberOfSimulations(bestAssignment));
@@ -515,6 +530,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             Assignment a = new Assignment(assignment);
 
             a.put(logicGate, realization);
+
+            if (!checker.isCompatible(a))
+               continue;
 
             /* if second last mapping determines mapping of last one --> jump straight to leaf nodes/complete assignments */
             if ((leftGatesOfType == 2) && (availableRealizations.size() == 2) && (assignment.size() == reversedLogicGates.length - 2)) {

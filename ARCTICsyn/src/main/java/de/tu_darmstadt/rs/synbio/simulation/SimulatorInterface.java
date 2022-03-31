@@ -128,9 +128,6 @@ public class SimulatorInterface {
 
             String assignmentStr = mapper.writeValueAsString(assignmentMap);
 
-            //if (mode == PropagationMode.BOUNDING)
-            //    logger.info("\t"+assignmentStr);
-
             writer.write("update_settings " + simArgs + additionalArgs + " --assignment=" + assignmentStr);
             writer.newLine();
             writer.flush();
@@ -153,9 +150,6 @@ public class SimulatorInterface {
 
             output = output.substring(scorePrefix.length());
 
-            //if (assignmentStr.contains("\"NOR2_1\":\"L1_LitR\""))
-                //logger.info(output + "," + assignmentStr);
-
             // relevant to correctly parse infinity as returned score
             try {
                 score = output.equals("inf") ? Double.POSITIVE_INFINITY : Double.parseDouble(output);
@@ -163,12 +157,10 @@ public class SimulatorInterface {
                 logger.error(e.getMessage());
             }
 
-            /*logger.info(score+"");
-            if (mode==PropagationMode.BOUNDING)
-                mapper.writerWithDefaultPrettyPrinter().writeValue(new File("partial.json"), assignmentMap);*/
-            //if (score == 1.0)
-                //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("full.json"), assignmentMap);
-
+            /*if (mode == PropagationMode.BOUNDING)
+                mapper.writerWithDefaultPrettyPrinter().writeValue(new File("01110110_partial.json"), assignmentMap);
+            else
+                mapper.writerWithDefaultPrettyPrinter().writeValue(new File("01110110_full.json"), assignmentMap);*/
 
 
         } catch (Exception e) {

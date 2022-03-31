@@ -49,6 +49,9 @@ public class GateRealization {
         return isCharacterized;
     }
 
+    @Override
+    public String toString() { return identifier; }
+
     public static class GateCharacterization {
 
         /* library values */

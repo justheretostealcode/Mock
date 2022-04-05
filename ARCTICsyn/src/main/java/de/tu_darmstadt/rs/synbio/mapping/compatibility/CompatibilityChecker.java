@@ -87,13 +87,14 @@ public class CompatibilityChecker {
         // dummy matrix
         this.matrix = new CompatibilityMatrix<>();
 
-        Random rand = new Random();
+        Random rand = new Random(123456789);
+        double threshold = 0.5;
 
         for (String source : deviceToTf.keySet()) {
             for (String destination : deviceToTf.keySet()) {
 
                 double randomNumber = rand.nextDouble();
-                matrix.addEntry(source, destination, null, randomNumber > 0.5);
+                matrix.addEntry(source, destination, null, randomNumber > threshold);
 
                 for (String secondSource : deviceToTf.keySet()) {
 
@@ -101,7 +102,7 @@ public class CompatibilityChecker {
                         matrix.addEntry(source, destination, secondSource, false);
                     } else {
                         randomNumber = rand.nextDouble();
-                        matrix.addEntry(source, destination, secondSource, randomNumber > 0.5);
+                        matrix.addEntry(source, destination, secondSource, randomNumber > threshold);
                     }
                 }
             }
@@ -290,7 +291,7 @@ public class CompatibilityChecker {
             GateRealization source = assignment.get(triple.source);
             GateRealization secondSource = triple.secondSource != null ? assignment.get(triple.secondSource) : null;
 
-            if (destination == null || source == null)
+            if (destination == null || source == null || (triple.secondSource != null && assignment.get(triple.secondSource) == null))
                 continue;
 
             if (!matrix.isCompatible(source.getIdentifier(), destination.getIdentifier(), secondSource != null ? secondSource.getIdentifier() : null))

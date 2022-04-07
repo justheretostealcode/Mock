@@ -68,6 +68,9 @@ public class CompatibilityChecker {
         for (List<GateRealization> devicesList : devices.values()) {
             for (GateRealization device : devicesList) {
 
+                if (device.getLogicType() == LogicType.OUTPUT_BUFFER || device.getLogicType() == LogicType.OUTPUT_OR2)
+                    continue;
+
                 deviceToTf.putIfAbsent(device.getIdentifier(), device.getGroup());
 
                 tfToDevice.putIfAbsent(device.getGroup(), new HashSet<>());
@@ -89,7 +92,9 @@ public class CompatibilityChecker {
         this.constantTrue = factory.constant(true);
         this.miniSat = MiniSat.miniSat(factory);
 
-        // dummy matrix
+        this.matrix = library.getCompatibilityMatrix();
+
+        /* dummy matrix
         this.matrix = new CompatibilityMatrix<>();
 
         Random rand = new Random(123456789);
@@ -111,7 +116,7 @@ public class CompatibilityChecker {
                     }
                 }
             }
-        }
+        }*/
 
         /* build SAT */
 
@@ -272,6 +277,7 @@ public class CompatibilityChecker {
     public boolean isCompatible(Assignment incompleteAssigment) {
 
         miniSat.loadState(state);
+
         /* determine vars to substitute with constant TRUE to account for incomplete assignment */
 
         for (Gate gate : incompleteAssigment.keySet()) {
@@ -283,7 +289,6 @@ public class CompatibilityChecker {
         /* solve SAT */
 
         Tristate result = miniSat.sat();
-
 
         /*logger.info(incompleteAssigment.getIdentifierMap()+"");
         org.logicng.datastructures.Assignment ass = miniSat.model();
@@ -317,15 +322,6 @@ public class CompatibilityChecker {
     }
 
     /* private helper functions */
-
-    private Formula substituteVars(Formula formula, List<Variable> vars) {
-
-        for (Variable var : vars) {
-            formula = formula.substitute(var, constantTrue);
-        }
-
-        return formula;
-    }
 
     private Set<GateTriple> extractTriples(Circuit circuit) {
 

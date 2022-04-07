@@ -85,7 +85,7 @@ public class SimulationTestbench {
         SimulationConfiguration simConfig = new SimulationConfiguration(simulationConfigFile);
 
         //GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), proxWeights);
-        GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), true);
+        GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), mapConfig.getCompatibilityLibrary(), true);
 
         //CompatibilityChecker checker = new CompatibilityChecker(gateLib);
 

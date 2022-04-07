@@ -3,13 +3,13 @@ package de.tu_darmstadt.rs.synbio.common.library;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
+import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityMatrix;
 import org.logicng.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class GateLibrary {
 
@@ -17,39 +17,89 @@ public class GateLibrary {
 
     private final File sourceFile;
 
+    private final File compatibilityFile;
+
     private final Map<LogicType, List<GateRealization>> gateRealizations = new HashMap<>();
     private final Map<String, Map<String, Double>> devicePromoterFactors = new HashMap<>();
 
     private Double[] proxNormalization = new Double[]{1.0, 1.0, 1.0};
     private Double[] proxWeights = new Double[]{1.0, 1.0, 1.0};
 
-    private final Map<LogicType, Double> yMin;
-    private final Map<LogicType, Double> yMax;
-
-    public GateLibrary(File libraryFile, boolean isThermo) {
+    public GateLibrary(File libraryFile, File compatibilityFile, boolean isThermo) {
 
         this.sourceFile = libraryFile;
+        this.compatibilityFile = compatibilityFile;
 
         if (isThermo) {
+            if (compatibilityFile != null)
+                loadCompatibility(compatibilityFile);
             loadThermoLibrary(libraryFile);
         } else {
             loadConvLibrary(libraryFile);
         }
-
-        Pair<Map<LogicType, Double>, Map<LogicType, Double>> maxPromoterLevels = getMaxPromoterLevels();
-        yMin = maxPromoterLevels.first();
-        yMax = maxPromoterLevels.second();
     }
 
     public GateLibrary(File libraryFile, Double[] proxWeights) {
 
-        this(libraryFile, false);
+        this(libraryFile, null,false);
 
         this.proxWeights = proxWeights;
         proxNormalization = calcProxNormalization();
     }
 
     /* library file handling */
+
+    private Map<String, List<Double>> outputs3dB;
+
+    private CompatibilityMatrix<String> compatibilityMatrix;
+
+    private void loadCompatibility(File compatibilityFile) {
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        JsonNode content;
+
+        try {
+            content = mapper.readTree(compatibilityFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        /* load 3dB outputs */
+
+        outputs3dB = new HashMap<>();
+
+        Iterator<Map.Entry<String, JsonNode>> deviceIterator = content.get("critical_points").fields();
+
+        deviceIterator.forEachRemaining(e -> outputs3dB.put(e.getKey(),
+                Arrays.asList(e.getValue().get("y_c").get(0).doubleValue(), e.getValue().get("y_c").get(1).doubleValue())));
+
+        /* load compatibility info */
+
+        compatibilityMatrix = new CompatibilityMatrix<>();
+
+        List<String> deviceOrder = new ArrayList<>();
+        Iterator<JsonNode> orderIterator = content.get("compatibility").get("order").elements();
+        orderIterator.forEachRemaining(d -> deviceOrder.add(d.asText()));
+
+        JsonNode compatPairs = content.get("compatibility").get("table_2");
+        JsonNode compatTriples = content.get("compatibility").get("table_3");
+
+        for (int s = 0; s < deviceOrder.size(); s ++) {
+            for (int t = 0; t < deviceOrder.size(); t ++) {
+
+                boolean isCompatible = compatPairs.get(s).get(t).doubleValue() == 1.0;
+                compatibilityMatrix.addEntry(deviceOrder.get(s), deviceOrder.get(t), null, isCompatible);
+
+                for (int ss = 0; ss < deviceOrder.size(); ss ++) {
+
+                    isCompatible = compatTriples.get(s).get(ss).get(t).doubleValue() == 1.0;
+                    compatibilityMatrix.addEntry(deviceOrder.get(s), deviceOrder.get(t), deviceOrder.get(ss), isCompatible);
+                }
+            }
+        }
+    }
 
     private void loadThermoLibrary(File libraryFile) {
 
@@ -305,43 +355,12 @@ public class GateLibrary {
         return gateRealizations.get(type).get(0);
     }
 
-    private Pair<Map<LogicType, Double>, Map<LogicType, Double>> getMaxPromoterLevels() {
-
-        Map<LogicType, Double> minPromoterLevels = new HashMap<>();
-        Map<LogicType, Double> maxPromoterLevels = new HashMap<>();
-
-        for (LogicType type : gateRealizations.keySet()) {
-
-            List<GateRealization> realizations = gateRealizations.get(type).stream()
-                    .filter(g -> g.getLogicType() == type)
-                    .filter(GateRealization::isCharacterized)
-                    .collect(Collectors.toList());
-
-            Optional<Double> yMin = realizations.stream()
-                    .map(g -> g.getCharacterization().getYmin())
-                    .min(Double::compareTo);
-
-            Optional<Double> yMax = realizations.stream()
-                    .map(g -> g.getCharacterization().getYmax())
-                    .max(Double::compareTo);
-
-            minPromoterLevels.put(type, yMin.orElse(0.0));
-            maxPromoterLevels.put(type, yMax.orElse(0.0));
-        }
-
-        return new Pair<>(minPromoterLevels, maxPromoterLevels);
-    }
-
-    public double getyMin(LogicType type) {
-        return yMin.get(type);
-    }
-
-    public double getyMax(LogicType type) {
-        return yMax.get(type);
-    }
-
     public Map<String, Double> getTfFactorsForDevice(String promoter) {
         return devicePromoterFactors.get(promoter);
+    }
+
+    public CompatibilityMatrix<String> getCompatibilityMatrix() {
+        return compatibilityMatrix;
     }
 
     public void print() {

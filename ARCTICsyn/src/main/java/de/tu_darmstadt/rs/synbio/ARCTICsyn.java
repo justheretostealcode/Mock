@@ -52,7 +52,7 @@ public class ARCTICsyn {
         /* initialize gate library */
 
         //final GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), new Double[]{0.9,0.1,0.0});
-        final GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), true);
+        final GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), mapConfig.getCompatibilityLibrary(),true);
         logger.info("Loaded gate library " + gateLib.getSourceFile() + ".");
 
         if (inputTruthTable.getSupportSize() > gateLib.getNumAvailableGates(LogicType.INPUT)) {

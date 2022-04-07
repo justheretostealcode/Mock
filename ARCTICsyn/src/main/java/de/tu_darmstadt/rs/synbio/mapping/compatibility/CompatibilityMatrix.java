@@ -27,6 +27,5 @@ public class CompatibilityMatrix<T> {
 
     public boolean isCompatible(T source, T destination, T secondSource) {
         return compatibility.get(source).get(destination).get(secondSource);
-    };
-
+    }
 }

@@ -15,6 +15,7 @@ import org.logicng.formulas.Variable;
 import org.logicng.io.parsers.PropositionalParser;
 import org.logicng.solvers.MiniSat;
 import org.logicng.solvers.SATSolver;
+import org.logicng.solvers.SolverState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,10 @@ public class CompatibilityChecker {
     final PropositionalParser parser;
     final Formula constantTrue;
     final SATSolver miniSat;
+
+    /* SAT */
+
+    final SolverState state;
 
     public CompatibilityChecker(GateLibrary library, Circuit structure) {
 
@@ -88,7 +93,7 @@ public class CompatibilityChecker {
         this.matrix = new CompatibilityMatrix<>();
 
         Random rand = new Random(123456789);
-        double threshold = 0.5;
+        double threshold = 0.25;
 
         for (String source : deviceToTf.keySet()) {
             for (String destination : deviceToTf.keySet()) {
@@ -107,23 +112,12 @@ public class CompatibilityChecker {
                 }
             }
         }
-    }
 
-    public boolean isCompatible(Assignment incompleteAssigment) {
+        /* build SAT */
 
-        factory.clear();
-        miniSat.reset();
+        List<Formula> clauses = new ArrayList<>();
 
-        /* determine vars to substitute with constant TRUE to account for incomplete assignment */
-
-        List<Variable> constants = new ArrayList<>();
-
-        if (incompleteAssigment != null) {
-            for (Gate gate : incompleteAssigment.keySet()) {
-                if (gate.getLogicType() != LogicType.OUTPUT_BUFFER && gate.getLogicType() != LogicType.OUTPUT_OR2)
-                    constants.add(factory.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getIdentifier()));
-            }
-        }
+        //long start = System.currentTimeMillis();
 
         /* Clause 1: Every gate has to be assigned one device */
 
@@ -150,7 +144,7 @@ public class CompatibilityChecker {
 
             try {
                 Formula formula = parser.parse(builder.toString());
-                miniSat.add(substituteVars(formula, constants));
+                clauses.add(formula);
             } catch (Exception e) {
                 logger.error(e.getMessage());
             }
@@ -191,7 +185,7 @@ public class CompatibilityChecker {
 
             try {
                 Formula formula = parser.parse(builder.toString());
-                miniSat.add(substituteVars(formula, constants));
+                clauses.add(formula);
             } catch (Exception e) {
                 logger.error(e.getMessage());
             }
@@ -212,7 +206,7 @@ public class CompatibilityChecker {
 
             try {
                 Formula formula = parser.parse(builder.toString());
-                miniSat.add(substituteVars(formula, constants));
+                clauses.add(formula);
             } catch (Exception e) {
                 logger.error(e.getMessage());
             }
@@ -261,17 +255,38 @@ public class CompatibilityChecker {
 
             try {
                 Formula formula = parser.parse(builder.toString());
-                miniSat.add(substituteVars(formula, constants));
+                clauses.add(formula);
             } catch (Exception e) {
                 logger.error(e.getMessage());
             }
+        }
+
+        /* add clauses */
+        for (Formula clause : clauses) {
+            miniSat.add(clause);
+        }
+
+        state = miniSat.saveState();
+    }
+
+    public boolean isCompatible(Assignment incompleteAssigment) {
+
+        miniSat.loadState(state);
+        /* determine vars to substitute with constant TRUE to account for incomplete assignment */
+
+        for (Gate gate : incompleteAssigment.keySet()) {
+            if (gate.getLogicType() != LogicType.OUTPUT_BUFFER && gate.getLogicType() != LogicType.OUTPUT_OR2)
+                miniSat.add(factory.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getIdentifier()));
+                //constants.add(factory.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getIdentifier()));
         }
 
         /* solve SAT */
 
         Tristate result = miniSat.sat();
 
-        /*org.logicng.datastructures.Assignment ass = miniSat.model();
+
+        /*logger.info(incompleteAssigment.getIdentifierMap()+"");
+        org.logicng.datastructures.Assignment ass = miniSat.model();
         if (ass != null) {
             logger.info("SAT model:");
             for (Variable pos : ass.positiveLiterals()) {

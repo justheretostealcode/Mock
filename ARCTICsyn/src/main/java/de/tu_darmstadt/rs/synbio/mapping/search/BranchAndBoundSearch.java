@@ -428,6 +428,16 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                             bestScore = val;
                             bestAssignment = assignment;
                             logger.info("new best score: " + bestScore);
+
+                            /*boolean checkerResult = checker.isCompatible(assignment);
+                            boolean verifyResult = checker.verify(assignment);
+
+                            if (checkerResult != verifyResult) {
+                                logger.warn("checkerResult != verifyResult");
+                            } else {
+                                logger.info("equal");
+                            }*/
+
                             searchStatsLogger.notifyNewBestAssignment(iteration, iNeededSimulations);
                         }
                     }
@@ -514,6 +524,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         Gate logicGate = reversedLogicGates[assignment.size()];
 
+        boolean checkNaive = false;
+
         long leftGatesOfType = Arrays.stream(reversedLogicGates)
                 .filter(g -> !assignment.keySet().contains(g))
                 .filter(g -> g.getLogicType() == logicGate.getLogicType()).count();
@@ -531,8 +543,10 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
             a.put(logicGate, realization);
 
-            if (!checker.isCompatible(a))
-               continue;
+            if (checkNaive ? !checker.verify(a) : !checker.isCompatible(a)) {
+                //logger.info("suppressed branch of assignment with size " + assignment.size());
+                continue;
+            }
 
             /* if second last mapping determines mapping of last one --> jump straight to leaf nodes/complete assignments */
             if ((leftGatesOfType == 2) && (availableRealizations.size() == 2) && (assignment.size() == reversedLogicGates.length - 2)) {

@@ -60,6 +60,12 @@ public class GateRealization {
         private final double k;
         private final double n;
 
+        private final double iLower;
+        private final double iUpper;
+
+        private final double jLower;
+        private final double jUpper;
+
         private final Particles particles;
 
         /* derived values */
@@ -67,10 +73,17 @@ public class GateRealization {
         private final double ym;
         private final double grad;
 
-        public GateCharacterization(double ymax, double ymin, double k, double n, Particles particles) {
+        public GateCharacterization(double ymax, double ymin, double iLower, double iUpper, double jLower, double jUpper, double k, double n, Particles particles) {
 
             this.ymax = ymax;
             this.ymin = ymin;
+
+            this.iLower = iLower;
+            this.iUpper = iUpper;
+
+            this.jLower = jLower;
+            this.jUpper = jUpper;
+
             this.k = k;
             this.n = n;
 
@@ -90,6 +103,14 @@ public class GateRealization {
         public double getYmin() {
             return ymin;
         }
+
+        public double getILower() { return iLower; }
+
+        public double getIUpper() { return iUpper; }
+
+        public double getJLower() { return jLower; }
+
+        public double getJUpper() { return jUpper; }
 
         public double getK() {
             return k;

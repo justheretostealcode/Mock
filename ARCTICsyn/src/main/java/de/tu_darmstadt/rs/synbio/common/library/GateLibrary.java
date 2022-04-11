@@ -49,6 +49,7 @@ public class GateLibrary {
 
     /* library file handling */
 
+    private Map<String, List<Double>> inputs3dB;
     private Map<String, List<Double>> outputs3dB;
 
     private CompatibilityMatrix<String> compatibilityMatrix;
@@ -66,14 +67,17 @@ public class GateLibrary {
             return;
         }
 
-        /* load 3dB outputs */
+        /* load 3dB in-/outputs */
 
+        inputs3dB = new HashMap<>();
         outputs3dB = new HashMap<>();
 
         Iterator<Map.Entry<String, JsonNode>> deviceIterator = content.get("critical_points").fields();
 
-        deviceIterator.forEachRemaining(e -> outputs3dB.put(e.getKey(),
-                Arrays.asList(e.getValue().get("y_c").get(0).doubleValue(), e.getValue().get("y_c").get(1).doubleValue())));
+        deviceIterator.forEachRemaining(e -> {
+                    inputs3dB.put(e.getKey(), Arrays.asList(e.getValue().get("x_c").get(0).doubleValue(), e.getValue().get("x_c").get(1).doubleValue()));
+                    outputs3dB.put(e.getKey(), Arrays.asList(e.getValue().get("y_c").get(0).doubleValue(), e.getValue().get("y_c").get(1).doubleValue()));
+                });
 
         /* load compatibility info */
 
@@ -201,8 +205,16 @@ public class GateLibrary {
                         newGate = new GateRealization(deviceName, function, tfName);
                     } else {
                         newGate = new GateRealization(deviceName, function, tfName,
-                                new GateRealization.GateCharacterization(promoterLevels.get(promoterName).second(),
-                                        promoterLevels.get(promoterName).first(), 0, 0, null));
+                                new GateRealization.GateCharacterization(
+                                        promoterLevels.get(promoterName).second(),
+                                        promoterLevels.get(promoterName).first(),
+                                        function == LogicType.INPUT ? 0.0 : outputs3dB.get(deviceName).get(0),
+                                        function == LogicType.INPUT ? 0.0 : outputs3dB.get(deviceName).get(1),
+                                        function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(0),
+                                        function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(1),
+                                        0,
+                                        0,
+                                        null));
                     }
                     addGateRealization(newGate);
                 }
@@ -272,7 +284,7 @@ public class GateLibrary {
                 }
 
                 newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group,
-                        new GateRealization.GateCharacterization(ymax, ymin, k ,n, gateParticles));
+                        new GateRealization.GateCharacterization(ymax, ymin, 0.0, 0.0, 0.0, 0.0, k ,n, gateParticles));
 
             } else {
                 newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group);
@@ -284,13 +296,13 @@ public class GateLibrary {
         /* add input gates */
 
         addGateRealization(new GateRealization("pTac", LogicType.INPUT, "pTac",
-                new GateRealization.GateCharacterization(2.8, 0.0034 , 0, 0, null)));
+                new GateRealization.GateCharacterization(2.8, 0.0034 , 0.0, 0.0, 0.0, 0.0, 0, 0, null)));
 
         addGateRealization(new GateRealization("pTet", LogicType.INPUT, "pTet",
-                new GateRealization.GateCharacterization(4.4, 0.0013 , 0, 0, null)));
+                new GateRealization.GateCharacterization(4.4, 0.0013 , 0.0, 0.0, 0.0, 0.0, 0, 0, null)));
 
         addGateRealization(new GateRealization("pBAD", LogicType.INPUT, "pBAD",
-                new GateRealization.GateCharacterization(2.5, 0.0082 , 0, 0, null)));
+                new GateRealization.GateCharacterization(2.5, 0.0082 , 0.0, 0.0, 0.0, 0.0, 0, 0, null)));
     }
 
     private void addGateRealization(GateRealization newGate) {

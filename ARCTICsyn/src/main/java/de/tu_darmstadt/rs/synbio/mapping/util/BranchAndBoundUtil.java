@@ -288,6 +288,24 @@ public class BranchAndBoundUtil {
         Set<String> usedGroups = new HashSet<>();
         assignment.values().forEach(r -> usedGroups.add(r.getGroup()));
 
+        /* write assigned gates */
+
+        for (Gate gate : assignment.keySet()) {
+
+            Map<String, Object> gateMap = new HashMap<>();
+
+            if (assignment.get(gate).isCharacterized()) {
+                List<Double> iList = Arrays.asList(assignment.get(gate).getCharacterization().getILower(), assignment.get(gate).getCharacterization().getIUpper());
+                gateMap.put("i", iList);
+            }
+
+            gateMap.put("d", assignment.get(gate).getIdentifier());
+
+            output.put(gate.getIdentifier(), gateMap);
+        }
+
+        /* write dummy gates */
+
         /* sets of used TFs for dummy gates for each agate */
         Map<Gate, Set<String>> setMinFactors = new HashMap<>();
         Map<Gate, Set<String>> setMaxFactors = new HashMap<>();
@@ -318,28 +336,49 @@ public class BranchAndBoundUtil {
             a.add(minActivity.get());
             a.add(maxActivity.get());
 
-            /* list i contains narrowest promoter activity interval for given dummy logic type */
+            /* list i contains narrowest output promoter activity interval for given dummy logic type */
 
             List<Double> i = new ArrayList<>();
 
-            if (dummyType == LogicType.INPUT) {
+            Optional<Double> iLower = library.getRealizations().get(dummyType).stream()
+                    .filter(r -> !usedGroups.contains(r.getGroup()))
+                    .map(r -> dummyType == LogicType.INPUT ? r.getCharacterization().getYmin() : r.getCharacterization().getILower())
+                    .max(Double::compareTo);
 
-                Optional<Double> maxOffActivity = library.getRealizations().get(dummyType).stream()
-                        .filter(r -> !usedGroups.contains(r.getGroup()))
-                        .map(r -> r.getCharacterization().getYmin()).max(Double::compareTo);
+            Optional<Double> iUpper = library.getRealizations().get(dummyType).stream()
+                    .filter(r -> !usedGroups.contains(r.getGroup()))
+                    .map(r -> dummyType == LogicType.INPUT ? r.getCharacterization().getYmax() : r.getCharacterization().getIUpper())
+                    .min(Double::compareTo);
 
-                Optional<Double> minOnActivity = library.getRealizations().get(dummyType).stream()
-                        .filter(r -> !usedGroups.contains(r.getGroup()))
-                        .map(r -> r.getCharacterization().getYmax()).min(Double::compareTo);
-
-                if (maxOffActivity.isEmpty() || minOnActivity.isEmpty()) {
-                    logger.error("Unable to obtain activities for dummy gate.");
-                    return null;
-                }
-
-                i.add(minOnActivity.get());
-                i.add(maxOffActivity.get());
+            if (iLower.isEmpty() || iUpper.isEmpty()) {
+                logger.error("Unable to obtain activities for dummy gate.");
+                return null;
             }
+
+            i.add(iUpper.get());
+            i.add(iLower.get());
+
+            /* list j contains narrowest input promoter activity interval for given dummy logic type */
+
+            List<Double> j = new ArrayList<>();
+
+            Optional<Double> jLower = library.getRealizations().get(dummyType).stream()
+                    .filter(r -> !usedGroups.contains(r.getGroup()))
+                    .map(r -> dummyType == LogicType.INPUT ? 0.0 : r.getCharacterization().getJLower())
+                    .max(Double::compareTo);
+
+            Optional<Double> jUpper = library.getRealizations().get(dummyType).stream()
+                    .filter(r -> !usedGroups.contains(r.getGroup()))
+                    .map(r -> dummyType == LogicType.INPUT ? 0.0 : r.getCharacterization().getJUpper())
+                    .min(Double::compareTo);
+
+            if (jLower.isEmpty() || jUpper.isEmpty()) {
+                logger.error("Unable to obtain activities for dummy gate.");
+                return null;
+            }
+
+            j.add(jUpper.get());
+            j.add(jLower.get());
 
             for (Gate gate : assignment.keySet()) {
 
@@ -392,9 +431,8 @@ public class BranchAndBoundUtil {
                 Map<String, List<?>> gateMap = new HashMap<>();
                 gateMap.put("a", a);
                 gateMap.put("b", b);
-
-                if (dummyType == LogicType.INPUT)
-                    gateMap.put("i", i);
+                gateMap.put("i", i);
+                gateMap.put("j", j);
 
                 dummyMap.put(gateName, gateMap);
             }

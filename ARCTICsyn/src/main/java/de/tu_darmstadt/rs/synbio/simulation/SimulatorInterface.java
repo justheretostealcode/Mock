@@ -102,19 +102,20 @@ public class SimulatorInterface {
 
     public Double simulate(Assignment assignment, PropagationMode mode) { //TODO: handle null return value
 
-        Map<String, Object> assignmentMap = new HashMap<>();
 
-        Map<String, String> assignmentIdentifiers = assignment.getIdentifierMap();
+        //Map<String, String> assignmentIdentifiers = assignment.getIdentifierMap();
         String additionalArgs = "--propagation_mode=" + mode.ordinal();
 
-        /* handle incomplete assignments of B&B */
+        Map<String, Map<?, ?>> assignmentMap = BranchAndBoundUtil.compileDummyInfos(library, circuitGates, assignment);
+
+        /* handle incomplete assignments of B&B
         if (assignment.keySet().size() < circuitGates.size() + 1) {
             Map<String, Map<?, ?>> dummyInfos = BranchAndBoundUtil.compileDummyInfos(library, circuitGates, assignment);
             if (dummyInfos != null)
                 assignmentMap.putAll(dummyInfos);
         }
 
-        assignmentMap.putAll(assignmentIdentifiers);
+        assignmentMap.putAll(assignmentIdentifiers);*/
 
         double score = 0.0;
 

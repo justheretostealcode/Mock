@@ -377,8 +377,8 @@ public class BranchAndBoundUtil {
                 return null;
             }
 
-            j.add(jUpper.get());
-            j.add(jLower.get());
+            j.add(jLower.get()); // max(x_c[0])
+            j.add(jUpper.get()); // min(x_c[1])
 
             for (Gate gate : assignment.keySet()) {
 

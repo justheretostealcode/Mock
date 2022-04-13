@@ -28,4 +28,43 @@ public class CompatibilityMatrix<T> {
     public boolean isCompatible(T source, T destination, T secondSource) {
         return compatibility.get(source).get(destination).get(secondSource);
     }
+
+    public String getCompatibilityInfo() {
+
+        long totalPairs = 0;
+        long totalTriples = 0;
+
+        long compatiblePairs = 0;
+        long compatibleTriples = 0;
+
+        for (T source : compatibility.keySet()) {
+            for (T dest : compatibility.get(source).keySet()) {
+
+                if (dest.equals("input_1") || dest.equals("input_2") ||dest.equals("input_3"))
+                    continue;
+
+                if (source.equals(dest))
+                    continue;
+
+                totalPairs ++;
+
+                if (compatibility.get(source).get(dest).get(null))
+                    compatiblePairs ++;
+
+                for (T second : compatibility.get(source).get(dest).keySet()) {
+
+                    if (source.equals(second) || dest.equals(second))
+                        continue;
+
+                    totalTriples ++;
+
+                    if (compatibility.get(source).get(dest).get(second))
+                        compatibleTriples ++;
+
+                }
+            }
+        }
+
+        return "pairs: " + (double) compatiblePairs/totalPairs + " triple: " + (double) compatibleTriples/totalTriples;
+    }
 }

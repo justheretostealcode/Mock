@@ -146,6 +146,139 @@ reverse_input_encoding = dict({
     'c': 2
 })
 
+# bounding submodes
+bounding_modes = dict({
+    'heuristic': 1,
+    'ita': 2
+})
+
+# Define important indexing variables
+# leaves of the decision tree
+_wired_assigned = 0
+_wired_dummy_nor = 1
+_wired_dummy_or = 2
+_xtalk_assignedandnor = 3
+_xtalk_dummyoror_dummy = 4
+_xtalk_dummyoror_or = 5
+_xtalk_dummyoror_tf = 6
+# Variable categories from the LUT's of the gates
+_a = 0
+_i = 1
+_j = 2
+_k = 3
+_d = 4
+_b = 5
+_o = 6
+_var_map = dict({
+    'a': _a,
+    'i': _i,
+    'j': _j,
+    'k': _k,
+    'd': _d,
+    'b': _b,
+    'o': _o,
+})
+_var_pre = dict({
+    'a': (lambda a, circ: float(a)),
+    'i': (lambda i, circ: float(i)),
+    'j': (lambda j, circ: float(j)),
+    'k': (lambda k, circ: float(k)),
+    'd': (lambda d, circ: circ.p_idx[d]),
+    'b': (lambda b, circ: circ.tf_idx[b][0]),
+    'o': (lambda o, circ: float(o)),
+})
+# Indexes for min and max values of a respective category
+_min = 0
+_max = 1
+
+# bounding mode settings
+# this defines, in which modes which variables are drawn given the parameters
+_bounding_configs = dict({
+    0: np.array([  # TODO: naive optimal mode
+        ]),
+    1: np.array([  # TODO: naive herusitic mode
+        ]),
+    2: np.array([  # ita optimal mode
+            [  # _wired_assigned
+                [(_i, _min), (_o, _max)],   # 0 target
+                [(_o, _min), (_i, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _wired_dummy_nor
+                [(_i, _min), (_a, _max)],   # 0 target
+                [(_a, _min), (_i, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _wired_dummy_or
+                [(_a, _min), (_i, _max)],   # 0 target
+                [(_i, _min), (_a, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _xtalk_assignedandnor
+                [(_a, _max), (_j, _min)],   # 0 target
+                [(_j, _max), (_a, _min)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _xtalk_dummyoror_dummy
+                [(_a, _max), (_j, _min)],   # 0 target
+                [(_j, _max), (_a, _min)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _xtalk_dummyoror_or
+                [(_k, _min), (_a, _max)],   # 0 target
+                [(_a, _min), (_i, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _xtalk_dummyoror_tf
+                [(_b, _max), (_b, _max)],   # 0 target
+                [(_b, _min), (_b, _min)],   # 1
+                #    0              1
+                #       source
+            ],
+        ]),
+    3: np.array([  # TODO: ita heuristic mode
+        ]),
+    4: np.array([  # TODO: full heuristic mode
+        ]),
+})
+# force maps
+_force_configs = dict({
+    0: np.array([  # TODO: naive optimal mode
+        ]),
+    1: np.array([  # TODO: naive herusitic mode
+        ]),
+    2: np.array([  # ita optimal mode
+            [  # _wired_assigned
+                [(0, 0), (0, 1)],   # 0 target
+                [(1, 0), (0, 0)],   # 1
+                #   0       1
+                #    source
+            ],
+            [  # _wired_dummy_or
+                [(0, 0), (0, 1)],   # 0 target
+                [(1, 0), (0, 0)],   # 1
+                #   0       1
+                #    source
+            ],
+            [  # _wired_dummy_nor
+                [(0, 0), (1, 0)],   # 0 target
+                [(1, 0), (1, 1)],   # 1
+                #   0       1
+                #    source
+            ],
+        ]),
+    3: np.array([  # TODO: ita heuristic mode
+        ]),
+    4: np.array([  # TODO: full heuristic mode
+        ]),
+})
+
 # A structure for a NOR circuit
 # we try it here with a fixed TF-order and all information
 class nor_circuit:
@@ -204,64 +337,144 @@ class nor_circuit:
             if v[0] == '_':  # dummy gate
                 self.g_p[self.node_idx[k]] = -1
                 self.dummy_idx[int(v[1])] = self.node_idx[k]
-                # translate the dict describing the dummys behaviour into index notation
-                # gate_idx -> env -> a_out, p_idx
-                codebook = np.zeros([len(node_list), 2, 3])
-                for l, w in self.assignment.dummys[v].items():
-                    # TODO: this can be shorter
-                    nidx = self.node_idx[l]
-                    codebook[nidx, 0, 0] = float(w['a'][1])
-                    codebook[nidx, 1, 0] = float(w['a'][0])
-                    if 'i' in w:
-                        codebook[nidx, 0, 1] = float(w['i'][1])
-                        codebook[nidx, 1, 1] = float(w['i'][0])
-                    else:
-                        codebook[nidx, 0, 1] = float(0)
-                        codebook[nidx, 1, 1] = float(0)
-                    codebook[nidx, 0, 2] = self.tf_idx[w['b'][1]][0]
-                    codebook[nidx, 1, 2] = self.tf_idx[w['b'][0]][0]
-                self.gates[self.node_idx[k]] = _dummy_gate(k, v, codebook)
+                self.gates[self.node_idx[k]] = _dummy_gate(k, v)
             elif v.startswith('output'):  # implicit or / reporter TF
                 self.g_p[self.node_idx[k]] = self.dev_idx[v][0]
                 self.p_g[self.dev_idx[v][0]] = self.node_idx[k]
                 or_factors = np.zeros(len(self.p_idx))
                 or_factors[self.dev_idx[v][0]] = 1.0
                 self.gates[self.node_idx[k]] = _implicit_or_gate(k, v, or_factors)
-            else:
+            else:  # assigned NOR gate
                 self.g_p[self.node_idx[k]] = self.dev_idx[v][0]
                 self.p_g[self.dev_idx[v][0]] = self.node_idx[k]
                 # Find better solution to recognize YFP
-                self.gates[self.node_idx[k]] = _nor_gate(k, v, self.factors[:, self.dev_idx[v][0], :, :], self.affinities[self.dev_idx[v][0]], self.extremes[self.dev_idx[v][0], :], self.lib.env['reservoir'])
-        # also always create the artificial output gates (which are not in assignment)
-        #for k in list(self.structure.outputs):
-        #    self.g_p[self.node_idx[k]] = -1
-        #    self.gates[self.node_idx[k]] = _implicit_or_gate(k, 'simulation_monitor')
-        # print all gates if debug level is above 0
+                self.gates[self.node_idx[k]] = _nor_gate(k, v, self.factors[:, self.dev_idx[v][0], :, :], self.affinities[self.dev_idx[v][0]], self.lib.env['reservoir'])
+            # each gate will be getting a lut with all values handed over
+            # via the assignment. The dimensions are the following
+            # variable -> order index (min/max) -> target
+            # target can be left out on gets to obtain target-independent attributes
+            # The actual position in the array is the zeroth position
+            lut = np.zeros([len(_var_map.keys()), 2, len(node_list) + 1])
+            if DEBUG_LEVEL > 1:
+                print(hl(k) + ' obtains attributes ', end='')
+            for attr, content in self.assignment.attributes[v].items():
+                if attr == 'd':
+                    continue
+                if isinstance(content, dict):
+                    # this is a target dependent attribute
+                    for target, vals in content.items():
+                        lut[_var_map[attr], :, self.node_idx[target] + 1] = np.array([_var_pre[attr](vals[0], self), _var_pre[attr](vals[1], self)])
+                    if DEBUG_LEVEL > 1:
+                        print(hl(attr) + '(s) ', end='')
+                else:
+                    lut[_var_map[attr], :, 0] = np.array([_var_pre[attr](content[0], self), _var_pre[attr](content[1], self)])
+                    if DEBUG_LEVEL > 1:
+                        print(hl(attr) + '(i) ', end='')
+            self.gates[self.node_idx[k]]._lut = lut
+            if DEBUG_LEVEL > 1:
+                print('')
         if DEBUG_LEVEL > 0:
             print('Gates comprising the circuit:')
             for gate in self.gates:
                 print(hl(str(gate.node)) + '/' + hl(str(gate.dev)) + ', type = ' + str(gate.type))
 
         # generate the adjacency matrix w == g_g
+        # also inject a list of inputs to each gate
         if DEBUG_LEVEL > 0:
             print('Drawing wires:')
         self.w = np.zeros([len(node_list), len(node_list)])
         for gate_in, v in self.structure.adjacency['in'].items():
             t = self.node_idx[gate_in]
+            in_list = list()
             for gate_out in v:
                 f = self.node_idx[gate_out]
                 if DEBUG_LEVEL > 0:
                     print(hl(gate_out) + ' -> ' + hl(gate_in))
                 self.w[f, t] = 1
+                in_list.append(f)
+            self.gates[t].inputs = np.array(in_list)
 
         # for bounding, get a vector of extreme values
-        self.bound_a_min = np.array([gate.min for gate in self.gates])
-        self.bound_a_max = np.array([gate.max for gate in self.gates])
+        self.bound_a_min = np.array([gate.lut(_a, _min) for gate in self.gates])
+        self.bound_a_max = np.array([gate.lut(_a, _max) for gate in self.gates])
         self.bound_env = np.zeros(len(self.gates), dtype=int)
 
         # Now finally set the solver
         if solver is not None:
             self.set_solver(solver)
+
+    # a is the array of current output values
+    # force is an boolean array of length len(a) indicating possible substitution cases
+    # mode_lut is an array containing the indices for the local gate luts associated with the active mode
+    def propagate_bound(self, a, mode_lut, force_map):
+        new_a = np.copy(a)
+        # we first need to check where in the circuit we have potential substitution cases
+        for n in range(len(self.gates)):
+            target_gate = self.gates[n]
+            # check first, if the node is immutable or a dummy
+            if not self.mutable[n] or target_gate.type == -1:  # only propagate those gates which are mutable/assigned
+                if DEBUG_LEVEL > 1:
+                    print('Skipping immutable or dummy node: ' + hl(self.gates[n].node))
+                continue
+            # now, we are either an OR or a NOR gate
+            # prepare device array
+            p_a = np.zeros(len(self.p_idx))
+            # in both cases, iterate over all gates to calculate their influence on the target gate
+            # The decision tree is the following
+            # - is the connection wired or crosstalk?
+            # -- wired: is the source gate assigned or a dummy?
+            # -- wired, assigned: assign the lut value depending on the forcing truthtable
+            # -- wired, source dummy: is the target gate NOR or OR?
+            # -- wired, source dummy, target NOR/OR: assign the lut value depending on the forcing truthtable
+            # -- crosstalk: is the source gate assigned and a NOR or is it dummy/OR?
+            # -- crosstalk, assigned.NOR: assign the lut value
+            # -- crosstalk, source dummy/OR: read the optimal TF from the lut. Is the source gate dummy or OR?
+            # -- crosstalk, source dummy/OR, source dummy/OR: assign the lut value depending on the forcing truthtable
+            for m in range(len(self.gates)):
+                source_gate = self.gates[m]
+                # check if gate m is connected via wire
+                # - is the connection wired or crosstalk? -> wired
+                if self.w[m, n] == 1:
+                    # -- wired: is the source gate assigned or a dummy? -> assigned
+                    if source_gate.type != -1:
+                        # -- wired, assigned: assign the lut value depending on the forcing truthtable
+                        (tenv, senv) = force_map[_wired_assigned, target_gate.env, source_gate.env]
+                        p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_assigned, tenv, senv])
+                    # -- wired: is the source gate assigned or a dummy? -> dummy
+                    else:
+                        # -- wired, source dummy: is the target gate NOR or OR? -> NOR
+                        if target_gate.type == 0:
+                            # -- wired, source dummy, target NOR: assign the lut value depending on the forcing truthtable
+                            (tenv, senv) = force_map[_wired_dummy_nor, target_gate.env, source_gate.env]
+                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_nor, tenv, senv])
+                        # -- wired, source dummy: is the target gate NOR or OR? -> OR
+                        else:
+                            # -- wired, source dummy, target OR: assign the lut value depending on the forcing truthtable
+                            (tenv, senv) = force_map[_wired_dummy_or, target_gate.env, source_gate.env]
+                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_or, tenv, senv])
+                # - is the connection wired or crosstalk? -> crosstalk
+                elif target_gate.type == 0:
+                    # -- crosstalk: is the source gate assigned and a NOR or is it dummy/OR? -> assigned.NOR
+                    if source_gate.type == 0:
+                        # -- crosstalk, assigned.NOR: assign the lut value
+                        p_a[self.g_p[m]] += source_gate.lut(*mode_lut[_xtalk_assignedandnor, target_gate.env, source_gate.env])
+                    # -- crosstalk: is the source gate assigned and a NOR or is it dummy/OR? -> dummy/OR
+                    else:
+                        # -- crosstalk, source dummy/OR: read the optimal TF from the lut. [...]
+                        pa_ix = int(source_gate.lut(*mode_lut[_xtalk_dummyoror_tf, target_gate.env, source_gate.env], target=n))
+                        # -- crosstalk, source dummy/OR: [...] Is the source gate dummy or OR? -> dummy
+                        if source_gate.type == -1:
+                            # -- crosstalk, source dummy/OR, source dummy: assign the lut value
+                            p_a[pa_ix] += source_gate.lut(*mode_lut[_xtalk_dummyoror_dummy, target_gate.env, source_gate.env])
+                        # -- crosstalk, source dummy/OR: [...] Is the source gate dummy or OR? -> OR
+                        else:
+                            # -- crosstalk, source dummy/OR, source dummy: assign the lut value
+                            p_a[pa_ix] += source_gate.lut(*mode_lut[_xtalk_dummyoror_or, target_gate.env, source_gate.env])
+            if DEBUG_LEVEL > 2:
+                print('p_a vector for ' + hl(str(target_gate.node)) + ' (index ' + hl(str(n)) + ')' + ' of type ' + hl(str(target_gate.type)) + ':')
+                print(p_a)
+            new_a[n] = target_gate.out(p_a)
+        return new_a
 
     def propagate(self, a):
         new_a = np.copy(a)
@@ -281,98 +494,6 @@ class nor_circuit:
             new_a[n] = self.gates[n].out(p_a)
         return new_a
 
-    # this will be sloooooow.....
-    def propagate_bound(self, a, heuristic=False):
-        new_a = np.copy(a)
-        if DEBUG_LEVEL > 1:
-            print('')
-        for n in range(len(self.gates)):
-            if not self.mutable[n] or self.gates[n].type == -1:
-                if DEBUG_LEVEL > 1:
-                    print('Skipping immutable or dummy node: ' + hl(self.gates[n].node))
-                continue
-            if DEBUG_LEVEL > 1:
-                print('Looking at node: ' + hl(self.gates[n].node))
-            if DEBUG_LEVEL > 2:
-                print('Propagate: ' + hl(str(self.gates[n].node)) + '/' + hl(str(self.gates[n].dev)) + ', type = ' + str(self.gates[n].type) + ', env = ' + hl(str(self.bound_env[n])))
-            p_a = np.zeros(len(self.p_idx))
-            # get extreme inputs
-            a_x = np.zeros(len(self.gates))
-            if self.bound_env[n] == 1:  # everything on minimum!
-                a_x = np.copy(self.bound_a_min)
-            else:  # everything on maximum!
-                a_x = np.copy(self.bound_a_max)
-            if DEBUG_LEVEL > 2:
-                print('dummy wires:')
-            for idx in self.dummy_idx:  # set the dummy gates optimally
-                a_x[idx] = self.gates[idx].out(n, self.bound_env[n])
-                if DEBUG_LEVEL > 2:
-                    print(':: ' + hl(str(a_x[idx])))
-            # do the wiring
-            wa = np.dot(self.w.T, a_x)
-            # but unset the own wire because we reset it later
-            wa[n] = 0
-            # set the correct wire input
-            for m in range(len(self.gates)):
-                if self.w[m, n] == 1:  # we have a an input, so set
-                    if self.gates[m].type == -1:  # dummy
-                        wa[n] += self.gates[m].out(n, self.bound_env[n])
-                    else:
-                        wa[n] += a[m]
-            # now associate the correct TF's
-            if DEBUG_LEVEL > 2:
-                print('dummy TF\'s:')
-            force_env = False
-            in_env = np.sum(self.bound_env[np.nonzero(self.w[:, n])])
-            if in_env != np.sum(self.w[:, n]) and in_env != 0 and not heuristic:
-                force_env = True
-            for m in range(len(self.gates)):
-                if self.gates[n].type != 1 and self.gates[m].type == -1 and self.w[m, n] == 0:  # dummy: choose weakest or strongest TF
-                    pa_idx = self.gates[m].promoter(n, self.bound_env[n])
-                    if DEBUG_LEVEL > 2:
-                        print(':: ' + hl(pa_idx))
-                    p_a[pa_idx] += wa[m]
-                elif self.gates[n].type != 1 or self.w[m, n] == 1:  # only accept crosstalk if not implicit OR
-                    if self.w[m, n] == 1:
-                        val = 0
-                        forced = False
-                        if force_env and (self.mutable[m] or self.gates[m].type == -1) and self.gates[m].type != 1 and ((self.gates[n].type == 0 and self.bound_env[m] == self.bound_env[n]) or (self.gates[n].type == 1 and self.bound_env[m] != self.bound_env[n])):
-                            forced_value = 0
-                            if self.gates[m].type == -1:
-                                if not self.mutable[m]:
-                                    forced_value = self.gates[m].alt_out(n, int(bool(self.gates[n].type) != bool(self.bound_env[n])))
-                                else:
-                                    forced_value = self.gates[m].out(n, int(bool(self.gates[n].type) != bool(self.bound_env[n])))
-                            else:
-                                if (self.bound_env[n] == self.gates[n].type): # either NOR gate and 0-env or implicit OR gate and 1-env
-                                    forced_value = self.bound_a_max[m]
-                                else:
-                                    forced_value = self.bound_a_min[m]
-                            val = forced_value
-                            forced = True
-                        else:
-                            if self.gates[m].type != -1:
-                                val = a[m]
-                            else:
-                                #val = self.gates[m].out(n, int(bool(self.gates[n].type) != bool(self.bound_env[n])))
-                                val = self.gates[m].out(n, int(not bool(self.bound_env[m])))
-                        if DEBUG_LEVEL > 1:
-                            if forced:
-                                print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by wire with ' + head('forced') + ' value ' + hl(str(val)))
-                            else:
-                                print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by wire with value ' + hl(str(val)))
-                        p_a[self.g_p[n]] += val
-                    elif m != n:
-                        if DEBUG_LEVEL > 1:
-                            print(hl(str(self.gates[m].node)) + ' -> ' + hl(str(self.gates[n].node)) + ' by crosstalk with value ' + hl(str(wa[m])))
-                        p_a[self.g_p[m]] += wa[m]
-            # propagate the artificial environment through the gate
-            if DEBUG_LEVEL > 2:
-                print('p_a vector for ' + hl(str(self.gates[n].node)) + ' of type ' + hl(str(self.gates[n].type)) + ':')
-                print(p_a)
-            new_a[n] = self.gates[n].out(p_a)
-        return new_a
-
     def set_dummy_mode(self, ttix=0):
         # this mode must be set at least once if dummy gates are present
         if self.structure.gate_truthtables is None:
@@ -381,6 +502,7 @@ class nor_circuit:
             return
         for n in range(len(self.gates)):
             self.bound_env[n] = self.structure.gate_truthtables[self.gates[n].node][ttix]
+            self.gates[n].env = self.bound_env[n]
 
     def set_initial_value(self, values, ttix=-1):
         val = np.zeros(len(self.node_idx))
@@ -494,14 +616,18 @@ class circuit_assignment:
         self.map_gtod = dict()
         self.map_dtog = dict()
         self.dummys = dict()
+        self.attributes = dict()
         n_dummy = 0
         for k, v in assi.items():
-            d = v
-            if isinstance(v, dict):
-                # if there is a dict present, we want a dummy gate which emits extreme values
+            # v is always a dict now. We look for the presence of a d value
+            if 'd' not in v:
+                # if there is no 'd' in v, we have a dummy gate
                 d = '_' + str(n_dummy)
                 self.dummys[d] = v
                 n_dummy += 1
+            else:
+                d = v['d']
+            self.attributes[d] = v
             self.map_gtod[k] = d
             self.map_dtog[d] = k
         self.devices = set(self.map_dtog.keys())
@@ -578,14 +704,26 @@ class library:
         return json.dumps(content)
 
 # PRIVATE. Not intended to use manually
+# unified base gate
+class _base_gate:
+    # a base class for a logic gate
+    def __init__(self):
+        self._lut = None
+        self.env = 0
+        self.inputs = list()
+    def lut(self, var, val, target=-1):
+        # function wrapper to maintain full control and put
+        # dirty last minute modification hacks here
+        return self._lut[var, val, target + 1]
+    def set_out(self, val):
+        self._lut[_o, 0, 0] = val
+
 # The NOR gate is a simple, modular gate structure independent of input wiring
-class _nor_gate:
+class _nor_gate(_base_gate):
     # represents a NOR gate in the circuit
-    def __init__(self, node, dev, factors, affinity, extreme, c):
+    def __init__(self, node, dev, factors, affinity, c):
         self.node = node
         self.dev = dev
-        self.min = extreme[0]
-        self.max = extreme[1]
         self.bepj = factors[0]
         self.bef = factors[1]
         self.bep = affinity
@@ -597,50 +735,39 @@ class _nor_gate:
         #print(iwa)
         if DEBUG_LEVEL > 2:
             print(str(self.bep + np.sum(iwa*self.bepj)) + '/' + str(1 + np.sum(iwa*self.bef)) + ' = ' + hl(str((self.bep + np.sum(iwa*self.bepj))/(1 + np.sum(iwa*self.bef)))))
-        return (self.bep + np.sum(iwa*self.bepj))/(1 + np.sum(iwa*self.bef))
+        ret = (self.bep + np.sum(iwa*self.bepj))/(1 + np.sum(iwa*self.bef))
+        super().set_out(ret)
+        return ret
     def __str__(self):
         return self.name + ': ' + str(self.e)
 
 # PRIVATE. Not intended to use manually
 # The implicit OR gate is just a pseudo-gate, which outputs the YFP RPU
-class _implicit_or_gate:
+class _implicit_or_gate(_base_gate):
     # represents a NOR gate in the circuit
     def __init__(self, node, dev, factors):
         self.node = node
         self.dev = dev
         self.type = 1
-        self.min = 0
-        self.max = 0
         self.b = factors.astype(bool)
     def out(self, wa):
-        return np.sum(wa[self.b])
+        ret = np.sum(wa[self.b])
+        super().set_out(ret)
+        return ret
     def __str__(self):
         return self.name + ': None (implicit OR)'
 
 # PRIVATE. Not intended to use manually
 # The dummy gate is a placeholder, which always emits 0 but has initialised
 # boundary values
-class _dummy_gate:
+class _dummy_gate(_base_gate):
     # represents a NOR gate in the circuit
-    def __init__(self, node, dev, codebook):
+    def __init__(self, node, dev):
         self.node = node
         self.dev = dev
-        self.codebook = codebook
         self.type = -1
-        self.min = np.min(codebook[:, 1, 0])
-        self.max = np.max(codebook[:, 0, 0])
-    def out(self, g_idx, env):
-        return self.codebook[g_idx, env, 0]
-    def alt_out(self, g_idx, env):
-        return self.codebook[g_idx, env, 1]
-    def extremes(self, env):
-        if not env:
-            return self.max
-        return self.min
-    def promoter(self, g_idx, env):
-        return int(self.codebook[g_idx, env, 2])
     def __str__(self):
-        return self.name + ': None (dummy gate, codebook size: ' + len(self.codebook[:, 0, 0]) + ')'
+        return self.name + ': None (dummy gate)'
 
 # This solver does a fixed point iteration. Simplest solver thinkable
 # this dramatically reduced. Essentially only solve the propagate function
@@ -701,6 +828,7 @@ class nor_circuit_solver_powell:
         else:
             self.values = np.zeros(len(self.circuit))
         self.bound = bound
+        self.mode = 0
     def set_initial_value(self, initial_value):
         self.values = initial_value
         # create initial guess from crosstalk-free combinational solution
@@ -712,23 +840,26 @@ class nor_circuit_solver_powell:
             p_a = np.zeros(len(self.circuit.p_idx))
             p_a[self.circuit.g_p[gix]] = np.sum(self.values[self.circuit.w[:, gix].astype(bool)])
             if self.circuit.gates[gix].type == -1:
-                self.values[gix] = self.circuit.gates[gix].extremes(self.circuit.bound_env[gix])
+                self.values[gix] = self.circuit.gates[gix].lut(_a, self.circuit.bound_env[gix])
             else:
                 self.values[gix] = self.circuit.gates[gix].out(p_a)
             #print(p_a)
         # debug print the initial guess
         if (DEBUG_LEVEL > 1):
             self._debug_step(self.values, 'initial guess', 'unknown')
-    def bounding_mode(self, bound, heuristic=False):
-        self.heuristic = heuristic
-        self.bound = bound
+    def bounding_mode(self, mode_idx=None):
+        if mode_idx is None:
+            self.bound = not self.bound
+        else:
+            self.bound = True
+            self.mode = mode_idx
     def solve(self, tol=10**(-2), max_iter=100):
         # Iterate the points using Banach's fixed point theorem
         # to estimate the error, compare old and new node values
         err = np.inf
         run = 0
         if self.bound:
-            function = (lambda a: self.circuit.propagate_bound(a, heuristic=self.heuristic))
+            function = (lambda a: self.circuit.propagate_bound(a, _bounding_configs[self.mode], _force_configs[self.mode]))
         else:
             function = self.circuit.propagate
         vs = self.values
@@ -784,14 +915,14 @@ class json_file:
 #   Classes and functions for more abstract objects/tasks
 #____________________________________________________________________________
 
-class __directed_acyclic_graph:
+class _directed_acyclic_graph:
     def __init__(self, nodes, edges):
         self.nodes = nodes
         self.edges = edges
     def is_valid(self):
         pass
 
-def __list_intersect(a, b):
+def _list_intersect(a, b):
     return list(set(a) & set(b))
 
 def _filter_dict(d, l, as_list=False, act=copy):
@@ -808,7 +939,7 @@ def dict_from_list(l, fill=None):
     return dict({k: copy(fill) for k in l})
 
 # JIT friendly version of integer power
-def __power(bases, exponents):
+def _power(bases, exponents):
     for n in range(len(bases)):
         b = bases[n]
         e = exponents[n] - 1

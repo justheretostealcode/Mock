@@ -18,7 +18,7 @@ import shlex
 import libsim_coop as sim
 
 # standard configuration path
-version = '1.0'
+version = '1.2'
 settings_config_path = './settings_config.cfg'
 
 # pwd
@@ -31,10 +31,12 @@ here = op.dirname(op.abspath(inspect.getfile(inspect.currentframe())))
 library = None
 circuit = None
 inputs = None
+supplement = None
 
 library_file = None
 structure_file = None
 assignment_file = None
+supplement_file = None
 
 #____________________________________________________________________________
 #   Functions and related constants for convenience
@@ -109,6 +111,8 @@ def prepare_simulation():
     structure = check_load_and_create(settings['structure'], structure_file, sim.circuit_structure)
     # check and load assignment
     assignment = check_load_and_create(settings['assignment'], assignment_file, sim.circuit_assignment)
+    # check and load bb additional library
+    #supplement = check_load_and_create(settings['bb_library'], bb_file, sim.circuit_supplement)
     # build the circuit
     circuit = sim.nor_circuit(structure, assignment, library, solver=sim.nor_circuit_solver_powell)
     # generate the inputs (I assume, I have a valid truthtable given)
@@ -155,10 +159,8 @@ def sim_run():
     whitelist = np.ones(len(inputs), dtype=int)
     if len(circuit.assignment.dummys) > 0 or 'propagation_mode' in settings and settings['propagation_mode'] > 0:
         bounding_mode = True
-        heuristic_mode = False
-        if settings['propagation_mode'] > 1:
-            heuristic_mode = True
-        circuit.solver.bounding_mode(bounding_mode, heuristic_mode)
+        sub_mode = settings['propagation_mode'] - 1
+        circuit.solver.bounding_mode(sub_mode)
         if 'whitelist' in settings:
             whitelist = np.array(list(map(int, settings['whitelist'])))
     # Now solve the circuit function

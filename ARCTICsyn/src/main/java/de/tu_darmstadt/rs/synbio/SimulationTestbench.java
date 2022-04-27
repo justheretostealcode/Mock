@@ -145,13 +145,6 @@ public class SimulationTestbench {
 
             if (structure != null) {
 
-                /*Assignment ass = new Assignment();
-
-                LogicGate k = (LogicGate) structure.vertexSet().stream().filter(g -> g instanceof LogicGate).findAny().get();
-                GateRealization l = gateLib.getRealizations().get(k.getLogicType()).get(0);
-                ass.put(k,l);
-                checker.isCompatible(structure, ass);*/
-                
                 try {
                     out.print(child.getName());
                 } catch (Exception e) {
@@ -176,9 +169,11 @@ public class SimulationTestbench {
                         if (result.getStructure() != null && result.getAssignment() != null) {
                             logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + result.getAssignment().getIdentifierMap());
 
-                        AssignmentCounter counter = new AssignmentCounter(structure, gateLib, mapConfig, simConfig);
+                        //logger.info(child.getName() + ", " + result.getNeededSimulations());
+
+                        /*AssignmentCounter counter = new AssignmentCounter(structure, gateLib, mapConfig, simConfig);
                         long maxAssignments = counter.assign().getNeededSimulations();
-                        logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");
+                        logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");*/
 
                         //structure.save(new File(structure.getIdentifier() + ".json"));
                         //mapper.writerWithDefaultPrettyPrinter().writeValue(new File(structure.getIdentifier() + "_assignment.json"), result.getAssignment().getIdentifierMap());

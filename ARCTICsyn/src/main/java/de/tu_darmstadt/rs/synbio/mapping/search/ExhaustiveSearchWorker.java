@@ -1,6 +1,7 @@
 package de.tu_darmstadt.rs.synbio.mapping.search;
 
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
+import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityChecker;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
@@ -22,12 +23,16 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
     private final Circuit structure;
     private final MappingConfiguration mapConfig;
 
+    private final CompatibilityChecker checker;
+
     public ExhaustiveSearchWorker(ExhaustiveAssigner assigner, Circuit structure, MappingConfiguration mapConfig,
                                   SimulationConfiguration simConfig, GateLibrary gateLibrary) {
         this.mapConfig = mapConfig;
         this.simulator = new SimulatorInterface(simConfig, gateLibrary);
         this.assigner = assigner;
         this.structure = structure;
+
+        this.checker = new CompatibilityChecker(gateLibrary, structure);
     }
 
     @Override
@@ -38,7 +43,7 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
 
         do {
             assignment = assigner.getNextAssignment();
-        } while(assignment != null && !assignment.fulfilsConstraints(structure));
+        } while(assignment != null && !checker.isCompatible(assignment));
 
         SimulationResult bestRes = null;
         long numSims = 0;
@@ -56,7 +61,7 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
 
             do {
                 assignment = assigner.getNextAssignment();
-            } while(assignment != null && !assignment.fulfilsConstraints(structure));
+            } while(assignment != null && !checker.isCompatible(assignment));
         }
 
         simulator.shutdown();

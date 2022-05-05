@@ -43,7 +43,7 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
 
         do {
             assignment = assigner.getNextAssignment();
-        } while(assignment != null && !checker.isCompatible(assignment));
+        } while(assignment != null && !checker.verify(assignment));
 
         SimulationResult bestRes = null;
         long numSims = 0;
@@ -61,7 +61,7 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
 
             do {
                 assignment = assigner.getNextAssignment();
-            } while(assignment != null && !checker.isCompatible(assignment));
+            } while(assignment != null && !checker.verify(assignment));
         }
 
         simulator.shutdown();

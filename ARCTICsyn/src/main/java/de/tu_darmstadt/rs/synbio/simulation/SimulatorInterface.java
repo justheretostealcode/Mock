@@ -33,8 +33,7 @@ public class SimulatorInterface {
     private BufferedWriter writer;
     private BufferedReader errorReader;
     private final ObjectMapper mapper = new ObjectMapper();
-
-    private Set<Gate> circuitGates;
+    private AssignmentCompiler compiler;
 
     public enum PropagationMode {
         EXACT,
@@ -56,10 +55,7 @@ public class SimulatorInterface {
         if (simProcess!= null && simProcess.isAlive())
             simProcess.destroy();
 
-        circuitGates = circuit.vertexSet().stream()
-                .filter(g -> g.getLogicType() != LogicType.OUTPUT_BUFFER)
-                .filter(g -> g.getLogicType() != LogicType.OUTPUT_OR2)
-                .collect(Collectors.toSet());
+        this.compiler = new AssignmentCompiler(circuit, library);
 
         try {
             String structureFileName = "structure_" + circuit.getIdentifier() + "_tid" + Thread.currentThread().getId() + "_" + System.nanoTime() + ".json";
@@ -102,20 +98,14 @@ public class SimulatorInterface {
 
     public Double simulate(Assignment assignment, PropagationMode mode) { //TODO: handle null return value
 
-
-        //Map<String, String> assignmentIdentifiers = assignment.getIdentifierMap();
         String additionalArgs = "--propagation_mode=" + mode.ordinal();
 
-        Map<String, Map<?, ?>> assignmentMap = BranchAndBoundUtil.compileDummyInfos(library, circuitGates, assignment);
+        Map<String, Map<?, ?>> assignmentMap = compiler.compile(assignment);
 
-        /* handle incomplete assignments of B&B
-        if (assignment.keySet().size() < circuitGates.size() + 1) {
-            Map<String, Map<?, ?>> dummyInfos = BranchAndBoundUtil.compileDummyInfos(library, circuitGates, assignment);
-            if (dummyInfos != null)
-                assignmentMap.putAll(dummyInfos);
-        }
-
-        assignmentMap.putAll(assignmentIdentifiers);*/
+        /*try {
+            mapper.writerWithDefaultPrettyPrinter().writeValue(new File("assignment_00000110.json"), assignmentMap);
+        } catch (Exception e) {
+        }*/
 
         double score = 0.0;
 
@@ -142,7 +132,6 @@ public class SimulatorInterface {
 
                 if (!simProcess.isAlive()) {
                     logger.error("Simulator exited during simulation: " + getError());
-                    //mapper.writerWithDefaultPrettyPrinter().writeValue(new File("last.json"), assignmentMap);
                     shutdown();
                     return null;
                 }
@@ -157,12 +146,6 @@ public class SimulatorInterface {
             } catch (Exception e) {
                 logger.error(e.getMessage());
             }
-
-            /*if (mode == PropagationMode.BOUNDING)
-                mapper.writerWithDefaultPrettyPrinter().writeValue(new File("01110110_partial.json"), assignmentMap);
-            else
-                mapper.writerWithDefaultPrettyPrinter().writeValue(new File("01110110_full.json"), assignmentMap);*/
-
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -373,8 +373,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
             searchTreeVisualizer.add(currentItem, bestScore, false);
 
-            if (iteration % 100 == 0)  // Only update every hundred iterations
-                System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
+            //if (iteration % 100 == 0)  // Only update every hundred iterations
+            //    System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
 
             if (currentItem.val <= bestScore * (1.0 - errorThreshold)) {
                 // Removes item if the best score has changed after this queue item has been added to the queue
@@ -427,17 +427,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                         if (val > bestScore) {   // Since the node is a terminal node (leave), one needs to check if it is better than the current best solution
                             bestScore = val;
                             bestAssignment = assignment;
-                            logger.info("new best score: " + bestScore);
-
-                            /*boolean checkerResult = checker.isCompatible(assignment);
-                            boolean verifyResult = checker.verify(assignment);
-
-                            if (checkerResult != verifyResult) {
-                                logger.warn("checkerResult != verifyResult");
-                            } else {
-                                logger.info("equal");
-                            }*/
-
+                            //logger.info("new best score: " + bestScore);
                             searchStatsLogger.notifyNewBestAssignment(iteration, iNeededSimulations);
                         }
                     }

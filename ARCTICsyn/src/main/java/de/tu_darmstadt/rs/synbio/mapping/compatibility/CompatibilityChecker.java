@@ -302,6 +302,16 @@ public class CompatibilityChecker {
         return result == Tristate.TRUE;
     }
 
+    public List<org.logicng.datastructures.Assignment> getAllAssignments() {
+
+        miniSat.loadState(state);
+        Tristate result = miniSat.sat();
+
+        List<org.logicng.datastructures.Assignment> assignments = miniSat.enumerateAllModels();
+
+        return assignments;
+    }
+
     public boolean verify(Assignment partialAssignment) {
 
         for (GateTriple triple : triples) {

@@ -208,8 +208,8 @@ public class GateLibrary {
                                 new GateRealization.GateCharacterization(
                                         promoterLevels.get(promoterName).second(),
                                         promoterLevels.get(promoterName).first(),
-                                        function == LogicType.INPUT ? 0.0 : outputs3dB.get(deviceName).get(0),
-                                        function == LogicType.INPUT ? 0.0 : outputs3dB.get(deviceName).get(1),
+                                        function == LogicType.INPUT ? promoterLevels.get(promoterName).first() : outputs3dB.get(deviceName).get(0),
+                                        function == LogicType.INPUT ? promoterLevels.get(promoterName).second() : outputs3dB.get(deviceName).get(1),
                                         function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(0),
                                         function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(1),
                                         0,

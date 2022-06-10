@@ -5,11 +5,10 @@ import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import de.tu_darmstadt.rs.synbio.common.circuit.*;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.synthesis.SynthesisConfiguration;
-import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.jgrapht.Graphs;
+import org.logicng.formulas.Formula;
 import org.logicng.formulas.Variable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +27,7 @@ public class EnumeratorFast {
     /* Configuration */
     private final SynthesisConfiguration synConfig;
     private TruthTable targetTruthTable;
+    private boolean isGuided = false;
     private final GateLibrary gateLib;
     private final int feasibility;
 
@@ -36,7 +36,7 @@ public class EnumeratorFast {
     private final int numGroupsInLib;
     private final List<LogicType> gateTypes;
 
-    private HashMap<TruthTable, Circuit> resultCircuits;
+    private HashMap<TruthTable, Set<Circuit>> resultCircuits;
 
     /* enumeration buffers */
     private final List<String> gateInputNames;
@@ -52,6 +52,7 @@ public class EnumeratorFast {
         currentMinSize = Integer.MAX_VALUE - synConfig.getWeightRelaxation();
 
         this.targetTruthTable = targetTruthTable;
+        this.isGuided = true;
     }
 
     /* constructor for free enumeration */
@@ -215,7 +216,7 @@ public class EnumeratorFast {
                     buildCircuitGraph(result.getCircuit(), result.getInputMapping());
                 }
             }  catch (Exception e) {
-                logger.error(e.getMessage());
+                //logger.error(e.getMessage());
             }
         }
 
@@ -316,38 +317,51 @@ public class EnumeratorFast {
         if (!circuit.removeRedundantGates())
             return;
 
-        // compare to current min size
         int weight = circuit.getWeight();
-        if (weight > currentMinSize + synConfig.getWeightRelaxation())
-            return;
 
-        TruthTable truthTable = new TruthTable(circuit.getExpression());
+        // if guided, compare to current min size
+        if (isGuided) {
+            if (weight > currentMinSize + synConfig.getWeightRelaxation())
+                return;
+        }
 
-        if (!truthTable.equalsLogically(targetTruthTable)) {
-            circuit.print(new File("test.dot"));
-            evaluatePrimitiveCircuit(candidate, inputMapping);
-            logger.error("Synthesis error: " + truthTable.toString());
+        Formula expression = circuit.getExpression();
+        TruthTable truthTable = new TruthTable(expression);
+
+        /* filter circuits with reduced support after redundancy removal */
+        if (!isGuided) {
+            if (expression.variables().size() < feasibility) {
+                return;
+            }
+        }
+
+        if (isGuided) {
+            if (!truthTable.equals(targetTruthTable)) {
+                logger.error("Synthesis error: " + truthTable);
+            }
         }
 
         // filter out structurally equivalent circuits
-        for (TruthTable libTruthTable : resultCircuits.keySet()) {
-
-            if (targetTruthTable != null || libTruthTable.equalsLogically(truthTable)) {
-
-                if (circuit.isEquivalent(resultCircuits.get(libTruthTable))) {
+        if (resultCircuits.containsKey(truthTable)) {
+            for (Circuit existingCircuit : resultCircuits.get(truthTable)) {
+                if (circuit.isEquivalent(existingCircuit))
                     return;
+            }
+        }
+
+        if (isGuided) {
+            if (weight < currentMinSize) {
+                currentMinSize = weight;
+
+                // update result circuits
+                if (resultCircuits.containsKey(truthTable)) {
+                    resultCircuits.get(truthTable).removeIf(c -> c.getWeight() > (currentMinSize + synConfig.getWeightRelaxation()));
                 }
             }
         }
 
-        if (weight < currentMinSize) {
-            currentMinSize = weight;
-
-            // update result circuits
-            resultCircuits.entrySet().removeIf(e -> e.getValue().getWeight() > (currentMinSize + synConfig.getWeightRelaxation()));
-        }
-
-        resultCircuits.put(truthTable, circuit);
+        resultCircuits.putIfAbsent(truthTable, new HashSet<>());
+        resultCircuits.get(truthTable).add(circuit);
     }
 
     /* helper functions for handling of primitive circuits */
@@ -790,7 +804,7 @@ public class EnumeratorFast {
 
     /* getter */
 
-    public HashMap<TruthTable, Circuit> getResultCircuits() {
+    public HashMap<TruthTable, Set<Circuit>> getResultCircuits() {
         return resultCircuits;
     }
 }

@@ -124,7 +124,9 @@ public class CompatibilityChecker {
 
         //long start = System.currentTimeMillis();
 
-        /* Clause 1: Every gate has to be assigned one device */
+        /* Clause 1: Every gate has to be assigned one exactly device */
+        /* This clause is not necessary for a compatibility check as it is covered by clause 3 */
+        /* But if included, the SAT model represents a valid assignment */
 
         for (Gate gate : gates) {
 
@@ -217,7 +219,7 @@ public class CompatibilityChecker {
             }
         }
 
-        /* Clause 4: All triples of devices have to be compatible */
+        /* Clause 4: All pairs and triples of devices have to be compatible */
 
         for (GateTriple triple : triples) {
 
@@ -267,6 +269,7 @@ public class CompatibilityChecker {
         }
 
         /* add clauses */
+
         for (Formula clause : clauses) {
             miniSat.add(clause);
         }
@@ -278,7 +281,7 @@ public class CompatibilityChecker {
 
         miniSat.loadState(state);
 
-        /* determine vars to substitute with constant TRUE to account for incomplete assignment */
+        /* determine vars to substitute with constant TRUE to account for (incomplete) assignment */
 
         for (Gate gate : partialAssignment.keySet()) {
             if (gate.getLogicType() != LogicType.OUTPUT_BUFFER && gate.getLogicType() != LogicType.OUTPUT_OR2)

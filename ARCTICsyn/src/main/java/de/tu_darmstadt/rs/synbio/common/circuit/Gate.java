@@ -35,10 +35,6 @@ public class Gate {
         }
     }
 
-    public TruthTable getTruthTable() {
-        return new TruthTable(getExpression());
-    }
-
     public String getIdentifier() {
         return identifier;
     }

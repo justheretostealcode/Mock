@@ -9,7 +9,6 @@ import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
 import de.tu_darmstadt.rs.synbio.synthesis.SynthesisConfiguration;
-import de.tu_darmstadt.rs.synbio.synthesis.enumeration.Enumerator;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import de.tu_darmstadt.rs.synbio.synthesis.enumeration.EnumeratorFast;
 import org.slf4j.Logger;
@@ -67,7 +66,7 @@ public class ARCTICsyn {
         EnumeratorFast enumerator = new EnumeratorFast(gateLib, inputTruthTable, synConfig);
 
         enumerator.enumerate();
-        List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().values());
+        List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().get(inputTruthTable));
 
         if (circuits.isEmpty()) {
             logger.info("No circuit structures found.");

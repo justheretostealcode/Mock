@@ -72,7 +72,7 @@ public class EnumerationWorker implements Callable<List<EnumerationResult>> {
             TruthTable circuitTT = new TruthTable(f);
 
             // match
-            if(targetTruthTable == null || targetTruthTable.equalsLogically(circuitTT)) {
+            if(targetTruthTable == null || targetTruthTable.equals(circuitTT)) {
                 results.add(new EnumerationResult(circuit, inputMapping));
             }
         }

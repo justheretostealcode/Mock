@@ -18,9 +18,7 @@ import org.logicng.formulas.Variable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.Writer;
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -246,7 +244,7 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
 
         TruthTable afterTT = new TruthTable(getExpression());
 
-        if (!beforeTT.equalsLogically(afterTT))
+        if (!beforeTT.equals(afterTT))
             logger.error("Circuit with redundancy removed does not equal input circuit!");
 
         return true;
@@ -454,6 +452,25 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         }
 
     }
+
+    public String print() {
+
+        ComponentNameProvider<Gate> vertexIdProvider = Gate::getIdentifier;
+        ComponentNameProvider<Gate> vertexLabelProvider = gate -> gate.getLogicType().toString();
+        GraphExporter<Gate, Wire> exporter = new DOTExporter<>(vertexIdProvider, vertexLabelProvider, null);
+
+        Writer writer = new StringWriter();
+
+        try {
+            exporter.exportGraph(this, writer);
+            writer.close();
+        } catch(Exception e) {
+            logger.error(e.getMessage());
+        }
+
+        return writer.toString();
+    }
+
 
     public void print(File outputFile, Assignment assignment) {
 

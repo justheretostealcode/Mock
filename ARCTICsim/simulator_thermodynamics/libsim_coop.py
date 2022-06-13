@@ -154,13 +154,14 @@ bounding_modes = dict({
 
 # Define important indexing variables
 # leaves of the decision tree
-_wired_assigned = 0
-_wired_dummy_nor = 1
-_wired_dummy_or = 2
-_xtalk_assignedandnor = 3
-_xtalk_dummyoror_dummy = 4
-_xtalk_dummyoror_or = 5
-_xtalk_dummyoror_tf = 6
+_wired_assignedandnor = 0
+_wired_assignedandor = 1
+_wired_dummy_nor = 2
+_wired_dummy_or = 3
+_xtalk_assignedandnor = 4
+_xtalk_dummyoror_dummy = 5
+_xtalk_dummyoror_or = 6
+_xtalk_dummyoror_tf = 7
 # Variable categories from the LUT's of the gates
 _a = 0
 _i = 1
@@ -169,6 +170,7 @@ _k = 3
 _d = 4
 _b = 5
 _o = 6
+_c = 7
 _var_map = dict({
     'a': _a,
     'i': _i,
@@ -177,6 +179,7 @@ _var_map = dict({
     'd': _d,
     'b': _b,
     'o': _o,
+    'c': _c,
 })
 _var_pre = dict({
     'a': (lambda a, circ: float(a)),
@@ -186,6 +189,7 @@ _var_pre = dict({
     'd': (lambda d, circ: circ.p_idx[d]),
     'b': (lambda b, circ: circ.tf_idx[b][0]),
     'o': (lambda o, circ: float(o)),
+    'c': (lambda c, circ: float(c)),
 })
 # Indexes for min and max values of a respective category
 _min = 0
@@ -199,9 +203,15 @@ _bounding_configs = dict({
     1: np.array([  # TODO: naive herusitic mode
         ]),
     2: np.array([  # ita optimal mode
-            [  # _wired_assigned
+            [  # _wired_assignedandnor
                 [(_i, _min), (_o, _max)],   # 0 target
                 [(_o, _min), (_i, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _wired_assignedandor
+                [(_o, _min), (_i, _max)],   # 0 target
+                [(_i, _min), (_o, _max)],   # 1
                 #    0              1
                 #       source
             ],
@@ -218,14 +228,14 @@ _bounding_configs = dict({
                 #       source
             ],
             [  # _xtalk_assignedandnor
-                [(_a, _max), (_j, _min)],   # 0 target
-                [(_j, _max), (_a, _min)],   # 1
+                [(_c, _max), (_j, _min)],   # 0 target
+                [(_j, _max), (_c, _min)],   # 1
                 #    0              1
                 #       source
             ],
             [  # _xtalk_dummyoror_dummy
-                [(_a, _max), (_j, _min)],   # 0 target
-                [(_j, _max), (_a, _min)],   # 1
+                [(_c, _max), (_j, _min)],   # 0 target
+                [(_j, _max), (_c, _min)],   # 1
                 #    0              1
                 #       source
             ],
@@ -254,19 +264,25 @@ _force_configs = dict({
     1: np.array([  # TODO: naive herusitic mode
         ]),
     2: np.array([  # ita optimal mode
-            [  # _wired_assigned
+            [  # _wired_assignedandnor
+                [(0, 0), (0, 1)],   # 0 target
+                [(1, 0), (0, 0)],   # 1
+                #   0       1
+                #    source
+            ],
+            [  # _wired_assignedandor
+                [(0, 0), (1, 0)],   # 0 target
+                [(1, 0), (1, 1)],   # 1
+                #   0       1
+                #    source
+            ],
+            [  # _wired_dummy_nor
                 [(0, 0), (0, 1)],   # 0 target
                 [(1, 0), (0, 0)],   # 1
                 #   0       1
                 #    source
             ],
             [  # _wired_dummy_or
-                [(0, 0), (0, 1)],   # 0 target
-                [(1, 0), (0, 0)],   # 1
-                #   0       1
-                #    source
-            ],
-            [  # _wired_dummy_nor
                 [(0, 0), (1, 0)],   # 0 target
                 [(1, 0), (1, 1)],   # 1
                 #   0       1
@@ -361,11 +377,13 @@ class nor_circuit:
                 if attr == 'd':
                     continue
                 if isinstance(content, dict):
-                    # this is a target dependent attribute
-                    for target, vals in content.items():
-                        lut[_var_map[attr], :, self.node_idx[target] + 1] = np.array([_var_pre[attr](vals[0], self), _var_pre[attr](vals[1], self)])
-                    if DEBUG_LEVEL > 1:
-                        print(hl(attr) + '(s) ', end='')
+                    # this is a target dependent attribute, so attr is in fact
+                    # the target gate and dict entries are the specific attributes
+                    target = attr
+                    for sattr, vals in content.items():
+                        lut[_var_map[sattr], :, self.node_idx[target] + 1] = np.array([_var_pre[sattr](vals[0], self), _var_pre[sattr](vals[1], self)])
+                        if DEBUG_LEVEL > 1:
+                            print(hl(sattr) + '(s) ', end='')
                 else:
                     lut[_var_map[attr], :, 0] = np.array([_var_pre[attr](content[0], self), _var_pre[attr](content[1], self)])
                     if DEBUG_LEVEL > 1:
@@ -416,6 +434,8 @@ class nor_circuit:
                 if DEBUG_LEVEL > 1:
                     print('Skipping immutable or dummy node: ' + hl(self.gates[n].node))
                 continue
+            if DEBUG_LEVEL > 1:
+                print('Working on node: ' + hl(self.gates[n].node) + str(' (') + str(self.g_p[n]) + str(')'))
             # now, we are either an OR or a NOR gate
             # prepare device array
             p_a = np.zeros(len(self.p_idx))
@@ -423,35 +443,54 @@ class nor_circuit:
             # The decision tree is the following
             # - is the connection wired or crosstalk?
             # -- wired: is the source gate assigned or a dummy?
-            # -- wired, assigned: assign the lut value depending on the forcing truthtable
+            # -- wired, assigned: is the target gate an OR or a NOR?
+            # -- wired, assigned.NOR: assign the lut value depending on the forcing truthtable
+            # -- wired, assigned.OR: assign the lut value depending on the forcing truthtable
             # -- wired, source dummy: is the target gate NOR or OR?
             # -- wired, source dummy, target NOR/OR: assign the lut value depending on the forcing truthtable
             # -- crosstalk: is the source gate assigned and a NOR or is it dummy/OR?
             # -- crosstalk, assigned.NOR: assign the lut value
             # -- crosstalk, source dummy/OR: read the optimal TF from the lut. Is the source gate dummy or OR?
             # -- crosstalk, source dummy/OR, source dummy/OR: assign the lut value depending on the forcing truthtable
+            if DEBUG_LEVEL > 2:
+                print('Source gates: ', end='')
             for m in range(len(self.gates)):
                 source_gate = self.gates[m]
+                if DEBUG_LEVEL > 2:
+                    print(hl(self.gates[m].node) + str('('), end='')
                 # check if gate m is connected via wire
                 # - is the connection wired or crosstalk? -> wired
                 if self.w[m, n] == 1:
                     # -- wired: is the source gate assigned or a dummy? -> assigned
                     if source_gate.type != -1:
-                        # -- wired, assigned: assign the lut value depending on the forcing truthtable
-                        (tenv, senv) = force_map[_wired_assigned, target_gate.env, source_gate.env]
-                        p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_assigned, tenv, senv])
+                        # -- wired, assigned: is the target gate an OR or a NOR?
+                        if target_gate.type == 0:
+                            # -- wired, assigned.NOR: assign the lut value depending on the forcing truthtable
+                            (tenv, senv) = force_map[_wired_assignedandnor, target_gate.env, source_gate.env]
+                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_assignedandnor, tenv, senv])
+                        else:
+                            # -- wired, assigned.OR: assign the lut value depending on the forcing truthtable
+                            (tenv, senv) = force_map[_wired_assignedandor, target_gate.env, source_gate.env]
+                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_assignedandor, tenv, senv])
                     # -- wired: is the source gate assigned or a dummy? -> dummy
                     else:
                         # -- wired, source dummy: is the target gate NOR or OR? -> NOR
                         if target_gate.type == 0:
                             # -- wired, source dummy, target NOR: assign the lut value depending on the forcing truthtable
                             (tenv, senv) = force_map[_wired_dummy_nor, target_gate.env, source_gate.env]
-                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_nor, tenv, senv])
+                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_nor, tenv, senv], target=n)
                         # -- wired, source dummy: is the target gate NOR or OR? -> OR
                         else:
                             # -- wired, source dummy, target OR: assign the lut value depending on the forcing truthtable
                             (tenv, senv) = force_map[_wired_dummy_or, target_gate.env, source_gate.env]
-                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_or, tenv, senv])
+                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_or, tenv, senv], target=n)
+                            #print(str(_wired_dummy_or))
+                            #print(str(target_gate.env) + ' ' + str(source_gate.env))
+                            #print(str(tenv) + ' ' + str(senv))
+                            #print(str(mode_lut[_wired_dummy_or, tenv, senv]))
+                            #print(str(source_gate.lut(*mode_lut[_wired_dummy_or, tenv, senv])))
+                    if DEBUG_LEVEL > 2:
+                        print(str('w') + str(') '), end='')
                 # - is the connection wired or crosstalk? -> crosstalk
                 elif target_gate.type == 0:
                     # -- crosstalk: is the source gate assigned and a NOR or is it dummy/OR? -> assigned.NOR
@@ -465,12 +504,18 @@ class nor_circuit:
                         # -- crosstalk, source dummy/OR: [...] Is the source gate dummy or OR? -> dummy
                         if source_gate.type == -1:
                             # -- crosstalk, source dummy/OR, source dummy: assign the lut value
-                            p_a[pa_ix] += source_gate.lut(*mode_lut[_xtalk_dummyoror_dummy, target_gate.env, source_gate.env])
+                            p_a[pa_ix] += source_gate.lut(*mode_lut[_xtalk_dummyoror_dummy, target_gate.env, source_gate.env], target=n)
                         # -- crosstalk, source dummy/OR: [...] Is the source gate dummy or OR? -> OR
                         else:
                             # -- crosstalk, source dummy/OR, source dummy: assign the lut value
                             p_a[pa_ix] += source_gate.lut(*mode_lut[_xtalk_dummyoror_or, target_gate.env, source_gate.env])
+                    if DEBUG_LEVEL > 2:
+                        print(str('x') + str(') '), end='')
+                else:
+                    if DEBUG_LEVEL > 2:
+                        print(str('_') + str(') '), end='')
             if DEBUG_LEVEL > 2:
+                print('')
                 print('p_a vector for ' + hl(str(target_gate.node)) + ' (index ' + hl(str(n)) + ')' + ' of type ' + hl(str(target_gate.type)) + ':')
                 print(p_a)
             new_a[n] = target_gate.out(p_a)

@@ -921,7 +921,9 @@ class nor_circuit_solver_powell:
                 self._debug_step(x, r[0], 'unknown')
             r[0] += 1
         obj = (lambda v, mutix=mutix, immutix=immutix, v_im=vs[immutix], N=len(vs): fp(v, mutix, immutix, v_im, N))
-        result = so.root(obj, np.copy(vs[mutix]), tol=tol, method='hybr')#, callback=(lambda x, f, r=[run]: callback))
+        #print(vs[mutix])
+        result = so.root(obj, np.copy(vs[mutix]), tol=tol, method='lm')#, callback=(lambda x, f, r=[run]: callback))
+        #print(result)
         vs[mutix] = result.x
         err = nla.norm(result.fun)
         if (DEBUG_LEVEL > 0):

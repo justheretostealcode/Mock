@@ -57,14 +57,14 @@ public class BoundingValidator extends AssignmentSearchAlgorithm {
         while (assignment != null) {
 
             Assignment completeAssignment = new Assignment(assignment);
-            double exactScore = simulator.simulate(completeAssignment, SimulatorInterface.PropagationMode.EXACT);
+            double exactScore = simulator.simulate(completeAssignment, SimulatorInterface.PropagationMode.NORMAL);
 
             for (int i = 0; i < gates.size() - 1; i++) {
 
                 Gate gate = gates.get(i);
 
                 assignment.remove(gate);
-                double estimation = simulator.simulate(assignment, SimulatorInterface.PropagationMode.BOUNDING);
+                double estimation = simulator.simulate(assignment, SimulatorInterface.PropagationMode.ITA_OPTIMAL);
 
                 if (estimation < exactScore) {
                     logger.warn("Estimation is not optimistic! Aborting check for " + structure.getIdentifier() + ".");

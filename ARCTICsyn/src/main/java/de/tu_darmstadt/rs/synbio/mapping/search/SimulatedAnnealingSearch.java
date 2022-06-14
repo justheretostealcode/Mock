@@ -90,7 +90,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         do {
             current = randomAssigner.getNextAssignment();
             problemSize = exhaustiveAssigner.getNumTotalPermutations();
-            currentScore = simulator.simulate(current, SimulatorInterface.PropagationMode.EXACT);
+            currentScore = simulator.simulate(current, SimulatorInterface.PropagationMode.NORMAL);
             currentGrowth = 1.0;//simulator.getLastGrowth();
             currentScore = currentScore * (currentGrowth< 0.75 ? Math.pow(currentGrowth * 1.33, 1) : 1.0);
         } while (!current.fulfilsConstraints(structure) || currentGrowth < 0.75);
@@ -126,7 +126,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             if (neighbor == null)
                 break;
 
-            double neighborScore = simulator.simulate(neighbor, SimulatorInterface.PropagationMode.EXACT);
+            double neighborScore = simulator.simulate(neighbor, SimulatorInterface.PropagationMode.NORMAL);
             double neighborGrowth = 1.0;//simulator.getLastGrowth();
             neighborScore =  neighborScore * (neighborGrowth < 0.75 ? Math.pow(neighborGrowth * 1.33, 1) : 1.0);
             simCount ++;
@@ -194,7 +194,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
         }
 
-        SimulationResult result = new SimulationResult(structure, best, simulator.simulate(best, SimulatorInterface.PropagationMode.EXACT));
+        SimulationResult result = new SimulationResult(structure, best, simulator.simulate(best, SimulatorInterface.PropagationMode.NORMAL));
         result.setNeededSimulations(simCount);
         simulator.shutdown();
         return result;
@@ -223,7 +223,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         RandomAssigner assigner = new RandomAssigner(gateLib, structure);
 
         for (int i = 0; i < numSamples; i++) {
-            scores[i] = simulator.simulate(assigner.getNextAssignment(), SimulatorInterface.PropagationMode.EXACT);
+            scores[i] = simulator.simulate(assigner.getNextAssignment(), SimulatorInterface.PropagationMode.NORMAL);
         }
 
         double sDev = new StandardDeviation().evaluate(scores);

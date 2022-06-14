@@ -1,18 +1,14 @@
 package de.tu_darmstadt.rs.synbio.simulation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.tu_darmstadt.rs.synbio.common.LogicType;
-import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.mapping.util.BranchAndBoundUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class SimulatorInterface {
 
@@ -36,9 +32,12 @@ public class SimulatorInterface {
     private AssignmentCompiler compiler;
 
     public enum PropagationMode {
-        EXACT,
-        BOUNDING,
-        HEURISTIC
+        NORMAL,
+        NAIVE_OPTIMAL,
+        NAIVE_HEURISTIC,
+        ITA_OPTIMAL,
+        ITA_HEURISTIC,
+        FULL_HEURISTIC
     }
 
     public SimulatorInterface(SimulationConfiguration config, GateLibrary gateLibrary) {

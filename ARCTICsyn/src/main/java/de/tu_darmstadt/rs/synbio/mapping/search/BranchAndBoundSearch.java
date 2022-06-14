@@ -567,9 +567,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         SimulatorInterface.PropagationMode mode;
 
         if (assignment.size() == logicGates.length)
-             mode = SimulatorInterface.PropagationMode.EXACT;
+             mode = SimulatorInterface.PropagationMode.NORMAL;
         else
-            mode = mapConfig.getBabFast() ? SimulatorInterface.PropagationMode.HEURISTIC : SimulatorInterface.PropagationMode.BOUNDING;
+            mode = mapConfig.getBabFast() ? SimulatorInterface.PropagationMode.ITA_HEURISTIC : SimulatorInterface.PropagationMode.ITA_OPTIMAL;
 
         return simulator.simulate(assignment, mode);
     }

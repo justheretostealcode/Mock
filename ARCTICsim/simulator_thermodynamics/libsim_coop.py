@@ -761,7 +761,7 @@ class _base_gate:
         # dirty last minute modification hacks here
         return self._lut[var, val, target + 1]
     def set_out(self, val):
-        self._lut[_o, 0, 0] = val
+        self._lut[_o, :, 0] = val
 
 # The NOR gate is a simple, modular gate structure independent of input wiring
 class _nor_gate(_base_gate):

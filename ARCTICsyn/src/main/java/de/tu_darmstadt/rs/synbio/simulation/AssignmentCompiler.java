@@ -54,6 +54,9 @@ public class AssignmentCompiler {
             if (assignment.get(gate).isCharacterized()) {
                 List<Double> iList = Arrays.asList(assignment.get(gate).getCharacterization().getILower(), assignment.get(gate).getCharacterization().getIUpper());
                 gateMap.put("i", iList);
+
+                List<Double> jList = Arrays.asList(assignment.get(gate).getCharacterization().getJLower(), assignment.get(gate).getCharacterization().getJUpper());
+                gateMap.put("j", jList);
             }
 
             /* compose c and k lists */
@@ -121,7 +124,7 @@ public class AssignmentCompiler {
             gateMap.put("c", Arrays.asList(c0Vals.stream().reduce(0.0, Double::sum), c1Vals.stream().reduce(0.0, Double::sum)));
 
             if (gate.getLogicType() == LogicType.OUTPUT_OR2)
-                gateMap.put("k", Arrays.asList(k0Vals.stream().reduce(0.0, Double::sum), k1Vals.stream().reduce(0.0, Double::sum)));
+                gateMap.put("k", Arrays.asList(k0Vals.stream().reduce(0.0, Double::sum), c0Vals.stream().min(Double::compareTo).get() + k1Vals.stream().min(Double::compareTo).get()));
 
             gateMap.put("d", assignment.get(gate).getIdentifier());
 

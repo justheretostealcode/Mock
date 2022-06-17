@@ -475,24 +475,18 @@ class nor_circuit:
                             # -- wired, assigned.OR: assign the lut value depending on the forcing truthtable
                             (tenv, senv) = force_map[_wired_assignedandor, target_gate.env, source_gate.env]
                             p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_assignedandor, tenv, senv])
-                            #print(str(target_gate.env) + ' ' + str(source_gate.env))
-                            if False and source_gate.node == 'P3_PhlF':
-                                print(str(target_gate.env) + ' ' + str(source_gate.env))
-                                print(str(tenv) + ' ' + str(senv))
-                                print(str(mode_lut[_wired_assignedandor, tenv, senv]))
-                                print(str(source_gate.lut(*mode_lut[_wired_assignedandor, tenv, senv])))
                     # -- wired: is the source gate assigned or a dummy? -> dummy
                     else:
                         # -- wired, source dummy: is the target gate NOR or OR? -> NOR
                         if target_gate.type == 0:
                             # -- wired, source dummy, target NOR: assign the lut value depending on the forcing truthtable
                             (tenv, senv) = force_map[_wired_dummy_nor, target_gate.env, source_gate.env]
-                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_nor, tenv, senv], target=n)
+                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_nor, tenv, senv])
                         # -- wired, source dummy: is the target gate NOR or OR? -> OR
                         else:
                             # -- wired, source dummy, target OR: assign the lut value depending on the forcing truthtable
                             (tenv, senv) = force_map[_wired_dummy_or, target_gate.env, source_gate.env]
-                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_or, tenv, senv], target=n)
+                            p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_or, tenv, senv])
                             #print(str(_wired_dummy_or))
                     if DEBUG_LEVEL > 2:
                         print(str('w') + str(') '), end='')
@@ -514,7 +508,7 @@ class nor_circuit:
                         # -- crosstalk, source dummy/OR: [...] Is the source gate dummy or OR? -> dummy
                         if source_gate.type == -1:
                             # -- crosstalk, source dummy/OR, source dummy: assign the lut value
-                            p_a[pa_ix] += source_gate.lut(*mode_lut[_xtalk_dummyoror_dummy, target_gate.env, source_gate.env], target=n)
+                            p_a[pa_ix] += source_gate.lut(*mode_lut[_xtalk_dummyoror_dummy, target_gate.env, source_gate.env])
                     if DEBUG_LEVEL > 2:
                         print(str('x') + str(') '), end='')
                 else:

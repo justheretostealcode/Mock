@@ -52,11 +52,7 @@ public class AssignmentCompiler {
             Map<String, Object> gateMap = new HashMap<>();
 
             if (assignment.get(gate).isCharacterized()) {
-
-                if (gate.getLogicType() == LogicType.INPUT) {
-                    gateMap.put("a", Arrays.asList(assignment.get(gate).getCharacterization().getYmin(), assignment.get(gate).getCharacterization().getYmax()));
-                }
-
+                gateMap.put("a", Arrays.asList(assignment.get(gate).getCharacterization().getYmin(), assignment.get(gate).getCharacterization().getYmax()));
                 gateMap.put("i", Arrays.asList(assignment.get(gate).getCharacterization().getILower(), assignment.get(gate).getCharacterization().getIUpper()));
                 gateMap.put("j", Arrays.asList(assignment.get(gate).getCharacterization().getJLower(), assignment.get(gate).getCharacterization().getJUpper()));
             }
@@ -141,7 +137,7 @@ public class AssignmentCompiler {
 
         for (Gate dummy : dummyGates) {
 
-            Map<String, Map<?, ?>> dummyMap = new HashMap<>();
+            Map<String, Object> dummyMap = new HashMap<>();
             String dummyName = dummy.getIdentifier();
             LogicType dummyType = dummy.getLogicType();
 
@@ -277,14 +273,14 @@ public class AssignmentCompiler {
                 }
 
                 Map<String, List<?>> gateMap = new HashMap<>();
-                gateMap.put("a", a);
                 gateMap.put("b", b);
-                gateMap.put("c", c);
-                gateMap.put("i", i);
-                gateMap.put("j", j);
-
                 dummyMap.put(gateName, gateMap);
             }
+
+            dummyMap.put("a", a);
+            dummyMap.put("c", c);
+            dummyMap.put("i", i);
+            dummyMap.put("j", j);
 
             try {
                 output.put(dummyName, dummyMap);

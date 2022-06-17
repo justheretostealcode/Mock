@@ -52,11 +52,13 @@ public class AssignmentCompiler {
             Map<String, Object> gateMap = new HashMap<>();
 
             if (assignment.get(gate).isCharacterized()) {
-                List<Double> iList = Arrays.asList(assignment.get(gate).getCharacterization().getILower(), assignment.get(gate).getCharacterization().getIUpper());
-                gateMap.put("i", iList);
 
-                List<Double> jList = Arrays.asList(assignment.get(gate).getCharacterization().getJLower(), assignment.get(gate).getCharacterization().getJUpper());
-                gateMap.put("j", jList);
+                if (gate.getLogicType() == LogicType.INPUT) {
+                    gateMap.put("a", Arrays.asList(assignment.get(gate).getCharacterization().getYmin(), assignment.get(gate).getCharacterization().getYmax()));
+                }
+
+                gateMap.put("i", Arrays.asList(assignment.get(gate).getCharacterization().getILower(), assignment.get(gate).getCharacterization().getIUpper()));
+                gateMap.put("j", Arrays.asList(assignment.get(gate).getCharacterization().getJLower(), assignment.get(gate).getCharacterization().getJUpper()));
             }
 
             /* compose c and k lists */

@@ -788,7 +788,7 @@ class _nor_gate(_base_gate):
         try:
             return super().lut(var, val, target, default)
         except ValueError as e:
-            raise ValueError('LUT assertion error occured in gate \'' + str(self.node) + '\' of type ' + str(self.type)) from e
+            raise ValueError('LUT assertion error occured in gate \'' + str(self.node) + '\' of type NOR') from e
     def __str__(self):
         return self.name + ': ' + str(self.e)
 
@@ -805,6 +805,11 @@ class _implicit_or_gate(_base_gate):
         ret = np.sum(wa[self.b])
         super().set_out(ret)
         return ret
+    def lut(self, var, val, target=-1, default=None):
+        try:
+            return super().lut(var, val, target, default)
+        except ValueError as e:
+            raise ValueError('LUT assertion error occured in gate \'' + str(self.node) + '\' of type implicit OR') from e
     def __str__(self):
         return self.name + ': None (implicit OR)'
 
@@ -817,6 +822,11 @@ class _dummy_gate(_base_gate):
         self.node = node
         self.dev = dev
         self.type = -1
+    def lut(self, var, val, target=-1, default=None):
+        try:
+            return super().lut(var, val, target, default)
+        except ValueError as e:
+            raise ValueError('LUT assertion error occured in gate \'' + str(self.node) + '\' of type dummy') from e
     def __str__(self):
         return self.name + ': None (dummy gate)'
 

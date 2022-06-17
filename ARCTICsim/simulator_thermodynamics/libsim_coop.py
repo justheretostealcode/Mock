@@ -784,6 +784,11 @@ class _nor_gate(_base_gate):
         ret = (self.bep + np.sum(iwa*self.bepj))/(1 + np.sum(iwa*self.bef))
         super().set_out(ret)
         return ret
+    def lut(self, var, val, target=-1, default=None):
+        try:
+            return super().lut(var, val, target, default)
+        except ValueError as e:
+            raise ValueError('LUT assertion error occured in gate \'' + str(self.node) + '\' of type ' + str(self.type)) from e
     def __str__(self):
         return self.name + ': ' + str(self.e)
 

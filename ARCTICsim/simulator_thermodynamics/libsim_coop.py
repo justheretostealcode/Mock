@@ -240,8 +240,8 @@ _bounding_configs = dict({
                 #       source
             ],
             [  # _xtalk_dummyoror_or
-                [(_k, _min), (_a, _max)],   # 0 target
-                [(_a, _min), (_i, _max)],   # 1
+                [(_k, _min), (_c, _max)],   # 0 target
+                [(_c, _min), (_k, _max)],   # 1
                 #    0              1
                 #       source
             ],
@@ -370,7 +370,7 @@ class nor_circuit:
             # variable -> order index (min/max) -> target
             # target can be left out on gets to obtain target-independent attributes
             # The actual position in the array is the zeroth position
-            lut = np.zeros([len(_var_map.keys()), 2, len(node_list) + 1])
+            lut = -np.ones([len(_var_map.keys()), 2, len(node_list) + 1])
             if DEBUG_LEVEL > 1:
                 print(hl(k) + ' obtains attributes ', end='')
             for attr, content in self.assignment.attributes[v].items():
@@ -413,9 +413,12 @@ class nor_circuit:
             self.gates[t].inputs = np.array(in_list)
 
         # for bounding, get a vector of extreme values
-        self.bound_a_min = np.array([gate.lut(_a, _min) for gate in self.gates])
-        self.bound_a_max = np.array([gate.lut(_a, _max) for gate in self.gates])
+        self.bound_a_min = np.array([gate.lut(_a, _min, default=0.) for gate in self.gates])
+        self.bound_a_max = np.array([gate.lut(_a, _max, default=0.) for gate in self.gates])
         self.bound_env = np.zeros(len(self.gates), dtype=int)
+
+        print(self.gates)
+        print(self.g_p)
 
         # Now finally set the solver
         if solver is not None:
@@ -472,6 +475,12 @@ class nor_circuit:
                             # -- wired, assigned.OR: assign the lut value depending on the forcing truthtable
                             (tenv, senv) = force_map[_wired_assignedandor, target_gate.env, source_gate.env]
                             p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_assignedandor, tenv, senv])
+                            #print(str(target_gate.env) + ' ' + str(source_gate.env))
+                            if False and source_gate.node == 'P3_PhlF':
+                                print(str(target_gate.env) + ' ' + str(source_gate.env))
+                                print(str(tenv) + ' ' + str(senv))
+                                print(str(mode_lut[_wired_assignedandor, tenv, senv]))
+                                print(str(source_gate.lut(*mode_lut[_wired_assignedandor, tenv, senv])))
                     # -- wired: is the source gate assigned or a dummy? -> dummy
                     else:
                         # -- wired, source dummy: is the target gate NOR or OR? -> NOR
@@ -485,18 +494,19 @@ class nor_circuit:
                             (tenv, senv) = force_map[_wired_dummy_or, target_gate.env, source_gate.env]
                             p_a[self.g_p[n]] += source_gate.lut(*mode_lut[_wired_dummy_or, tenv, senv], target=n)
                             #print(str(_wired_dummy_or))
-                            #print(str(target_gate.env) + ' ' + str(source_gate.env))
-                            #print(str(tenv) + ' ' + str(senv))
-                            #print(str(mode_lut[_wired_dummy_or, tenv, senv]))
-                            #print(str(source_gate.lut(*mode_lut[_wired_dummy_or, tenv, senv])))
                     if DEBUG_LEVEL > 2:
                         print(str('w') + str(') '), end='')
                 # - is the connection wired or crosstalk? -> crosstalk
-                elif target_gate.type == 0:
+                elif m != n and target_gate.type == 0:
                     # -- crosstalk: is the source gate assigned and a NOR or is it dummy/OR? -> assigned.NOR
-                    if source_gate.type == 0:
-                        # -- crosstalk, assigned.NOR: assign the lut value
-                        p_a[self.g_p[m]] += source_gate.lut(*mode_lut[_xtalk_assignedandnor, target_gate.env, source_gate.env])
+                    if source_gate.type != -1:
+                        # -- crosstalk, assigned: set value
+                        if source_gate.type == 0:
+                            # -- crosstalk, assigned, source NOR: assign the lut value
+                            p_a[self.g_p[m]] += source_gate.lut(*mode_lut[_xtalk_assignedandnor, target_gate.env, source_gate.env])
+                        else:
+                            # -- crosstalk, assigned, source OR: assign the lut value
+                            p_a[self.g_p[m]] += source_gate.lut(*mode_lut[_xtalk_dummyoror_or, target_gate.env, source_gate.env])
                     # -- crosstalk: is the source gate assigned and a NOR or is it dummy/OR? -> dummy/OR
                     else:
                         # -- crosstalk, source dummy/OR: read the optimal TF from the lut. [...]
@@ -505,10 +515,6 @@ class nor_circuit:
                         if source_gate.type == -1:
                             # -- crosstalk, source dummy/OR, source dummy: assign the lut value
                             p_a[pa_ix] += source_gate.lut(*mode_lut[_xtalk_dummyoror_dummy, target_gate.env, source_gate.env], target=n)
-                        # -- crosstalk, source dummy/OR: [...] Is the source gate dummy or OR? -> OR
-                        else:
-                            # -- crosstalk, source dummy/OR, source dummy: assign the lut value
-                            p_a[pa_ix] += source_gate.lut(*mode_lut[_xtalk_dummyoror_or, target_gate.env, source_gate.env])
                     if DEBUG_LEVEL > 2:
                         print(str('x') + str(') '), end='')
                 else:
@@ -525,10 +531,8 @@ class nor_circuit:
         new_a = np.copy(a)
         wa = np.dot(self.w.T, a)
         p_a = np.zeros(len(self.p_idx))
-        #print([(gate.node, self.node_idx[gate.node]) for gate in self.gates])
         for n in range(len(self.gates)):
-            if self.g_p[n] != -1:
-                p_a[self.g_p[n]] += wa[n]
+            p_a[self.g_p[n]] += wa[n]
         for n in range(len(self.gates)):
             if not self.mutable[n]:
                 continue
@@ -756,9 +760,13 @@ class _base_gate:
         self._lut = None
         self.env = 0
         self.inputs = list()
-    def lut(self, var, val, target=-1):
+    def lut(self, var, val, target=-1, default=None):
         # function wrapper to maintain full control and put
         # dirty last minute modification hacks here
+        if self._lut[var, val, target + 1] == -1.:
+            if default is not None:
+                return default
+            raise ValueError('Variable ' + str(var) + ' in gate LUT referenced but not set (' + str(target) + ').')
         return self._lut[var, val, target + 1]
     def set_out(self, val):
         self._lut[_o, :, 0] = val
@@ -777,7 +785,6 @@ class _nor_gate(_base_gate):
         self.type = 0
     def out(self, wa):
         iwa = np.cumprod(np.repeat(wa[:, np.newaxis], self.dim, axis=1), axis=1)
-        #print(iwa)
         if DEBUG_LEVEL > 2:
             print(str(self.bep + np.sum(iwa*self.bepj)) + '/' + str(1 + np.sum(iwa*self.bef)) + ' = ' + hl(str((self.bep + np.sum(iwa*self.bepj))/(1 + np.sum(iwa*self.bef)))))
         ret = (self.bep + np.sum(iwa*self.bepj))/(1 + np.sum(iwa*self.bef))
@@ -881,6 +888,7 @@ class nor_circuit_solver_powell:
         for node in order:
             gix = self.circuit.node_idx[node]
             if not self.circuit.mutable[gix]:
+                self.circuit.gates[gix].set_out(self.values[gix])
                 continue
             p_a = np.zeros(len(self.circuit.p_idx))
             p_a[self.circuit.g_p[gix]] = np.sum(self.values[self.circuit.w[:, gix].astype(bool)])

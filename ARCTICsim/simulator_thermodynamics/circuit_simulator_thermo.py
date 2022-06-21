@@ -169,18 +169,24 @@ def sim_run():
     results = [np.zeros(N - N_on), np.zeros(N_on)]
     used_inputs = [(inputs[n], circuit.structure.truthtable[n], n) for n in range(len(inputs)) if whitelist[n] == 1]
     c = np.zeros(2, dtype=int)
+    max_err = 0.
     for real_input, bool_output, ttix in used_inputs:
         circuit.set_initial_value(real_input, ttix)
         output, err, iter = circuit.solve(tol=float(settings['err']), max_iter=int(settings['max_iter']))
         results[bool_output][c[bool_output]] = round_to_magnitude(output, 2*settings['err'])
+        max_err = max(max_err, err)
         c[bool_output] += 1
-    return circuit_score(results)
+    return circuit_score(results, max_err)
 
 # Just for now the only circuit score
 # This will anyway be exchanged with a proper post-processing later
-def circuit_score(results):
+def circuit_score(results, err):
+    global settings
     differences = results[1][:, None] / results[0]
     score = round(np.min(np.min(differences)), int(settings['final_precision']))
+    if err > 2*settings['err']:
+        cli_io.writeline("error above tolerance, score dismissed.")
+        return -1
     cli_io.writeline("score: " + str(score))
     return score
 

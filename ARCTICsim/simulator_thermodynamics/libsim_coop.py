@@ -16,6 +16,7 @@ import os
 import sys
 import scipy.optimize as so
 from copy import copy, deepcopy
+from autograd import elementwise_grad as grad
 
 # The interfacing in the simulator methods and marshalling and demarshalling
 # of objects is based on json. Therefor, all classes can be generated from
@@ -347,12 +348,14 @@ class nor_circuit:
         self.g_p = np.zeros(len(node_list), dtype=int)
         self.p_g = -np.ones(len(self.p_idx), dtype=int)
         self.dummy_idx = np.zeros(len(self.assignment.dummys), dtype=int)
+        self.assigned = np.ones(len(node_list))
         self.gates = np.array([None for _ in range(len(node_list))])  # array of objects
         for k, v in self.assignment.map_gtod.items():
             #print('node/device: ' + hl(str(k)) + '/' + hl(str(v)) + ', node idx = ' + hl(str(self.node_idx[k])) + ', device idx = ' + hl(str(self.dev_idx[v][0])))
             if v[0] == '_':  # dummy gate
                 self.g_p[self.node_idx[k]] = -1
                 self.dummy_idx[int(v[1])] = self.node_idx[k]
+                self.assigned[self.node_idx[k]] = 0
                 self.gates[self.node_idx[k]] = _dummy_gate(k, v)
             elif v.startswith('output'):  # implicit or / reporter TF
                 self.g_p[self.node_idx[k]] = self.dev_idx[v][0]
@@ -416,9 +419,6 @@ class nor_circuit:
         self.bound_a_min = np.array([gate.lut(_a, _min, default=0.) for gate in self.gates])
         self.bound_a_max = np.array([gate.lut(_a, _max, default=0.) for gate in self.gates])
         self.bound_env = np.zeros(len(self.gates), dtype=int)
-
-        print(self.gates)
-        print(self.g_p)
 
         # Now finally set the solver
         if solver is not None:
@@ -915,38 +915,40 @@ class nor_circuit_solver_powell:
         else:
             self.bound = True
             self.mode = mode_idx
-    def solve(self, tol=10**(-2), max_iter=100):
+    def solve(self, tol=10**(-3), max_iter=100):
         # Iterate the points using Banach's fixed point theorem
         # to estimate the error, compare old and new node values
         err = np.inf
         run = 0
         if self.bound:
-            function = (lambda a: self.circuit.propagate_bound(a, _bounding_configs[self.mode], _force_configs[self.mode]))
+            function = (lambda a, _bc=_bounding_configs[self.mode], _fc=_force_configs[self.mode]: self.circuit.propagate_bound(a, _bc, _fc))
         else:
             function = self.circuit.propagate
         vs = self.values
-        mutix = self.circuit.mutable.astype(bool)
+        mutix = self.circuit.mutable.astype(bool) & self.circuit.assigned.astype(bool)
         immutix = np.invert(mutix)
         def fp(v, mutix, immutix, v_im, N):
             r = np.empty(N)
             r[mutix] = v
             r[immutix] = v_im
+            f = 1.
+            if np.sum(r < 0) > 0:
+                f = 1. + 1000.*np.sum(np.abs(r[r < 0]))
             s = function(r) - r
-            return s[mutix]
+            return f*s[mutix]
         def callback(x, f, r):
             if (DEBUG_LEVEL > 1):
                 self._debug_step(x, r[0], 'unknown')
             r[0] += 1
         obj = (lambda v, mutix=mutix, immutix=immutix, v_im=vs[immutix], N=len(vs): fp(v, mutix, immutix, v_im, N))
-        #print(vs[mutix])
-        result = so.root(obj, np.copy(vs[mutix]), tol=tol, method='lm')#, callback=(lambda x, f, r=[run]: callback))
-        #print(result)
+        result = so.root(obj, np.copy(vs[mutix]), tol=tol, method='lm', options={'col_deriv': True, 'factor': 1.})#, callback=(lambda x, f, r=[run]: callback))
+        #bounds=(np.zeros_like(vs[mutix]), np.inf*np.ones_like(vs[mutix])
         vs[mutix] = result.x
         err = nla.norm(result.fun)
         if (DEBUG_LEVEL > 0):
             self._debug_step(vs, result.nfev, err)
         self.values = vs
-        return (vs, 'unknown', run)
+        return (vs, err, run)
     def _debug_step(self, vs, run, err):
         print('---------\n' + head('Outputs') + ' (run = ' + hl(str(run)) + ', err < ' + hl(str(err)) + ', logic = ' + hl(str(self.circuit.bound_env[self.circuit.node_idx[list(self.circuit.structure.outputs)[0]]])) + '): ')
         for k, v in self.circuit.node_idx.items():

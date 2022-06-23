@@ -172,6 +172,7 @@ _d = 4
 _b = 5
 _o = 6
 _c = 7
+_e = 8
 _var_map = dict({
     'a': _a,
     'i': _i,
@@ -181,6 +182,7 @@ _var_map = dict({
     'b': _b,
     'o': _o,
     'c': _c,
+    'e': _e,
 })
 _var_pre = dict({
     'a': (lambda a, circ: float(a)),
@@ -191,6 +193,7 @@ _var_pre = dict({
     'b': (lambda b, circ: circ.tf_idx[b][0]),
     'o': (lambda o, circ: float(o)),
     'c': (lambda c, circ: float(c)),
+    'e': (lambda e, circ: float(e)),
 })
 # Indexes for min and max values of a respective category
 _min = 0
@@ -257,6 +260,56 @@ _bounding_configs = dict({
         ]),
     4: np.array([  # TODO: full heuristic mode
         ]),
+    5: np.array([  # optimal mode
+            [  # _wired_assignedandnor
+                [(_i, _min), (_o, _max)],   # 0 target
+                [(_o, _min), (_o, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _wired_assignedandor
+                [(_o, _min), (_o, _max)],   # 0 target
+                [(_i, _min), (_o, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _wired_dummy_nor
+                [(_i, _min), (_a, _max)],   # 0 target
+                [(_a, _min), (_a, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _wired_dummy_or
+                [(_a, _min), (_a, _max)],   # 0 target
+                [(_i, _min), (_a, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _xtalk_assignedandnor
+                [(_e, _max), (_e, _max)],   # 0 target
+                [(_j, _max), (_c, _min)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _xtalk_dummyoror_dummy
+                [(_e, _max), (_e, _max)],   # 0 target
+                [(_j, _max), (_e, _min)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _xtalk_dummyoror_or
+                [(_k, _min), (_c, _max)],   # 0 target
+                [(_c, _min), (_k, _max)],   # 1
+                #    0              1
+                #       source
+            ],
+            [  # _xtalk_dummyoror_tf
+                [(_b, _max), (_b, _max)],   # 0 target
+                [(_b, _min), (_b, _min)],   # 1
+                #    0              1
+                #       source
+            ],
+        ]),
 })
 # force maps
 _force_configs = dict({
@@ -293,6 +346,32 @@ _force_configs = dict({
     3: np.array([  # TODO: ita heuristic mode
         ]),
     4: np.array([  # TODO: full heuristic mode
+        ]),
+    5: np.array([  # optimal mode
+            [  # _wired_assignedandnor
+                [(0, 0), (0, 1)],   # 0 target
+                [(1, 0), (0, 0)],   # 1
+                #   0       1
+                #    source
+            ],
+            [  # _wired_assignedandor
+                [(0, 0), (1, 0)],   # 0 target
+                [(1, 0), (1, 1)],   # 1
+                #   0       1
+                #    source
+            ],
+            [  # _wired_dummy_nor
+                [(0, 0), (0, 1)],   # 0 target
+                [(1, 0), (0, 0)],   # 1
+                #   0       1
+                #    source
+            ],
+            [  # _wired_dummy_or
+                [(0, 0), (1, 0)],   # 0 target
+                [(1, 0), (1, 1)],   # 1
+                #   0       1
+                #    source
+            ],
         ]),
 })
 
@@ -491,7 +570,7 @@ class nor_circuit:
                     if DEBUG_LEVEL > 2:
                         print(str('w') + str(') '), end='')
                 # - is the connection wired or crosstalk? -> crosstalk
-                elif m != n and target_gate.type == 0:
+                if m != n and target_gate.type == 0:
                     # -- crosstalk: is the source gate assigned and a NOR or is it dummy/OR? -> assigned.NOR
                     if source_gate.type != -1:
                         # -- crosstalk, assigned: set value
@@ -516,7 +595,7 @@ class nor_circuit:
                         print(str('_') + str(') '), end='')
             if DEBUG_LEVEL > 2:
                 print('')
-                print('p_a vector for ' + hl(str(target_gate.node)) + ' (index ' + hl(str(n)) + ')' + ' of type ' + hl(str(target_gate.type)) + ':')
+                print('p_a vector for ' + hl(str(target_gate.node)) + ' (index ' + hl(str(n)) + ', p_a index ' + hl(str(self.g_p[n])) + ')' + ' of type ' + hl(str(target_gate.type)) + ':')
                 print(p_a)
             new_a[n] = target_gate.out(p_a)
         return new_a
@@ -532,7 +611,7 @@ class nor_circuit:
                 continue
             gate = self.gates[n]
             if DEBUG_LEVEL > 2:
-                print('p_a vector for ' + hl(str(gate.node)) + ' of type ' + hl(str(gate.type)) + ':')
+                print('p_a vector for ' + hl(str(gate.node)) + ' (index ' + hl(str(n)) + ', p_a index ' + hl(str(self.g_p[n])) + ')' + ' of type ' + hl(str(gate.type)) + ':')
                 print(p_a)
             new_a[n] = self.gates[n].out(p_a)
         return new_a

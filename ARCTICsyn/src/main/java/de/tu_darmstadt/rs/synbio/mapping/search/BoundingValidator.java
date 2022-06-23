@@ -8,7 +8,7 @@ import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.ExhaustiveAssigner;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.slf4j.Logger;
@@ -44,7 +44,7 @@ public class BoundingValidator extends AssignmentSearchAlgorithm {
 
 
     @Override
-    public SimulationResult assign() {
+    public MappingResult assign() {
 
         Assignment assignment;
         simulator.initSimulation(structure);
@@ -85,7 +85,7 @@ public class BoundingValidator extends AssignmentSearchAlgorithm {
 
         simulator.shutdown();
 
-        SimulationResult dummyResult = new SimulationResult(structure, null, 0.0);
+        MappingResult dummyResult = new MappingResult(structure, null, 0.0);
         dummyResult.setNeededSimulations(numSims);
 
         logger.info("Bounding validated successfully for " + structure.getIdentifier() + ".");

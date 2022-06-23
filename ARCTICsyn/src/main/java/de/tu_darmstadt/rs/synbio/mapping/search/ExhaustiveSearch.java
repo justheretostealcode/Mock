@@ -5,12 +5,10 @@ import de.tu_darmstadt.rs.synbio.mapping.assigner.ExhaustiveAssigner;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,7 +25,7 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
         assigner = new ExhaustiveAssigner(lib, structure);
     }
 
-    public SimulationResult assign() {
+    public MappingResult assign() {
 
         List<ExhaustiveSearchWorker> workers = new ArrayList<>();
         int maxThreads = Runtime.getRuntime().availableProcessors() - 1;
@@ -41,7 +39,7 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
 
         ExecutorService executor = Executors.newFixedThreadPool(availableProcessors);
 
-        List<Future<SimulationResult>> simResults = Collections.emptyList();
+        List<Future<MappingResult>> simResults = Collections.emptyList();
 
         try {
             simResults = executor.invokeAll(workers);
@@ -49,14 +47,14 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
             logger.error(e.getMessage());
         }
 
-        SimulationResult bestRes = null;
+        MappingResult bestRes = null;
 
         long numSims = 0;
 
-        for (Future<SimulationResult> result : simResults) {
+        for (Future<MappingResult> result : simResults) {
 
             try {
-                SimulationResult res = result.get();
+                MappingResult res = result.get();
 
                 if (res != null) {
 

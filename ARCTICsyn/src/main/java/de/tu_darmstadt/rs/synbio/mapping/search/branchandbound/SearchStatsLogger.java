@@ -9,7 +9,7 @@ import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.search.BranchAndBoundSearch;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +94,7 @@ public class SearchStatsLogger {
         this.optimalNumberOfSimulations = optimalNumberOfSimulations;
     }
 
-    public void setResult(SimulationResult result) {
+    public void setResult(MappingResult result) {
         this.bestScore = result.getScore();
         this.bestAssignment = result.getAssignment();
         this.numberOfSimulationsRequired = result.getNeededSimulations();

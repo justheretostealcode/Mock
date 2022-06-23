@@ -3,14 +3,13 @@ package de.tu_darmstadt.rs.synbio;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
-import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentCounter;
 import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.CircuitDeserializer;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.SearchStatsLogger;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,7 +158,7 @@ public class SimulationTestbench {
                     AssignmentSearchAlgorithm search = mapConfig.getSearchAlgorithm(structure, gateLib, simConfig);
                     long start = System.nanoTime(); // Added for measuring the execution time.
 
-                    SimulationResult result = search.assign();
+                    MappingResult result = search.assign();
 
                     long stop = System.nanoTime();
                     long duration = stop - start;

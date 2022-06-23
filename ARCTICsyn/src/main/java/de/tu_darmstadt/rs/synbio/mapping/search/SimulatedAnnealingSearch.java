@@ -10,7 +10,7 @@ import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.ExhaustiveAssigner;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.RandomAssigner;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +37,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
     private double maxDistance = 0.0;
     private double minDistance = Double.MAX_VALUE;
 
-    public SimulationResult assign() {
+    public MappingResult assign() {
 
         File output;
         PrintWriter out;
@@ -194,7 +194,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
         }
 
-        SimulationResult result = new SimulationResult(structure, best, simulator.simulate(best, SimulatorInterface.PropagationMode.NORMAL));
+        MappingResult result = new MappingResult(structure, best, simulator.simulate(best, SimulatorInterface.PropagationMode.NORMAL));
         result.setNeededSimulations(simCount);
         simulator.shutdown();
         return result;

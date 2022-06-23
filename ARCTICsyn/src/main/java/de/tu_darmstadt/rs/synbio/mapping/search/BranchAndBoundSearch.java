@@ -15,7 +15,7 @@ import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.SearchTreeVisuali
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.searchstrategies.*;
 import de.tu_darmstadt.rs.synbio.mapping.util.BranchAndBoundUtil;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
 import org.jgrapht.Graphs;
 import org.jgrapht.traverse.TopologicalOrderIterator;
@@ -325,7 +325,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     }
 
     @Override
-    public SimulationResult assign() {
+    public MappingResult assign() {
         SearchStatsLogger searchStatsLogger = new SearchStatsLogger(structure, mapConfig, simConfig, reversedLogicGates.length);
 
         Comparator<QueueItem> comparator;
@@ -484,7 +484,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         if (!checker.checkSimple(bestAssignment))
             logger.warn("Resulting assignment contains incompatible device combinations!");
 
-        SimulationResult result = new SimulationResult(structure, bestAssignment, bestScore);
+        MappingResult result = new MappingResult(structure, bestAssignment, bestScore);
         result.setNeededSimulations(iNeededSimulations);
         result.setMinimumBranchAndBoundSimulations(minimalNumberOfSimulations(bestAssignment));
 

@@ -7,7 +7,7 @@ import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.ExhaustiveAssigner;
 import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityChecker;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +25,7 @@ public class AssignmentCounter extends AssignmentSearchAlgorithm {
     }
 
     @Override
-    public SimulationResult assign() {
+    public MappingResult assign() {
 
         Assignment assignment;
         long assignments = 0;
@@ -45,7 +45,7 @@ public class AssignmentCounter extends AssignmentSearchAlgorithm {
 
         logger.info(structure.getIdentifier() + "," + assignments + "," + valid);
 
-        SimulationResult result = new SimulationResult(structure, null, 0.0);
+        MappingResult result = new MappingResult(structure, null, 0.0);
         result.setNeededSimulations(assignments);
 
         return result;

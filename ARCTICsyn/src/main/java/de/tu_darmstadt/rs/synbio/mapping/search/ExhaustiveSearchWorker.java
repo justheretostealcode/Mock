@@ -7,14 +7,14 @@ import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.ExhaustiveAssigner;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 
-public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
+public class ExhaustiveSearchWorker implements Callable<MappingResult> {
 
     private static final Logger logger = LoggerFactory.getLogger(ExhaustiveSearchWorker.class);
 
@@ -36,7 +36,7 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
     }
 
     @Override
-    public SimulationResult call() {
+    public MappingResult call() {
 
         Assignment assignment;
         simulator.initSimulation(structure);
@@ -45,11 +45,11 @@ public class ExhaustiveSearchWorker implements Callable<SimulationResult> {
             assignment = assigner.getNextAssignment();
         } while(assignment != null && !checker.checkSimple(assignment));
 
-        SimulationResult bestRes = null;
+        MappingResult bestRes = null;
         long numSims = 0;
 
         while (assignment != null && !Thread.interrupted()) {
-            SimulationResult result = new SimulationResult(structure, assignment, simulator.simulate(assignment, SimulatorInterface.PropagationMode.NORMAL));
+            MappingResult result = new MappingResult(structure, assignment, simulator.simulate(assignment, SimulatorInterface.PropagationMode.NORMAL));
 
             numSims ++;
 

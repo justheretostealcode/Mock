@@ -7,7 +7,7 @@ import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import de.tu_darmstadt.rs.synbio.synthesis.SynthesisConfiguration;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import de.tu_darmstadt.rs.synbio.synthesis.enumeration.EnumeratorFast;
@@ -94,7 +94,7 @@ public class ARCTICsyn {
 
             logger.info("Technology mapping...");
 
-            SimulationResult[] bestResults = new SimulationResult[synConfig.getWeightRelaxation() + 1];
+            MappingResult[] bestResults = new MappingResult[synConfig.getWeightRelaxation() + 1];
             int minSize = circuits.get(circuits.size() - 1).getWeight();
 
             for (int i = circuits.size() - 1; i >= 0; i--) {
@@ -102,7 +102,7 @@ public class ARCTICsyn {
                 AssignmentSearchAlgorithm sim = mapConfig.getSearchAlgorithm(circuits.get(i), gateLib, simConfig);
 
                 try {
-                    SimulationResult result = sim.assign();
+                    MappingResult result = sim.assign();
                     int relSize = circuits.get(i).getWeight() - minSize;
 
                     if (bestResults[relSize] == null || result.getScore() > bestResults[relSize].getScore())
@@ -116,7 +116,7 @@ public class ARCTICsyn {
             double currentBestScore = 0.0;
 
             for(int i = 0; i < bestResults.length; i++) {
-                SimulationResult result = bestResults[i];
+                MappingResult result = bestResults[i];
 
                 if (result != null && result.getScore() > currentBestScore) {
                     result.getStructure().save(new File(outputDir, "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax.json"));

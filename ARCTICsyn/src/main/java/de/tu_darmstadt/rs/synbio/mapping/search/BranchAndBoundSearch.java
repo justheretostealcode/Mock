@@ -481,7 +481,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         if (bestAssignment == null)
             return null;
 
-        if (!checker.verify(bestAssignment))
+        if (!checker.checkSimple(bestAssignment))
             logger.warn("Resulting assignment contains incompatible device combinations!");
 
         SimulationResult result = new SimulationResult(structure, bestAssignment, bestScore);
@@ -533,7 +533,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
             a.put(logicGate, realization);
 
-            if (checkNaive ? !checker.verify(a) : !checker.isCompatible(a)) {
+            if (checkNaive ? !checker.checkSimple(a) : !checker.checkSat(a)) {
                 //logger.info("suppressed branch of assignment with size " + assignment.size());
                 continue;
             }

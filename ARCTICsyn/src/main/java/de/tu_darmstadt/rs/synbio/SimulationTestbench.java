@@ -151,6 +151,8 @@ public class SimulationTestbench {
                     e.printStackTrace();
                 }
 
+                structure.print(new File("00000110.dot"));
+
                 int neededSims = 0;
 
                 for (int i = 0; i < numRepetitions; i ++) {

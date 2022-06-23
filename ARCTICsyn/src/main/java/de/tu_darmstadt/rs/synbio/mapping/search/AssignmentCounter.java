@@ -36,7 +36,7 @@ public class AssignmentCounter extends AssignmentSearchAlgorithm {
 
             if (assignment != null) {
                 assignments ++;
-                if (checker.verify(assignment)) {
+                if (checker.checkSimple(assignment)) {
                     valid++;
                 }
             }

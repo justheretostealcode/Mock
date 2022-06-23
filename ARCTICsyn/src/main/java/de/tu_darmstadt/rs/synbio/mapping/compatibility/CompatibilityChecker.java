@@ -11,7 +11,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.logicng.datastructures.Tristate;
 import org.logicng.formulas.Formula;
 import org.logicng.formulas.FormulaFactory;
-import org.logicng.formulas.Variable;
 import org.logicng.io.parsers.PropositionalParser;
 import org.logicng.solvers.MiniSat;
 import org.logicng.solvers.SATSolver;
@@ -277,15 +276,15 @@ public class CompatibilityChecker {
         state = miniSat.saveState();
     }
 
-    public boolean isCompatible(Assignment partialAssignment) {
+    public boolean checkSat(Assignment assignment) {
 
         miniSat.loadState(state);
 
         /* determine vars to substitute with constant TRUE to account for (incomplete) assignment */
 
-        for (Gate gate : partialAssignment.keySet()) {
+        for (Gate gate : assignment.keySet()) {
             if (gate.getLogicType() != LogicType.OUTPUT_BUFFER && gate.getLogicType() != LogicType.OUTPUT_OR2)
-                miniSat.add(factory.variable(gate.getIdentifier() + "_" + partialAssignment.get(gate).getIdentifier()));
+                miniSat.add(factory.variable(gate.getIdentifier() + "_" + assignment.get(gate).getIdentifier()));
         }
 
         /* solve SAT */
@@ -315,15 +314,15 @@ public class CompatibilityChecker {
         return assignments;
     }
 
-    public boolean verify(Assignment partialAssignment) {
+    public boolean checkSimple(Assignment assignment) {
 
         for (GateTriple triple : triples) {
 
-            GateRealization destination = partialAssignment.get(triple.destination);
-            GateRealization source = partialAssignment.get(triple.source);
-            GateRealization secondSource = triple.secondSource != null ? partialAssignment.get(triple.secondSource) : null;
+            GateRealization destination = assignment.get(triple.destination);
+            GateRealization source = assignment.get(triple.source);
+            GateRealization secondSource = triple.secondSource != null ? assignment.get(triple.secondSource) : null;
 
-            if (destination == null || source == null || (triple.secondSource != null && partialAssignment.get(triple.secondSource) == null))
+            if (destination == null || source == null || (triple.secondSource != null && assignment.get(triple.secondSource) == null))
                 continue;
 
             if (!matrix.isCompatible(source.getIdentifier(), destination.getIdentifier(), secondSource != null ? secondSource.getIdentifier() : null))

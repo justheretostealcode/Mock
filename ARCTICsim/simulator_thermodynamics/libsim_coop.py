@@ -286,14 +286,14 @@ _bounding_configs = dict({
                 #       source
             ],
             [  # _xtalk_assignedandnor
-                [(_e, _max), (_e, _max)],   # 0 target
+                [(_c, _max), (_c, _max)],   # 0 target
                 [(_j, _max), (_c, _min)],   # 1
                 #    0              1
                 #       source
             ],
             [  # _xtalk_dummyoror_dummy
-                [(_e, _max), (_e, _max)],   # 0 target
-                [(_j, _max), (_e, _min)],   # 1
+                [(_c, _max), (_c, _max)],   # 0 target
+                [(_j, _max), (_c, _min)],   # 1
                 #    0              1
                 #       source
             ],

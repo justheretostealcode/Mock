@@ -1,0 +1,15 @@
+{
+  "truthtable" : "00000110",
+  "gate_truthtables" : {
+    "P3_PhlF" : "00000100",
+    "E1_BetI" : "00000010",
+    "A1_AmtR" : "11110001",
+    "c" : "10101010",
+    "b" : "11001100",
+    "YFP" : "00000110",
+    "a" : "11110000",
+    "H1_HlyIIR" : "00010001",
+    "S4_SrpR" : "00001110"
+  },
+  "graph" : {"creator":"JGraphT JSON Exporter","version":"1","nodes":[{"id":"a","type":"INPUT"},{"id":"b","type":"INPUT"},{"id":"c","type":"INPUT"},{"id":"YFP","type":"OUTPUT_OR2"},{"id":"H1_HlyIIR","type":"NOR2"},{"id":"S4_SrpR","type":"NOR2"},{"id":"A1_AmtR","type":"NOT"},{"id":"E1_BetI","type":"NOR2"},{"id":"P3_PhlF","type":"NOR2"}],"edges":[{"id":"1","source":"E1_BetI","target":"YFP","variable":"x"},{"id":"2","source":"P3_PhlF","target":"YFP","variable":"y"},{"id":"3","source":"b","target":"H1_HlyIIR","variable":"x"},{"id":"4","source":"c","target":"H1_HlyIIR","variable":"y"},{"id":"5","source":"S4_SrpR","target":"A1_AmtR","variable":"x"},{"id":"6","source":"H1_HlyIIR","target":"S4_SrpR","variable":"x"},{"id":"7","source":"a","target":"S4_SrpR","variable":"y"},{"id":"8","source":"A1_AmtR","target":"E1_BetI","variable":"x"},{"id":"9","source":"b","target":"E1_BetI","variable":"y"},{"id":"10","source":"A1_AmtR","target":"P3_PhlF","variable":"x"},{"id":"11","source":"c","target":"P3_PhlF","variable":"y"}]}
+}

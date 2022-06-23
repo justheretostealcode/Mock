@@ -262,44 +262,44 @@ _bounding_configs = dict({
         ]),
     5: np.array([  # optimal mode
             [  # _wired_assignedandnor
-                [(_i, _min), (_o, _max)],   # 0 target
+                [(_a, _max), (_o, _max)],   # 0 target
                 [(_o, _min), (_o, _max)],   # 1
                 #    0              1
                 #       source
             ],
             [  # _wired_assignedandor
                 [(_o, _min), (_o, _max)],   # 0 target
-                [(_i, _min), (_o, _max)],   # 1
+                [(_a, _max), (_o, _max)],   # 1
                 #    0              1
                 #       source
             ],
             [  # _wired_dummy_nor
-                [(_i, _min), (_a, _max)],   # 0 target
+                [(_a, _max), (_a, _max)],   # 0 target
                 [(_a, _min), (_a, _max)],   # 1
                 #    0              1
                 #       source
             ],
             [  # _wired_dummy_or
                 [(_a, _min), (_a, _max)],   # 0 target
-                [(_i, _min), (_a, _max)],   # 1
+                [(_a, _max), (_a, _max)],   # 1
                 #    0              1
                 #       source
             ],
             [  # _xtalk_assignedandnor
                 [(_c, _max), (_c, _max)],   # 0 target
-                [(_j, _max), (_c, _min)],   # 1
+                [(_c, _min), (_c, _min)],   # 1
                 #    0              1
                 #       source
             ],
             [  # _xtalk_dummyoror_dummy
                 [(_c, _max), (_c, _max)],   # 0 target
-                [(_j, _max), (_c, _min)],   # 1
+                [(_c, _min), (_c, _min)],   # 1
                 #    0              1
                 #       source
             ],
             [  # _xtalk_dummyoror_or
-                [(_k, _min), (_c, _max)],   # 0 target
-                [(_c, _min), (_k, _max)],   # 1
+                [(_c, _max), (_c, _max)],   # 0 target
+                [(_c, _min), (_c, _min)],   # 1
                 #    0              1
                 #       source
             ],

@@ -121,8 +121,9 @@ public class AssignmentCompiler {
 
             gateMap.put("c", Arrays.asList(c0Vals.stream().reduce(0.0, Double::sum), c1Vals.stream().reduce(0.0, Double::sum)));
 
-            if (gate.getLogicType() == LogicType.OUTPUT_OR2)
-                gateMap.put("k", Arrays.asList(k0Vals.stream().reduce(0.0, Double::sum), c0Vals.stream().min(Double::compareTo).get() + k1Vals.stream().min(Double::compareTo).get()));
+            if (gate.getLogicType() == LogicType.OUTPUT_OR2 || gate.getLogicType() == LogicType.OUTPUT_BUFFER)
+                gateMap.put("k", Arrays.asList(k0Vals.stream().reduce(0.0, Double::sum),
+                        (gate.getLogicType() == LogicType.OUTPUT_OR2 ? c0Vals.stream().min(Double::compareTo).get() : 0.0) + k1Vals.stream().min(Double::compareTo).get()));
 
             gateMap.put("d", assignment.get(gate).getIdentifier());
 

@@ -104,6 +104,7 @@ public class MappingConfiguration {
                 searchAlgorithm = SearchAlgorithm.ANNEALING;
                 break;
             case "BRANCH_AND_BOUND":
+            case "BNB":
                 searchAlgorithm = SearchAlgorithm.BRANCH_AND_BOUND;
                 break;
             case "ASSIGNMENT_COUNTER":
@@ -216,9 +217,8 @@ public class MappingConfiguration {
         }
     }
 
-    public void print() {
-        logger.info("\tsearch algorithm: " + searchAlgorithm.name());
-        logger.info("\toptimization type: " + optimizationType.name());
+    public String getSearchAlgorithmName() {
+        return searchAlgorithm.name();
     }
 
     public File getLibrary() {

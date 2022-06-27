@@ -23,6 +23,7 @@ public class SimulatorInterface {
     private final String simArgs;
     private final GateLibrary library;
 
+    private ProcessBuilder pb;
     private Process simProcess;
     private File structureFile;
     private BufferedReader reader;
@@ -33,11 +34,12 @@ public class SimulatorInterface {
 
     public enum PropagationMode {
         NORMAL,
-        NAIVE_OPTIMAL,
-        NAIVE_HEURISTIC,
-        ITA_OPTIMAL,
-        ITA_HEURISTIC,
-        FULL_HEURISTIC
+        _NAIVE_OPTIMAL,
+        _NAIVE_HEURISTIC,
+        ITA,
+        _ITA_HEURISTIC,
+        _FULL_HEURISTIC,
+        OPTIMAL
     }
 
     public SimulatorInterface(SimulationConfiguration config, GateLibrary gateLibrary) {
@@ -60,13 +62,12 @@ public class SimulatorInterface {
             String structureFileName = "structure_" + circuit.getIdentifier() + "_tid" + Thread.currentThread().getId() + "_" + System.nanoTime() + ".json";
             structureFile = new File(simulatorPath, structureFileName);
             circuit.save(structureFile);
-            //circuit.print(new File("test.dot"));
 
             List<String> arguments = new ArrayList<>();
             arguments.addAll(Arrays.asList(pythonBinary, simScript, "-s=" + structureFileName, "-l=" + library.getSourceFile().getAbsolutePath()));
             arguments.addAll(Arrays.asList(simInitArgs.split(" ")));
 
-            ProcessBuilder pb = new ProcessBuilder(arguments.toArray(new String[0]));
+            pb = new ProcessBuilder(arguments.toArray(new String[0]));
             pb.directory(simulatorPath);
 
             simProcess = pb.start();
@@ -95,16 +96,79 @@ public class SimulatorInterface {
         }
     }
 
-    public Double simulate(Assignment assignment, PropagationMode mode) { //TODO: handle null return value
+
+
+    public Double simulate(Assignment assignment, PropagationMode mode) {
+
+        SimulationResult result;
+        //int repetitions = 0;
+
+        result = trySimulation(assignment, mode);
+
+        /* this is convergence hack code */
+
+        /*if (result.code == SimulationResult.ReturnCode.NO_CONVERGENCE) {
+
+            do {
+
+                simProcess.destroy();
+                try {
+                    simProcess = pb.start();
+                    reader = new BufferedReader(new InputStreamReader(simProcess.getInputStream()));
+                    writer = new BufferedWriter(new OutputStreamWriter(simProcess.getOutputStream()));
+                    errorReader = new BufferedReader(new InputStreamReader(simProcess.getErrorStream()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+
+                result = trySimulation(assignment, mode);
+                repetitions ++;
+
+                if (repetitions > 10) {
+                    logger.error("Aborted simulation due to non-convergence. Mode: " + mode.name());
+                    return 0.0;
+                }
+
+            } while (result.code == SimulationResult.ReturnCode.NO_CONVERGENCE);
+        }
+
+        if (repetitions > 0)
+            logger.warn("converged after " + repetitions + "repetitions.");*/
+
+        switch (result.code) {
+            case ERROR:
+                return null;
+            case NO_CONVERGENCE:
+                return 0.0;
+            default:
+                return result.score;
+        }
+
+        //return result.code == SimulationResult.ReturnCode.OK ? result.score : null;
+    }
+
+    private static class SimulationResult {
+
+        public Double score;
+        public ReturnCode code;
+
+        public enum ReturnCode {
+            OK,
+            NO_CONVERGENCE,
+            ERROR
+        }
+
+        public SimulationResult(Double score, ReturnCode code) {
+            this.score = score;
+            this.code = code;
+        }
+    }
+    private SimulationResult trySimulation(Assignment assignment, PropagationMode mode) {
 
         String additionalArgs = "--propagation_mode=" + mode.ordinal();
 
         Map<String, Map<?, ?>> assignmentMap = compiler.compile(assignment);
-
-        /*try {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File("assignment_00000110.json"), assignmentMap);
-        } catch (Exception e) {
-        }*/
 
         double score = 0.0;
 
@@ -113,7 +177,7 @@ public class SimulatorInterface {
             if (!simProcess.isAlive()) {
                 logger.error("Simulator exited before simulation start:\n" + getError());
                 shutdown();
-                return null;
+                return new SimulationResult(null, SimulationResult.ReturnCode.ERROR);
             }
 
             String assignmentStr = mapper.writeValueAsString(assignmentMap);
@@ -132,9 +196,12 @@ public class SimulatorInterface {
                 if (!simProcess.isAlive()) {
                     logger.error("Simulator exited during simulation: " + getError());
                     shutdown();
-                    return null;
+                    return new SimulationResult(null, SimulationResult.ReturnCode.ERROR);
                 }
 
+                if (output != null && output.equals("error above tolerance, score dismissed.")) {
+                    return new SimulationResult(null, SimulationResult.ReturnCode.NO_CONVERGENCE);
+                }
             } while (output == null || !output.startsWith(scorePrefix));
 
             output = output.substring(scorePrefix.length());
@@ -151,13 +218,13 @@ public class SimulatorInterface {
             shutdown();
         }
 
-        return score;
-    }
+        /*try {
+            mapper.writerWithDefaultPrettyPrinter().writeValue(new File("assignments", "assignment_00000110_"+ num + "_" + score + ".json"), assignmentMap);
+            num++;
+        } catch (Exception e) {
+        }*/
 
-    Double growth;
-
-    public Double getLastGrowth() {
-        return growth;
+        return new SimulationResult(score, SimulationResult.ReturnCode.OK);
     }
 
     public void shutdown() {

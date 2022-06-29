@@ -105,10 +105,12 @@ def round_to_magnitude(r, b):
 def prepare_simulation():
     global settings, library, circuit, inputs, library_file, structure_file, assignment_file
     # load library
-    library_file = sim.json_file(settings['library'])
-    library = sim.library(library_file.content)
+    if library is None:
+        library_file = sim.json_file(settings['library'])
+        library = sim.library(library_file.content)
     # check and load structure
-    structure = check_load_and_create(settings['structure'], structure_file, sim.circuit_structure)
+    if structure is None:
+        structure = check_load_and_create(settings['structure'], structure_file, sim.circuit_structure)
     # check and load assignment
     assignment = check_load_and_create(settings['assignment'], assignment_file, sim.circuit_assignment)
     # check and load bb additional library

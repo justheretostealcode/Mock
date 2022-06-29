@@ -30,6 +30,7 @@ here = op.dirname(op.abspath(inspect.getfile(inspect.currentframe())))
 
 library = None
 circuit = None
+structure = None
 inputs = None
 supplement = None
 

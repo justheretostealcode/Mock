@@ -104,7 +104,7 @@ def round_to_magnitude(r, b):
 
 # check if we have all data for simulation and do some preparations
 def prepare_simulation():
-    global settings, library, circuit, inputs, library_file, structure_file, assignment_file
+    global settings, library, circuit, structure, inputs, library_file, structure_file, assignment_file
     # load library
     if library is None:
         library_file = sim.json_file(settings['library'])

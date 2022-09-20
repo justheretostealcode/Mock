@@ -6,12 +6,13 @@
 
 2. Install the necessary Python modules.
 
-1. numpy
-2. matplotlib
-3. scipy
-4. autograd
+- numpy
+- scipy
+- autograd
+- matplotlib
 
-`pip install numpy scipy matplotlib autograd`
+
+`pip install numpy scipy autograd matplotlib `
 
 3. Set the Python binary in **ARCTICsyn/sim.config**
 

@@ -79,3 +79,29 @@ The technology mapping settings are located in the configuration file **ARCTICsy
 **BAB-FAST** *(Branch-and-Bound specific)* If true, heuristic mode is activated.
 
 # Genetic Gate Libraries
+
+Possible choices for the argument **LIBRARY** in **ARCTICsyn/map.config** are located in the folder **ARCTICsim/thermo_libs**. The gate libraries contain thermodynamic parameters for promoters, transcription factors (TFs) and the host context. With these parameters, circuit simulations can be performed. The core of the set of libraries is the 'ideal' or base library. It contains numerically fitted thermodynamic parameters for the 40 different gates available in Cello's library (`https://github.com/CIDARLAB/cello`).
+
+## Library Generation
+
+The different gate libraries are generated from the base library using different hyperparameters governing the distribution of crosstalk. The naming convention is the following.
+
+`thermo_lib_id_xtalk_all_dirichlet_<DIRICHLET>tot<TOTAL>.json`
+
+where
+- `<DIRICHLET>` is a label of the concentration parameter of the Dirichlet distribution that governs the crosstalk distribution across non-cognate transcription factors in a gate. It is a value in `{0, 1, ..., 6}`. See below for the actual concentration values.
+- `<TOTAL>` is a value specifying how strong crosstalking TF's modify the gate's output in relation to the cognate TF. It is a value in `[0, 1]`, where a `1` specifies that if all crosstalking TF's are present in a unit concentration, the gate's output would be modified as if there was instead the cognate TF present in a unit concentration.
+
+The distribution of crosstalk is governed by a Dirichlet distribution. Thus, the distribution has support on all unit-length vectors with as many entries as there are non-cognate TFs. Usually, every entry has an individual concentration parameter assigned. In our case, these are all equal to a global concentration parameter. This specific instance of Dirichlet distribution is also often called a 'symmetric Dirichlet distribution'. The labels `{0, 1, ..., 6}` of this global concentration are mapped to real concentration values by the following table
+
+label | real concentration (rounded)
+--------|-----------------------------
+`0`     |   0.004717
+`1`     |   0.114532
+`2`     |   0.378811
+`3`     |   1.
+`4`     |   2.63984
+`5`     |   8.731212
+`6`     | 212.005864
+
+The lowest label `0` assigns most crosstalk to only one non-cognate TF while the highest label `6` gives a mostly uniform distribution of crosstalk across non-cognate TFs.

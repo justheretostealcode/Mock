@@ -26,7 +26,7 @@ The following example command calls ARCTIC via Gradle and synthesizes the three 
 
 This command synthesizes the circuit structures and performs technology mapping on them with the preset genetic gate library. When the process is finished, the best found circuit structure and assignment of logic gates as well as the corresponding score is printed out. In the directory **ARCTICsyn/benchmarks** a new directory corresponding to the run has been created containing all found circuit structures as DOT and JSON files as well as structure and assignment of gates for the resulting circuit.
 
-# Setting for Synthesis, Simulation and Technology Mapping
+# Settings for Synthesis, Simulation and Technology Mapping
 
 ## Synthesis
 
@@ -78,11 +78,15 @@ The technology mapping settings are located in the configuration file **ARCTICsy
 
 **BAB-FAST** *(Branch-and-Bound specific)* If true, heuristic mode is activated.
 
-# Genetic Gate Libraries
+# Further Information / Features
 
-Possible choices for the argument **LIBRARY** in **ARCTICsyn/map.config** are located in the folder **ARCTICsim/thermo_libs**. The gate libraries contain thermodynamic parameters for promoters, transcription factors (TFs) and the host context. With these parameters, circuit simulations can be performed. The core of the set of libraries is the 'ideal' or base library. It contains numerically fitted thermodynamic parameters for the 40 different gates available in Cello's library (`https://github.com/CIDARLAB/cello`).
+In the following, details about the shipped libraries and debugging and test capabilities is briefly explained.
 
-## Library Generation
+## Genetic Gate Libraries
+
+Possible choices for the argument **LIBRARY** in **ARCTICsyn/map.config** are located in the folder **ARCTICsim/thermo_libs**. The gate libraries contain thermodynamic parameters for promoters, transcription factors (TFs) and the host context. With these parameters, circuit simulations can be performed. The core of the set of libraries is the 'ideal' or base library. It contains numerically fitted thermodynamic parameters for the 40 different gates available in Cello's library (https://github.com/CIDARLAB/cello).
+
+### Library Generation
 
 The different gate libraries are generated from the base library using different hyperparameters governing the distribution of crosstalk. The naming convention is the following.
 
@@ -105,3 +109,9 @@ label | real concentration (rounded)
 `6`     | 212.005864
 
 The lowest label `0` assigns most crosstalk to only one non-cognate TF while the highest label `6` gives a mostly uniform distribution of crosstalk across non-cognate TFs.
+
+## Standalone Simulation
+
+The circuit simulation alone can be tested for a given fixed assignment and structure, i.e. outside of a circuit synthesis loop. This is especially useful to verify results and/or obtain more information about a specific simulation, like output histograms etc.
+
+For this purpose, the simulator located at **ARCTICsim/simulator_thermodynamics/circuit_simulator_thermo.py** can be called directly and be given paths for structure, assignment and library files. A description of the possible command line arguments can be obtained fromm calling the simulator without arguments.

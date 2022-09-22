@@ -114,4 +114,4 @@ The lowest label `0` assigns most crosstalk to only one non-cognate TF while the
 
 The circuit simulation alone can be tested for a given fixed assignment and structure, i.e. outside of a circuit synthesis loop. This is especially useful to verify results and/or obtain more information about a specific simulation, like output histograms etc.
 
-For this purpose, the simulator located at **ARCTICsim/simulator_thermodynamics/circuit_simulator_thermo.py** can be called directly and be given paths for structure, assignment and library files. A description of the possible command line arguments can be obtained fromm calling the simulator without arguments.
+For this purpose, the simulator located at **ARCTICsim/simulator_thermodynamics/circuit_simulator_thermo.py** can be called directly and be given paths for structure, assignment and library files. A description of the possible command line arguments can be obtained from calling the simulator without arguments.

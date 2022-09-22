@@ -84,7 +84,7 @@ In the following, details about the shipped libraries and debugging and test cap
 
 ## Genetic Gate Libraries
 
-Possible choices for the argument **LIBRARY** in **ARCTICsyn/map.config** are located in the folder **ARCTICsim/thermo_libs**. The gate libraries contain thermodynamic parameters for promoters, transcription factors (TFs) and the host context. With these parameters, circuit simulations can be performed. The core of the set of libraries is the 'ideal' or base library. It contains numerically fitted thermodynamic parameters for the 40 different gates available in Cello's library (https://github.com/CIDARLAB/cello).
+Possible choices for the argument **LIBRARY** in **ARCTICsyn/map.config** are located in the folder **ARCTICsim/thermo_libs**. The gate libraries contain thermodynamic parameters for promoters, transcription factors (TFs) and the host context. With these parameters, circuit simulations can be performed. The core of the set of libraries is the 'ideal' or base library. It contains numerically fitted thermodynamic parameters for the 40 different gates available in Cello's library (https://github.com/CIDARLAB/cello) and its path is **ARCTICsim/thermo_libs/thermo_lib_id_ideal.json**.
 
 ### Library Generation
 

@@ -1,9 +1,10 @@
 package de.tu_darmstadt.rs.synbio.common.library;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
-import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.common.TruthTable;
+import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityMatrix;
+import org.logicng.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,34 +17,212 @@ public class GateLibrary {
 
     private final File sourceFile;
 
-    private final HashMap<TruthTable, Circuit> circuitLibrary = new HashMap<>();
-    private final HashMap<LogicType, List<GateRealization>> gateRealizations = new HashMap<>();
+    private final File compatibilityFile;
 
-    private final Double[] proxNormalization;
-    private final Double[] proxWeights;
+    private final Map<LogicType, List<GateRealization>> gateRealizations = new HashMap<>();
+    private final Map<String, Map<String, Double>> devicePromoterFactors = new HashMap<>();
 
-    public GateLibrary(File libraryFile) {
+    private Double[] proxNormalization = new Double[]{1.0, 1.0, 1.0};
+    private Double[] proxWeights = new Double[]{1.0, 1.0, 1.0};
+
+    public GateLibrary(File libraryFile, File compatibilityFile, boolean isThermo) {
 
         this.sourceFile = libraryFile;
-        this.proxNormalization = new Double[]{1.0, 1.0, 1.0};
-        this.proxWeights = new Double[]{1.0, 1.0, 1.0};
+        this.compatibilityFile = compatibilityFile;
 
-        loadPrimitiveLibrary(libraryFile);
+        if (isThermo) {
+            if (compatibilityFile != null)
+                loadCompatibility(compatibilityFile);
+            loadThermoLibrary(libraryFile);
+        } else {
+            loadConvLibrary(libraryFile);
+        }
     }
 
     public GateLibrary(File libraryFile, Double[] proxWeights) {
 
-        this.sourceFile = libraryFile;
+        this(libraryFile, null,false);
+
         this.proxWeights = proxWeights;
-
-        loadPrimitiveLibrary(libraryFile);
-
         proxNormalization = calcProxNormalization();
     }
 
     /* library file handling */
 
-    private void loadPrimitiveLibrary(File libraryFile) {
+    private Map<String, List<Double>> inputs3dB;
+    private Map<String, List<Double>> outputs3dB;
+
+    private CompatibilityMatrix<String> compatibilityMatrix;
+
+    private void loadCompatibility(File compatibilityFile) {
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        JsonNode content;
+
+        try {
+            content = mapper.readTree(compatibilityFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        /* load 3dB in-/outputs */
+
+        inputs3dB = new HashMap<>();
+        outputs3dB = new HashMap<>();
+
+        Iterator<Map.Entry<String, JsonNode>> deviceIterator = content.get("critical_points").fields();
+
+        deviceIterator.forEachRemaining(e -> {
+                    inputs3dB.put(e.getKey(), Arrays.asList(e.getValue().get("x_c").get(0).doubleValue(), e.getValue().get("x_c").get(1).doubleValue()));
+                    outputs3dB.put(e.getKey(), Arrays.asList(e.getValue().get("y_c").get(0).doubleValue(), e.getValue().get("y_c").get(1).doubleValue()));
+                });
+
+        /* load compatibility info */
+
+        compatibilityMatrix = new CompatibilityMatrix<>();
+
+        List<String> deviceOrder = new ArrayList<>();
+        Iterator<JsonNode> orderIterator = content.get("compatibility").get("order").elements();
+        orderIterator.forEachRemaining(d -> deviceOrder.add(d.asText()));
+
+        JsonNode compatPairs = content.get("compatibility").get("table_2");
+        JsonNode compatTriples = content.get("compatibility").get("table_3");
+
+        for (int s = 0; s < deviceOrder.size(); s ++) {
+            for (int t = 0; t < deviceOrder.size(); t ++) {
+
+                boolean isCompatible = compatPairs.get(s).get(t).doubleValue() == 1.0;
+                compatibilityMatrix.addEntry(deviceOrder.get(s), deviceOrder.get(t), null, isCompatible);
+
+                for (int ss = 0; ss < deviceOrder.size(); ss ++) {
+
+                    isCompatible = compatTriples.get(s).get(ss).get(t).doubleValue() == 1.0;
+                    compatibilityMatrix.addEntry(deviceOrder.get(s), deviceOrder.get(t), deviceOrder.get(ss), isCompatible);
+                }
+            }
+        }
+    }
+
+    private void loadThermoLibrary(File libraryFile) {
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        JsonNode content;
+
+        try {
+            content = mapper.readTree(libraryFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        JsonNode devices = null;
+        JsonNode tfs = null;
+        JsonNode promoters = null;
+
+        /* get and check root nodes */
+
+        for (int i = 0; i < content.size(); i++) {
+
+            if (content.get(i).get("class").textValue().equals("devices"))
+                devices = content.get(i).get("members");
+
+            if (content.get(i).get("class").textValue().equals("transcription_factors"))
+                tfs = content.get(i).get("members");
+
+            if (content.get(i).get("class").textValue().equals("promoters"))
+                promoters = content.get(i).get("members");
+        }
+
+        if (devices == null || tfs == null || promoters == null) {
+            logger.error("Invalid thermo library.");
+            return;
+        }
+
+        /* get logical functions of devices */
+
+        Map<String, List<LogicType>> deviceFunctions = new HashMap<>();
+
+        for (JsonNode device : devices) {
+
+            String name = device.get("name").textValue();
+
+            for (JsonNode function : device.get("functions")) {
+
+                if (!deviceFunctions.containsKey(name))
+                    deviceFunctions.put(name, new ArrayList<>());
+
+                deviceFunctions.get(name).add(LogicType.valueOf(function.textValue()));
+            }
+        }
+
+        /* get mapping of devices to promoters and maximum promoter levels */
+
+        Map<String, String> deviceToPromoter = new HashMap<>();
+        Map<String, Pair<Double, Double>> promoterLevels = new HashMap<>();
+
+        for (JsonNode promoter : promoters) {
+
+            String name = promoter.get("name").textValue();
+
+            if (!promoterLevels.containsKey(name))
+                promoterLevels.put(name, new Pair<>(promoter.get("levels").get("off").asDouble(), promoter.get("levels").get("on").asDouble()));
+
+            if (promoter.get("associated_devices").size() != 1) {
+                logger.error("Thermo library invalid: Promoter " + name + " has invalid number (!= 1) of associated devices.");
+                return;
+            }
+
+            String device = promoter.get("associated_devices").get(0).textValue();
+
+            if (!deviceToPromoter.containsKey(device))
+                deviceToPromoter.put(device, name);
+
+            /* fill device <-> promoter factors */
+            Iterator<Map.Entry<String, JsonNode>> it = promoter.get("factors").get("tf_only").fields();
+            devicePromoterFactors.put(device, new HashMap<>());
+            it.forEachRemaining(e -> devicePromoterFactors.get(device).put(e.getKey(), e.getValue().get(e.getValue().size() - 1).doubleValue()));
+        }
+
+        /* add gate for each tf by getting its device and promoter */
+
+        for (JsonNode tf : tfs) {
+
+            String tfName = tf.get("name").textValue();
+
+            for (JsonNode device : tf.get("associated_devices")) {
+
+                String promoterName = deviceToPromoter.get(device.textValue());
+                String deviceName = device.textValue();
+
+                for (LogicType function : deviceFunctions.get(device.textValue())) {
+
+                    GateRealization newGate;
+
+                    if (function == LogicType.OUTPUT_BUFFER || function == LogicType.OUTPUT_OR2) {
+                        newGate = new GateRealization(deviceName, function, tfName);
+                    } else {
+                        newGate = new GateRealization(deviceName, function, tfName,
+                                new GateRealization.GateCharacterization(
+                                        promoterLevels.get(promoterName).second(),
+                                        promoterLevels.get(promoterName).first(),
+                                        function == LogicType.INPUT ? promoterLevels.get(promoterName).first() : outputs3dB.get(deviceName).get(0),
+                                        function == LogicType.INPUT ? promoterLevels.get(promoterName).second() : outputs3dB.get(deviceName).get(1),
+                                        function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(0),
+                                        function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(1),
+                                        0,
+                                        0,
+                                        null));
+                    }
+                    addGateRealization(newGate);
+                }
+            }
+        }
+    }
+
+    private void loadConvLibrary(File libraryFile) {
 
         HashMap<String, Object>[] parsedRealizations;
 
@@ -63,9 +242,6 @@ public class GateLibrary {
 
             String identifier = (String) Optional.ofNullable(realization.get("identifier"))
                     .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"identifier\" not found!"));
-
-            String altIdentifier = (String) Optional.ofNullable(realization.get("alternative_identifier"))
-                    .orElse("");
 
             String group = (String) Optional.ofNullable(realization.get("group"))
                     .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"group\" not found!"));
@@ -107,27 +283,33 @@ public class GateLibrary {
                     gateParticles = new GateRealization.Particles(ymaxList, yminList);
                 }
 
-                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group, altIdentifier,
-                        new GateRealization.GateCharacterization(ymax, ymin, k ,n, gateParticles));
+                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group,
+                        new GateRealization.GateCharacterization(ymax, ymin, 0.0, 0.0, 0.0, 0.0, k ,n, gateParticles));
 
             } else {
-                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group, altIdentifier);
+                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group);
             }
 
-            addToLibrary(newRealization);
+            addGateRealization(newRealization);
         }
+
+        /* add input gates */
+
+        addGateRealization(new GateRealization("pTac", LogicType.INPUT, "pTac",
+                new GateRealization.GateCharacterization(2.8, 0.0034 , 0.0, 0.0, 0.0, 0.0, 0, 0, null)));
+
+        addGateRealization(new GateRealization("pTet", LogicType.INPUT, "pTet",
+                new GateRealization.GateCharacterization(4.4, 0.0013 , 0.0, 0.0, 0.0, 0.0, 0, 0, null)));
+
+        addGateRealization(new GateRealization("pBAD", LogicType.INPUT, "pBAD",
+                new GateRealization.GateCharacterization(2.5, 0.0082 , 0.0, 0.0, 0.0, 0.0, 0, 0, null)));
     }
 
-    private void addToLibrary(GateRealization element) {
-
-        if (gateRealizations.containsKey(element.getLogicType())) {
-            gateRealizations.get(element.getLogicType()).add(element);
-        } else {
-            gateRealizations.put(element.getLogicType(), new ArrayList<>());
-            gateRealizations.get(element.getLogicType()).add(element);
-
-            circuitLibrary.put(new TruthTable(element.getLogicType().getExpression()), new Circuit(element, element.getLogicType().name()));
+    private void addGateRealization(GateRealization newGate) {
+        if (!gateRealizations.containsKey(newGate.getLogicType())) {
+            gateRealizations.put(newGate.getLogicType(), new ArrayList<>());
         }
+        gateRealizations.get(newGate.getLogicType()).add(newGate);
     }
 
     private Double[] calcProxNormalization() {
@@ -171,21 +353,31 @@ public class GateLibrary {
         return sourceFile;
     }
 
-    public HashMap<TruthTable, Circuit> get() {
-        return circuitLibrary;
+    public Map<LogicType, List<GateRealization>> getRealizations() {
+        return gateRealizations;
     }
 
-    public HashMap<LogicType, List<GateRealization>> getRealizations() {
-        return gateRealizations;
+    public GateRealization getOutputDevice(LogicType type) {
+
+        if (gateRealizations.get(type).size() != 1) {
+            logger.error("Unsupported number of output devices in library != 1.");
+            return null;
+        }
+
+        return gateRealizations.get(type).get(0);
+    }
+
+    public Map<String, Double> getTfFactorsForDevice(String promoter) {
+        return devicePromoterFactors.get(promoter);
+    }
+
+    public CompatibilityMatrix<String> getCompatibilityMatrix() {
+        return compatibilityMatrix;
     }
 
     public void print() {
 
         logger.info("Circuit library:");
-
-        for (TruthTable truthTable : circuitLibrary.keySet()) {
-            logger.info(truthTable.toString() + " --> " + circuitLibrary.get(truthTable).getIdentifier());
-        }
 
         logger.info("Gate number constraints:");
 
@@ -202,20 +394,14 @@ public class GateLibrary {
         return gateRealizations.get(type).size();
     }
 
-    public List<LogicType> getGateTypes() {
-        return new ArrayList<>(gateRealizations.keySet());
-    }
+    public List<LogicType> getLogicGateTypes() {
 
-    public int getFeasibility() {
+        List<LogicType> types = new ArrayList<>(gateRealizations.keySet());
+        types.remove(LogicType.INPUT);
+        types.remove(LogicType.OUTPUT_BUFFER);
+        types.remove(LogicType.OUTPUT_OR2);
 
-        OptionalInt feasibility = circuitLibrary.values().stream().mapToInt(c -> c.getExpression().variables().size()).max();
-
-        if (feasibility.isEmpty()) {
-            logger.error("Library feasibility could not be determined. Using a default value of 2.");
-            return 2;
-        } else {
-            return feasibility.getAsInt();
-        }
+        return types;
     }
 
     public Double[] getProxWeights() {

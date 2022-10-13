@@ -2,7 +2,7 @@ package de.tu_darmstadt.rs.synbio.mapping.assigner;
 
 import de.tu_darmstadt.rs.synbio.common.*;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
@@ -19,8 +19,11 @@ public class RandomAssigner implements Assigner {
     final private Random randomGenerator;
 
     // gates
-    final private HashMap<LogicType, List<GateRealization>> availableGates;
-    final private List<LogicGate> circuitGates;
+    private final Map<LogicType, List<GateRealization>> availableGates;
+    private final List<Gate> circuitGates;
+
+    private final Gate outputGate;
+    private final GateRealization outputRealization;
 
     public RandomAssigner(GateLibrary gateLib, Circuit circuit) {
 
@@ -28,17 +31,27 @@ public class RandomAssigner implements Assigner {
         this.availableGates = gateLib.getRealizations();
 
         // initialize circuit gate list
-        this.circuitGates = circuit.vertexSet().stream().filter(g -> g instanceof LogicGate).map(g -> (LogicGate) g).collect(Collectors.toList());
+        this.circuitGates = circuit.vertexSet().stream()
+                .filter(g -> g.getLogicType() != LogicType.OUTPUT_BUFFER)
+                .filter(g -> g.getLogicType() != LogicType.OUTPUT_OR2)
+                .collect(Collectors.toList());
+
+        outputGate = circuit.getOutputGate();
+        outputRealization = gateLib.getOutputDevice(outputGate.getLogicType());
 
         this.randomGenerator = new Random();
     }
 
     public Assignment getNextAssignment() {
 
-        Assignment assignment = new Assignment();
+        Assignment assignment = new Assignment(outputGate, outputRealization);
 
         do {
-            for (LogicGate gate : circuitGates) {
+            for (Gate gate : circuitGates) {
+
+                if (availableGates.get(gate.getLogicType()).size() <= 1)
+                    continue;
+
                 int rand = randomGenerator.nextInt(availableGates.get(gate.getLogicType()).size());
                 assignment.put(gate, availableGates.get(gate.getLogicType()).get(rand));
             }

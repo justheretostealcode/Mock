@@ -4,13 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.*;
-import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
-import org.jgrapht.Graphs;
-import org.jgrapht.traverse.TopologicalOrderIterator;
+import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
+import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import org.logicng.datastructures.Assignment;
-import org.logicng.formulas.FormulaFactory;
 import org.logicng.formulas.Variable;
+import org.logicng.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +19,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class BranchAndBoundUtil {
+
     private static final Logger logger = LoggerFactory.getLogger(BranchAndBoundUtil.class);
 
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static final String DEFAULT_INPUT_SPECIFICATION_ENTRY_FORMAT_STRING = "\"%s\" : {\"0\" : %s, \"1\" : %s}, ";
     public static final Map<String, Map<Boolean, Double>> CELLO_INPUT_SPECIFICATION = Map.ofEntries(
@@ -44,82 +45,6 @@ public class BranchAndBoundUtil {
     }
 
     /**
-     * This method creates the subproblems belonging to the provided circuit.   <br>
-     * Each subproblem thereby contains one gate less than the previous subproblem.
-     *
-     * @param structure The circuit to from which the subproblems shall be created
-     * @return A ordered list of subproblems (the first index is the original structure and the last is a circuit containing only one logic gate)
-     */
-    public static List<Circuit> getSubProblems(Circuit structure) {
-
-        // Establish the reverse topological order of the logic gates
-        ArrayList<Gate> gatesInReversedOrder = new ArrayList<>();
-        Iterator<Gate> iterator = new TopologicalOrderIterator<>(structure);
-        while (iterator.hasNext()) {
-            Gate g = iterator.next();
-
-            if (g.getType() == Gate.Type.LOGIC)
-                gatesInReversedOrder.add(g);
-        }
-
-        Gate[] gateOrder = new Gate[gatesInReversedOrder.size()];
-        gatesInReversedOrder.toArray(gateOrder);
-
-        List<Gate> originalInputBuffers = structure.getInputBuffers();
-        List<Map<Gate, List<Gate>>> substitutionsList;
-        Map<Gate, String> substitutionTruthTables;
-        // Create sub problems
-        ArrayList<Circuit> subProblems = new ArrayList<>(gateOrder.length - 1);
-        Circuit subProblem = new Circuit("Subproblem");
-        Graphs.addGraph(subProblem, structure);
-        FormulaFactory factory = new FormulaFactory();
-        String structureIdentifier = structure.getIdentifier();
-        String subProblemIdentifier = structureIdentifier + "_subproblem_";
-
-        subProblems.add(subProblem.copy(subProblemIdentifier + 0));
-
-        Map<Gate, Gate> insertedInputBuffers = new HashMap<>();
-        for (int iX = 0; iX < gateOrder.length - 1; iX++) {
-            Gate g = gateOrder[iX];
-
-            // Remove Vertex
-            Set<Wire> wires = subProblem.outgoingEdgesOf(g);
-
-            // For each gate, which is removed, we need to add a new input to the circuit and connect this input to the following gates
-            // Next to this, we mark, that the notes truthtable values result from a gate which was previous in the circuit.
-            String inputIdentifier = "OUT_" + g.getIdentifier();    // Named "OUT", since it represents the output of the referenced gate
-            Gate newInputBuffer = new InputGate(ExpressionParser.parse(inputIdentifier), inputIdentifier);
-            subProblem.addVertex(newInputBuffer);
-            insertedInputBuffers.put(newInputBuffer, g);
-            for (Wire w : wires) {
-                Gate target = subProblem.getEdgeTarget(w);
-                subProblem.addEdge(newInputBuffer, target, new Wire(factory.variable(w.getVariable().name())));
-            }
-
-            subProblem.removeVertex(g);
-            // Remove all Gates which do not contribute to the result
-            cleanCircuitFromNonContributingGates(subProblem);
-            subProblem.removeRedundantGates();
-
-            // Get the Whitelist for the resulting structure
-            String whiteList = determineWhitelist(structure, subProblem, insertedInputBuffers);
-            subProblem.setWhitelist(whiteList);
-
-            // Obtain substitutions list for the subproblem.
-            substitutionsList = determineSubstitutionList(subProblem, originalInputBuffers);
-            subProblem.setSubstitutionsList(substitutionsList);
-
-            // Substitution Truthtables are not used anymore
-            substitutionTruthTables = determineSubstitutionTruthTables(subProblem, substitutionsList, originalInputBuffers);
-            subProblem.setSubstitutionTruthTables(substitutionTruthTables);
-
-            subProblems.add(subProblem.copy(subProblemIdentifier + (iX + 1)));
-        }
-
-        return subProblems;
-    }
-
-    /**
      * Within this method, the whitelist of assignments is created. <br>
      * This is relevant, in order to only consider boolean input assignments, which are also present in the original circuit. <br>
      * A sub problem consisting of four input buffers has 16 possible input assignments, however, not all can be reached given the original structure with only 3 input buffers and thus 8 resulting logic input assignments.
@@ -129,7 +54,7 @@ public class BranchAndBoundUtil {
      * @param insertedInputBuffers A map of input buffers added to the circuit to the original logic gates replaced by them.
      * @return A whitelist string indicating which of the boolean input assignments of the sub problem are achieved by the original structure
      */
-    private static String determineWhitelist(Circuit structure, Circuit subProblem, Map<Gate, Gate> insertedInputBuffers) {
+    public static String determineWhitelist(Circuit structure, Circuit subProblem, Map<Gate, Gate> insertedInputBuffers) {
 
         List<Assignment> inputAssignmentsCircuit = new ArrayList<>(TruthTable.getAllAssignments(structure.getExpression().variables()));
 
@@ -198,8 +123,8 @@ public class BranchAndBoundUtil {
      *
      * @param structure The structure to clean.
      */
-    private static void cleanCircuitFromNonContributingGates(Circuit structure) {
-        Gate output = structure.getOutputBuffer();
+    public static void cleanCircuitFromNonContributingGates(Circuit structure) {
+        Gate output = structure.getOutputGate();
         ArrayList<Gate> visitedNodes = new ArrayList<>(structure.vertexSet().size());
         traverseCircuit(structure, output, visitedNodes);
 
@@ -232,15 +157,15 @@ public class BranchAndBoundUtil {
      * @param structure The original circuit to assing and not any subproblem
      * @return A string which can be directly added
      */
-    private static List<Map<Gate, List<Gate>>> determineSubstitutionList(Circuit structure, List<Gate> originalInputBuffers) {
+    public static List<Map<Gate, List<Gate>>> determineSubstitutionList(Circuit structure, List<Gate> originalInputBuffers) {
         List<Assignment> inputAssignmentsCircuit = new ArrayList<>(TruthTable.getAllAssignments(structure.getExpression().variables()));
 
-        List<LogicGate> logicGates = structure.getLogicGates();
+        List<Gate> logicGates = structure.getLogicGates();
 
         // Determine the ancestors of the relevant logic gates
-        HashMap<LogicGate, Set<Gate>> ancestorsMap = new HashMap<>();
-        for (LogicGate g : logicGates) {
-            if (g.getLogicType() == LogicType.NOR2 || g.getLogicType() == LogicType.OR2) {
+        HashMap<Gate, Set<Gate>> ancestorsMap = new HashMap<>();
+        for (Gate g : logicGates) {
+            if (g.getLogicType() == LogicType.NOR2 || g.getLogicType() == LogicType.OUTPUT_OR2) {
                 Set<Gate> ancestorsSet = structure.edgesOf(g).stream().filter(edge -> structure.getEdgeTarget(edge) == g).map(structure::getEdgeSource).collect(Collectors.toSet());
                 ancestorsMap.put(g, ancestorsSet);
             }
@@ -251,7 +176,7 @@ public class BranchAndBoundUtil {
         Map<Gate, List<Gate>> pairsToSubstitute;
         for (Assignment assignment : inputAssignmentsCircuit) {
             pairsToSubstitute = new HashMap<>();
-            for (LogicGate g : ancestorsMap.keySet()) {
+            for (Gate g : ancestorsMap.keySet()) {
                 LogicType type = g.getLogicType();
 
                 /*
@@ -260,7 +185,7 @@ public class BranchAndBoundUtil {
                 This Filtering step simplifies the following determination of substitution, since the output of the gate is known and thus at least one input needs to be HIGH.
                  */
                 if (type == LogicType.NOR2 && structure.getExpression(g).evaluate(assignment)
-                        || type == LogicType.OR2 && !structure.getExpression(g).evaluate(assignment))
+                        || type == LogicType.OUTPUT_OR2 && !structure.getExpression(g).evaluate(assignment))
                     continue;
 
                 Set<Gate> ancestors = ancestorsMap.get(g);
@@ -285,20 +210,6 @@ public class BranchAndBoundUtil {
     }
 
     /**
-     * Converts the substitutionList in an equivalent representation containing only identifiers.
-     *
-     * @param substitutionList
-     * @return
-     */
-    public static List<Map<String, List<String>>> substitutionListToString(List<Map<Gate, List<Gate>>> substitutionList) {
-        return substitutionList.stream().map(map -> {
-            Map<String, List<String>> newMap = new HashMap<>();
-            map.forEach((key, value) -> newMap.put(key.getIdentifier(), value.stream().map(Gate::getIdentifier).collect(Collectors.toList())));
-            return newMap;
-        }).collect(Collectors.toList());
-    }
-
-    /**
      * Returns the truth tables of the gates for which substitution is to perform. <br>
      * This feature is currently not used by the simulator.
      *
@@ -307,7 +218,7 @@ public class BranchAndBoundUtil {
      * @param originalInputBuffers The input buffers of the original structure
      * @return Truth tables for the gates, whose output values get substituted.
      */
-    private static Map<Gate, String> determineSubstitutionTruthTables(Circuit structure, List<Map<Gate, List<Gate>>> substitutionList, List<Gate> originalInputBuffers) {
+    public static Map<Gate, String> determineSubstitutionTruthTables(Circuit structure, List<Map<Gate, List<Gate>>> substitutionList, List<Gate> originalInputBuffers) {
         List<Assignment> assignments = TruthTable.getAllAssignments(structure.getExpression().variables());
         Set<Gate> gates = substitutionList.stream().map(Map::keySet).reduce(new HashSet<Gate>(), (subtotal, element) -> {
             subtotal.addAll(element);
@@ -327,37 +238,22 @@ public class BranchAndBoundUtil {
     }
 
     /**
-     * Converts the substitutionTruthTables in an equivalent representation containing only identifiers instead of gates.
-     *
-     * @param substitutionTruthTables
-     * @return
-     */
-    public static Map<String, String> substitutionTruthTablesToString(Map<Gate, String> substitutionTruthTables) {
-        Map<String, String> truthTables = new HashMap<>();
-        substitutionTruthTables.forEach((key, value) -> truthTables.put(key.getIdentifier(), value));
-        return truthTables;
-    }
-
-
-    /**
      * Creates a custom input specification as required by the simulator.
      *
-     * @param missingInputBufferIDs The elements to add beside the standard inputs ("A", "B", "C", "D")
-     * @param minVal                The value used for "0"
-     * @param maxVal                The value used for "1"
+     * @param inputIntervals Map of artificial input IDs to their ymin and ymax values
      * @return A string representing the input specification.
      */
-    public static String createCustomInputSpecification(Set<String> missingInputBufferIDs, double minVal, double maxVal) {
+    public static String createCustomInputSpecification(Map<String, Pair<Double, Double>> inputIntervals) {
         StringBuilder cis = new StringBuilder();
         cis.append("{");
 
-        CELLO_INPUT_SPECIFICATION.entrySet().stream().filter(stringMapEntry -> !missingInputBufferIDs.contains(stringMapEntry.getKey())).forEach(entry -> {
+        /*CELLO_INPUT_SPECIFICATION.entrySet().stream().filter(stringMapEntry -> !inputIntervals.containsKey(stringMapEntry.getKey())).forEach(entry -> {
             Map<Boolean, Double> value = entry.getValue();
             cis.append(String.format(DEFAULT_INPUT_SPECIFICATION_ENTRY_FORMAT_STRING, entry.getKey(), value.get(Boolean.FALSE), value.get(Boolean.TRUE)));
-        });
+        });*/
 
-        missingInputBufferIDs.forEach(entry -> {
-            cis.append(String.format(DEFAULT_INPUT_SPECIFICATION_ENTRY_FORMAT_STRING, entry, minVal, maxVal));
+        inputIntervals.forEach((id, interval) -> {
+            cis.append(String.format(DEFAULT_INPUT_SPECIFICATION_ENTRY_FORMAT_STRING, id, interval.first(), interval.second()));
         });
 
         cis.append("}");

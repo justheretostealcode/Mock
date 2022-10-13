@@ -4,7 +4,7 @@ import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 
 public abstract class AssignmentSearchAlgorithm {
 
@@ -20,5 +20,5 @@ public abstract class AssignmentSearchAlgorithm {
         this.simConfig = simConfig;
     }
 
-    public abstract SimulationResult assign();
+    public abstract MappingResult assign();
 }

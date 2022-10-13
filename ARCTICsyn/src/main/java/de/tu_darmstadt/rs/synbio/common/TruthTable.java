@@ -3,6 +3,7 @@ package de.tu_darmstadt.rs.synbio.common;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.logicng.datastructures.Assignment;
 import org.logicng.formulas.Formula;
 import org.logicng.formulas.Literal;
@@ -91,12 +92,25 @@ public class TruthTable {
 
         return builder.toString();
     }
-
-    public boolean equalsLogically(TruthTable cmp) {
-        if (this.firstUnusedBit != cmp.firstUnusedBit)
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) { return false; }
+        if (obj == this) { return true; }
+        if (obj.getClass() != getClass()) {
             return false;
+        }
+        TruthTable rhs = (TruthTable) obj;
+        return new EqualsBuilder().append(firstUnusedBit, rhs.firstUnusedBit)
+                .append(truthTable, rhs.truthTable)
+                .isEquals();
+    }
 
-        return this.truthTable.equals(cmp.truthTable);
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(firstUnusedBit)
+                .append(truthTable)
+                .toHashCode();
     }
 
     @JsonValue

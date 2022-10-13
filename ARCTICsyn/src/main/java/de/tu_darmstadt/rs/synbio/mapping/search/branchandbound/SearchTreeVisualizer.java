@@ -1,6 +1,6 @@
 package de.tu_darmstadt.rs.synbio.mapping.search.branchandbound;
 
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
@@ -14,10 +14,10 @@ import java.io.IOException;
  * A class to visualize the branch and bound search tree
  */
 public class SearchTreeVisualizer {
-    private final String initialNodeID = "EMPTY_INITIALISATION_NODE";
+    private final String initialNodeID = "ROOT";
     private BufferedWriter writer;
     private int expansionIndex;
-    private final LogicGate[] reversedLogicGates;
+    private final Gate[] reversedLogicGates;
     private boolean bVisualize;
 
 
@@ -29,7 +29,7 @@ public class SearchTreeVisualizer {
      * @param reversedLogicGates    The gates of the structure in reversed topological order
      * @param bVisualize            Whether to visualize or not
      */
-    public SearchTreeVisualizer(String structureName, MappingConfiguration mappingConfiguration, LogicGate[] reversedLogicGates, boolean bVisualize) {
+    public SearchTreeVisualizer(String structureName, MappingConfiguration mappingConfiguration, Gate[] reversedLogicGates, boolean bVisualize) {
 
         this.reversedLogicGates = reversedLogicGates;
         this.bVisualize = bVisualize;
@@ -58,22 +58,22 @@ public class SearchTreeVisualizer {
         return this.bVisualize;
     }
 
-    public void addLeafNode(Assignment assignment, double val, double currentBound) {
+    public void addLeafNode(Assignment assignment, double val, double currentBound, boolean skipParent) {
         if (!bVisualize)
             return;
 
         QueueItem item = QueueItem.getQueueItem(assignment, val);
-        add(item, currentBound);
+        add(item, currentBound, skipParent);
     }
 
     public void addIntermediateNode(QueueItem item, double currentBound) {
         if (!bVisualize)
             return;
 
-        add(item, currentBound);
+        add(item, currentBound, false);
     }
 
-    public void add(QueueItem item, double currentBound) {
+    public void add(QueueItem item, double currentBound, boolean skipParent) {
         if (!bVisualize)
             return;
 
@@ -83,23 +83,20 @@ public class SearchTreeVisualizer {
         if (size == 0)
             return;
 
-        LogicGate gate = reversedLogicGates[size - 1];
+        Gate gate = reversedLogicGates[size - 1];
         GateRealization realization = assignment.get(gate);
         String sourceIdentifier = "";
         String targetIdentifier = initialNodeID;
         for (int iX = 0; iX < assignment.size(); iX++) {
-            LogicGate g = reversedLogicGates[iX];
-            sourceIdentifier = targetIdentifier;
+            Gate g = reversedLogicGates[iX];
+            if (!(skipParent && iX == (assignment.size() - 1)))
+                sourceIdentifier = targetIdentifier;
             targetIdentifier += "__" + getNodeIdentifier(g, assignment.get(g));
         }
 
         String targetLabel = String.format("%s (%d)\n[%f | %f]", realization.getIdentifier(), expansionIndex, value, currentBound);
         try {
             writer.write(String.format("%s [label=\"%s\", shape=rect];\n", targetIdentifier, targetLabel));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
             writer.write(String.format("%s -> %s;\n", sourceIdentifier, targetIdentifier));
         } catch (IOException e) {
             e.printStackTrace();
@@ -108,7 +105,7 @@ public class SearchTreeVisualizer {
         expansionIndex++;
     }
 
-    private String getNodeIdentifier(LogicGate gate, GateRealization realization) {
+    private String getNodeIdentifier(Gate gate, GateRealization realization) {
         return gate.getIdentifier() + "_" + gate.getLogicType().toString() + "_" + realization.getIdentifier() + "_" + realization.getGroup();
     }
 

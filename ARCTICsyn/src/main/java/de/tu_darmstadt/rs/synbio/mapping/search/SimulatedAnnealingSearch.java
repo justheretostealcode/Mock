@@ -2,7 +2,7 @@ package de.tu_darmstadt.rs.synbio.mapping.search;
 
 import de.tu_darmstadt.rs.synbio.common.*;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
@@ -10,7 +10,7 @@ import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.ExhaustiveAssigner;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.RandomAssigner;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
     private static final Logger logger = LoggerFactory.getLogger(SimulatedAnnealingSearch.class);
 
-    private HashMap<LogicType, List<GateRealization>> realizations;
+    private Map<LogicType, List<GateRealization>> realizations;
 
     public SimulatedAnnealingSearch(Circuit structure, GateLibrary lib, MappingConfiguration mapConfig, SimulationConfiguration simConfig) {
         super(structure, lib, mapConfig, simConfig);
@@ -37,7 +37,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
     private double maxDistance = 0.0;
     private double minDistance = Double.MAX_VALUE;
 
-    public SimulationResult assign() {
+    public MappingResult assign() {
 
         File output;
         PrintWriter out;
@@ -73,7 +73,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
         // initialize simulator
 
-        SimulatorInterface simulator = new SimulatorInterface(simConfig, gateLib.getSourceFile());
+        SimulatorInterface simulator = new SimulatorInterface(simConfig, gateLib);
         simulator.initSimulation(structure);
 
         // get initial assignment
@@ -90,8 +90,8 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         do {
             current = randomAssigner.getNextAssignment();
             problemSize = exhaustiveAssigner.getNumTotalPermutations();
-            currentScore = simulator.simulate(current);
-            currentGrowth = simulator.getLastGrowth();
+            currentScore = simulator.simulate(current, SimulatorInterface.PropagationMode.NORMAL);
+            currentGrowth = 1.0;//simulator.getLastGrowth();
             currentScore = currentScore * (currentGrowth< 0.75 ? Math.pow(currentGrowth * 1.33, 1) : 1.0);
         } while (!current.fulfilsConstraints(structure) || currentGrowth < 0.75);
 
@@ -126,8 +126,8 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             if (neighbor == null)
                 break;
 
-            double neighborScore = simulator.simulate(neighbor);
-            double neighborGrowth = simulator.getLastGrowth();
+            double neighborScore = simulator.simulate(neighbor, SimulatorInterface.PropagationMode.NORMAL);
+            double neighborGrowth = 1.0;//simulator.getLastGrowth();
             neighborScore =  neighborScore * (neighborGrowth < 0.75 ? Math.pow(neighborGrowth * 1.33, 1) : 1.0);
             simCount ++;
 
@@ -194,7 +194,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
         }
 
-        SimulationResult result = new SimulationResult(structure, best, simulator.simulate(best));
+        MappingResult result = new MappingResult(structure, best, simulator.simulate(best, SimulatorInterface.PropagationMode.NORMAL));
         result.setNeededSimulations(simCount);
         simulator.shutdown();
         return result;
@@ -223,7 +223,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         RandomAssigner assigner = new RandomAssigner(gateLib, structure);
 
         for (int i = 0; i < numSamples; i++) {
-            scores[i] = simulator.simulate(assigner.getNextAssignment());
+            scores[i] = simulator.simulate(assigner.getNextAssignment(), SimulatorInterface.PropagationMode.NORMAL);
         }
 
         double sDev = new StandardDeviation().evaluate(scores);
@@ -237,7 +237,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
         Assignment neighbor;
 
-        List<LogicGate> gates = new ArrayList<>(current.keySet());
+        List<Gate> gates = new ArrayList<>(current.keySet());
 
         int tryCount = 0;
 
@@ -250,7 +250,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
 
             neighbor = new Assignment(current);
-            LogicGate selectedCircuitGate = gates.get(rand.nextInt(gates.size()));
+            Gate selectedCircuitGate = gates.get(rand.nextInt(gates.size()));
             GateRealization currentRealization = neighbor.get(selectedCircuitGate);
 
             List<GateRealization> realizationsOfType = this.realizations.get(selectedCircuitGate.getLogicType());

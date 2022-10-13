@@ -9,36 +9,46 @@ import org.logicng.formulas.Formula;
 
 import java.util.Map;
 
-public abstract class Gate {
+public class Gate {
 
     private final String identifier;
-    private final Type type;
+    private final LogicType type;
 
-    public enum Type {
-        INPUT,
-        LOGIC,
-        OUTPUT
-    };
-
-    public Gate(String identifier, Gate.Type type) {
+    public Gate(String identifier, LogicType type) {
         this.identifier = identifier;
         this.type = type;
     }
 
-    public abstract Formula getExpression();
+    private static final Map<String, Formula> inputExpressions = Map.of(
+            "a", ExpressionParser.parse("a"),
+            "b", ExpressionParser.parse("b"),
+            "c", ExpressionParser.parse("c"));
 
-    public TruthTable getTruthTable() {
-        return new TruthTable(getExpression());
+    public Formula getExpression() {
+        if (type == LogicType.INPUT) {
+            if (inputExpressions.containsKey(identifier))
+                return inputExpressions.get(identifier);
+            else
+                return ExpressionParser.parse(identifier);
+        } else {
+            return type.getExpression();
+        }
     }
 
     public String getIdentifier() {
         return identifier;
     }
 
-    public abstract int getWeight();
+    public int getWeight() {
+        return type.getWeight();
+    };
 
-    public Type getType() {
+    public LogicType getLogicType() {
         return type;
+    }
+
+    public boolean isLogicGate() {
+        return type != LogicType.INPUT && type != LogicType.OUTPUT_BUFFER && type != LogicType.OUTPUT_OR2;
     }
 
     @Override
@@ -51,16 +61,24 @@ public abstract class Gate {
         @Override
         public Gate buildVertex(String s, Map<String, Attribute> map) {
 
-            Formula expression = ExpressionParser.parse(map.get("expression").getValue());
-            String primitiveIdentifier = map.get("primitiveIdentifier").getValue();
+            /* this is for backwards compatibility with old structure files */
+            if (map.containsKey("expression")) {
 
-            switch(map.get("type").getValue()) {
-                case "INPUT":
-                    return new InputGate(expression, s);
-                case "OUTPUT":
-                    return new OutputGate(s);
-                default:
-                    return new LogicGate(s, LogicType.valueOf(primitiveIdentifier));
+                String primitiveIdentifier = map.get("primitiveIdentifier").getValue();
+
+                switch (map.get("type").getValue()) {
+                    case "INPUT":
+                        return new Gate(s, LogicType.INPUT);
+                    case "OUTPUT":
+                        return new Gate(s, LogicType.OUTPUT_BUFFER);
+                    default:
+                        if (primitiveIdentifier.equals("OR2"))
+                            return new Gate(s, LogicType.OUTPUT_OR2);
+                        else
+                            return new Gate(s, LogicType.valueOf(primitiveIdentifier));
+                }
+            } else {
+                return new Gate(s, LogicType.valueOf(map.get("type").getValue()));
             }
         }
     }

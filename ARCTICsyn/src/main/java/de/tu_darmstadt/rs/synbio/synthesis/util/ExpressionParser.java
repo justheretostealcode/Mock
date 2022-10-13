@@ -10,11 +10,10 @@ import org.slf4j.LoggerFactory;
 public class ExpressionParser {
 
     private static final Logger logger = LoggerFactory.getLogger(ExpressionParser.class);
+    private static final FormulaFactory factory = new FormulaFactory();
+    private static final PropositionalParser parser = new PropositionalParser(factory);
 
     public static Formula parse(String expression) {
-
-        FormulaFactory factory = new FormulaFactory();
-        PropositionalParser parser = new PropositionalParser(factory);
 
         Formula f = null;
         try {

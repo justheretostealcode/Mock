@@ -1,0 +1,15 @@
+{
+  "truthtable" : "11101111",
+  "gate_truthtables" : {
+    "NOT_0" : "11101111",
+    "NOT_2" : "10101011",
+    "a" : "11110000",
+    "NOR2_3" : "01010100",
+    "b" : "11001100",
+    "O" : "11101111",
+    "NOR2_4" : "00000011",
+    "c" : "10101010",
+    "NOR2_1" : "00010000"
+  },
+  "graph" : {"creator":"JGraphT JSON Exporter","version":"1","nodes":[{"id":"O","type":"OUTPUT_BUFFER"},{"id":"NOT_0","type":"NOT"},{"id":"NOR2_1","type":"NOR2"},{"id":"NOT_2","type":"NOT"},{"id":"NOR2_3","type":"NOR2"},{"id":"NOR2_4","type":"NOR2"},{"id":"a","type":"INPUT"},{"id":"b","type":"INPUT"},{"id":"c","type":"INPUT"}],"edges":[{"id":"1","source":"a","target":"NOR2_4","variable":"x"},{"id":"2","source":"b","target":"NOR2_4","variable":"y"},{"id":"3","source":"NOR2_4","target":"NOR2_3","variable":"y"},{"id":"4","source":"c","target":"NOR2_3","variable":"x"},{"id":"5","source":"NOR2_3","target":"NOT_2","variable":"x"},{"id":"6","source":"NOT_2","target":"NOR2_1","variable":"y"},{"id":"7","source":"b","target":"NOR2_1","variable":"x"},{"id":"8","source":"NOR2_1","target":"NOT_0","variable":"x"},{"id":"9","source":"NOT_0","target":"O","variable":"x"}]}
+}

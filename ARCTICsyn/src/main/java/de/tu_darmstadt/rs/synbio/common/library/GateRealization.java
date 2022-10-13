@@ -9,34 +9,28 @@ public class GateRealization {
     private final String identifier;
     private final LogicType logicType;
     private final String group;
-    private final String altIdenfifier;
 
     private boolean isCharacterized = false;
     private GateCharacterization characterization;
 
     /* constructor for un-characterized realizations */
 
-    public GateRealization(String identifier, LogicType type, String group, String altIdenfifier) {
+    public GateRealization(String identifier, LogicType type, String group) {
         this.identifier = identifier;
         this.logicType = type;
         this.group = group;
-        this.altIdenfifier = altIdenfifier;
     }
 
     /* constructor for characterized realizations */
 
-    public GateRealization(String identifier, LogicType type, String group, String altIdentifier, GateCharacterization characterization) {
-        this(identifier, type, group, altIdentifier);
+    public GateRealization(String identifier, LogicType type, String group, GateCharacterization characterization) {
+        this(identifier, type, group);
         this.characterization = characterization;
         this.isCharacterized = true;
     }
 
     public String getIdentifier() {
         return identifier;
-    }
-
-    public String getAltIdenfifier() {
-        return altIdenfifier;
     }
 
     public LogicType getLogicType() {
@@ -55,6 +49,9 @@ public class GateRealization {
         return isCharacterized;
     }
 
+    @Override
+    public String toString() { return identifier; }
+
     public static class GateCharacterization {
 
         /* library values */
@@ -63,6 +60,12 @@ public class GateRealization {
         private final double k;
         private final double n;
 
+        private final double iLower;
+        private final double iUpper;
+
+        private final double jLower;
+        private final double jUpper;
+
         private final Particles particles;
 
         /* derived values */
@@ -70,10 +73,17 @@ public class GateRealization {
         private final double ym;
         private final double grad;
 
-        public GateCharacterization(double ymax, double ymin, double k, double n, Particles particles) {
+        public GateCharacterization(double ymax, double ymin, double iLower, double iUpper, double jLower, double jUpper, double k, double n, Particles particles) {
 
             this.ymax = ymax;
             this.ymin = ymin;
+
+            this.iLower = iLower;
+            this.iUpper = iUpper;
+
+            this.jLower = jLower;
+            this.jUpper = jUpper;
+
             this.k = k;
             this.n = n;
 
@@ -93,6 +103,14 @@ public class GateRealization {
         public double getYmin() {
             return ymin;
         }
+
+        public double getILower() { return iLower; }
+
+        public double getIUpper() { return iUpper; }
+
+        public double getJLower() { return jLower; }
+
+        public double getJUpper() { return jUpper; }
 
         public double getK() {
             return k;

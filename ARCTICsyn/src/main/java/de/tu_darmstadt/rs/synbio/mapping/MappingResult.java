@@ -1,9 +1,8 @@
-package de.tu_darmstadt.rs.synbio.simulation;
+package de.tu_darmstadt.rs.synbio.mapping;
 
-import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 
-public class SimulationResult implements Comparable<SimulationResult> {
+public class MappingResult implements Comparable<MappingResult> {
 
     private final Circuit structure;
     private final Assignment assignment;
@@ -14,13 +13,13 @@ public class SimulationResult implements Comparable<SimulationResult> {
     private long neededSimulations = 0;
     private long minimumBranchAndBoundSimulations = -1;
 
-    public SimulationResult(Circuit structure, Assignment assignment, double score) {
+    public MappingResult(Circuit structure, Assignment assignment, double score) {
         this.structure = structure;
         this.assignment = assignment;
         this.score = score;
     }
 
-    public SimulationResult(Circuit structure, Assignment assignment, double score, double toxicity) {
+    public MappingResult(Circuit structure, Assignment assignment, double score, double toxicity) {
         this(structure, assignment, score);
         this.toxicity = toxicity;
     }
@@ -51,7 +50,7 @@ public class SimulationResult implements Comparable<SimulationResult> {
     public long getMinimumBranchAndBoundSimulations() {return minimumBranchAndBoundSimulations;}
 
     @Override
-    public int compareTo(SimulationResult cmp) {
+    public int compareTo(MappingResult cmp) {
         if (this.score < cmp.score)
             return -1;
         else if (cmp.score < this.score)

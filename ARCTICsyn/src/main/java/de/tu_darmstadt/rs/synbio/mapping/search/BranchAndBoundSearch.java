@@ -3,20 +3,24 @@ package de.tu_darmstadt.rs.synbio.mapping.search;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Wire;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
+import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityChecker;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.QueueItem;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.SearchStatsLogger;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.SearchTreeVisualizer;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.searchstrategies.*;
 import de.tu_darmstadt.rs.synbio.mapping.util.BranchAndBoundUtil;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
+import org.jgrapht.Graphs;
 import org.jgrapht.traverse.TopologicalOrderIterator;
+import org.logicng.formulas.FormulaFactory;
+import org.logicng.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,13 +31,20 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
     private static final Logger logger = LoggerFactory.getLogger(BranchAndBoundSearch.class);
 
-    private final HashMap<LogicType, List<GateRealization>> realizations;
+    private final Map<LogicType, List<GateRealization>> realizations;
 
     private final Circuit[] subProblems;
-    private final SimulatorInterface[] interfaces;
+    private final Map<String, LogicType> replacedLogicTypes;
+    //private final SimulatorInterface[] interfaces;
+    private final SimulatorInterface simulator;
 
-    private final LogicGate[] logicGates;
-    private final LogicGate[] reversedLogicGates;
+    private final CompatibilityChecker checker;
+
+    private final Gate outputGate;
+    private final GateRealization outputRealization;
+
+    private final Gate[] logicGates;
+    private final Gate[] reversedLogicGates;
 
     private Assignment initialAssignment;
     private double initialBestScore;
@@ -66,12 +77,30 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
 
         // Bei n logic Gattern werden n-1 Teilprobleme erzeugt
-        subProblems = getSubProblems(this.structure);
-        interfaces = getSubProblemInterfaces(this.structure, this.subProblems);
+        Pair<Circuit[], Map<String, LogicType>> subProblemResult = getSubProblems(this.structure);
+        subProblems = subProblemResult.first();
+        replacedLogicTypes = subProblemResult.second();
 
+        checker = new CompatibilityChecker(gateLib, structure);
+
+        /*structure.print(new File("structure.dot"));
+        structure.save(new File("structure.json"));
+        int i = 0;
+        for(Circuit sp : subProblems) {
+            sp.print(new File("sb_" + i + ".dot"));
+            sp.save(new File("sb_" + i + ".json"));
+            i++;
+        }*/
+
+        //interfaces = getSubProblemInterfaces(this.structure, this.subProblems);
+        simulator = new SimulatorInterface(simConfig, gateLib);
+        simulator.initSimulation(structure);
 
         logicGates = getLogicGatesInTopologicalOrder(structure);
         reversedLogicGates = getReversedLogicGates(logicGates);
+
+        outputGate = structure.getOutputGate();
+        outputRealization = gateLib.getOutputDevice(outputGate.getLogicType());
 
         initialAssignment = null;
         initialBestScore = Double.NEGATIVE_INFINITY;
@@ -98,18 +127,87 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     }
 
     /**
-     * Derives the subproblems of the provided structure
+     * This method creates the subproblems belonging to the provided circuit.   <br>
+     * Each subproblem thereby contains one gate less than the previous subproblem.
      *
-     * @param structure The structure to consider
-     * @return An array of circuits
+     * @param structure The circuit to from which the subproblems shall be created
+     * @return A pair of: An array of subproblem circuits and a map of IDs of gate replacements and their replaced logic type
      */
-    private Circuit[] getSubProblems(Circuit structure) {
-        List<Circuit> subProblems = BranchAndBoundUtil.getSubProblems(structure);
+    private Pair<Circuit[], Map<String, LogicType>> getSubProblems(Circuit structure) {
+
+        Map<String, LogicType> replacedLogicTypes = new HashMap<>();
+
+        // Establish the reverse topological order of the logic gates
+        ArrayList<Gate> gatesInReversedOrder = new ArrayList<>();
+        Iterator<Gate> iterator = new TopologicalOrderIterator<>(structure);
+        while (iterator.hasNext()) {
+            Gate g = iterator.next();
+
+            if (g.isLogicGate() || g.getLogicType() == LogicType.INPUT)
+                gatesInReversedOrder.add(g);
+        }
+
+        Gate[] gateOrder = new Gate[gatesInReversedOrder.size()];
+        gatesInReversedOrder.toArray(gateOrder);
+
+        List<Gate> originalInputBuffers = structure.getInputBuffers();
+        List<Map<Gate, List<Gate>>> substitutionsList;
+        Map<Gate, String> substitutionTruthTables;
+        // Create sub problems
+        ArrayList<Circuit> subProblems = new ArrayList<>(gateOrder.length - 1);
+        Circuit subProblem = new Circuit("Subproblem");
+        Graphs.addGraph(subProblem, structure);
+        FormulaFactory factory = new FormulaFactory();
+        String structureIdentifier = structure.getIdentifier();
+        String subProblemIdentifier = structureIdentifier + "_subproblem_";
+
+        subProblems.add(subProblem.copy(subProblemIdentifier + 0));
+
+        Map<Gate, Gate> insertedInputBuffers = new HashMap<>();
+        for (int iX = 0; iX < gateOrder.length - 1; iX++) {
+            Gate g = gateOrder[iX];
+
+            // Remove Vertex
+            Set<Wire> wires = subProblem.outgoingEdgesOf(g);
+
+            // For each gate, which is removed, we need to add a new input to the circuit and connect this input to the following gates
+            // Next to this, we mark, that the node's truthtable values result from a gate which was previously in the circuit.
+            String inputIdentifier = "OUT_" + g.getIdentifier();    // Named "OUT", since it represents the output of the referenced gate
+            Gate newInputBuffer = new Gate(inputIdentifier, LogicType.INPUT);
+            replacedLogicTypes.putIfAbsent(inputIdentifier, g.getLogicType());
+            subProblem.addVertex(newInputBuffer);
+            insertedInputBuffers.put(newInputBuffer, g);
+            for (Wire w : wires) {
+                Gate target = subProblem.getEdgeTarget(w);
+                subProblem.addEdge(newInputBuffer, target, new Wire(factory.variable(w.getVariable().name())));
+            }
+
+            subProblem.removeVertex(g);
+            // Remove all Gates which do not contribute to the result
+            BranchAndBoundUtil.cleanCircuitFromNonContributingGates(subProblem);
+            subProblem.removeRedundantGates();
+
+            // Get the Whitelist for the resulting structure
+            String whiteList = BranchAndBoundUtil.determineWhitelist(structure, subProblem, insertedInputBuffers);
+            subProblem.setWhitelist(whiteList);
+
+            // Obtain substitutions list for the subproblem. //TODO remove
+            substitutionsList = BranchAndBoundUtil.determineSubstitutionList(subProblem, originalInputBuffers);
+            subProblem.setSubstitutionsList(substitutionsList);
+
+            // Substitution Truthtables are not used anymore //TODO remove
+            substitutionTruthTables = BranchAndBoundUtil.determineSubstitutionTruthTables(subProblem, substitutionsList, originalInputBuffers);
+            subProblem.setSubstitutionTruthTables(substitutionTruthTables);
+
+            subProblems.add(subProblem.copy(subProblemIdentifier + (iX + 1)));
+        }
+
         Collections.reverse(subProblems);   // Reverse the order to achieve, that the index corresponds to the distance from the source in the search tree
 
         Circuit[] subProblemsA = new Circuit[subProblems.size()];
         subProblems.toArray(subProblemsA);
-        return subProblemsA;
+
+        return new Pair<>(subProblemsA, replacedLogicTypes);
     }
 
     /**
@@ -125,7 +223,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         SimulatorInterface simulator;
         for (Circuit subProblem : subProblems) {
-            simulator = new SimulatorInterface(simConfig, gateLib.getSourceFile());
+            simulator = new SimulatorInterface(simConfig, gateLib);
             simulator.initSimulation(subProblem);
             interfaces.add(simulator);
         }
@@ -135,22 +233,22 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         return array;
     }
 
-    private LogicGate[] getLogicGatesInTopologicalOrder(Circuit structure) {
-        ArrayList<LogicGate> gates = new ArrayList<>();
+    private Gate[] getLogicGatesInTopologicalOrder(Circuit structure) {
+        ArrayList<Gate> gates = new ArrayList<>();
         Iterator<Gate> iterator = new TopologicalOrderIterator<>(structure);
 
         while (iterator.hasNext()) {
             Gate g = iterator.next();
-            if (g instanceof LogicGate)
-                gates.add((LogicGate) g);
+            if (g.isLogicGate() || g.getLogicType() == LogicType.INPUT)
+                gates.add(g);
         }
-        LogicGate[] logicGates = new LogicGate[gates.size()];
+        Gate[] logicGates = new Gate[gates.size()];
         gates.toArray(logicGates);
         return logicGates;
     }
 
-    private LogicGate[] getReversedLogicGates(LogicGate[] logicGates) {
-        LogicGate[] reversedLogicGates = new LogicGate[logicGates.length];
+    private Gate[] getReversedLogicGates(Gate[] logicGates) {
+        Gate[] reversedLogicGates = new Gate[logicGates.length];
         for (int iX = 0; iX < logicGates.length; iX++) {
             reversedLogicGates[reversedLogicGates.length - 1 - iX] = logicGates[iX];
         }
@@ -165,7 +263,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      *
      * @param set
      */
-    private void sortRealizations(HashMap<LogicType, List<GateRealization>> set) {
+    private void sortRealizations(Map<LogicType, List<GateRealization>> set) {
         MappingConfiguration.BAB_Sort_Order libraryOrder = mapConfig.getBabLibraryOrder();
         if (libraryOrder == MappingConfiguration.BAB_Sort_Order.UNSORTED)
             return;
@@ -207,7 +305,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         if (assignment == null || !assignment.isValid() || assignment.size() != reversedLogicGates.length)
             return;
 
-        for (LogicGate g : reversedLogicGates) {
+        for (Gate g : reversedLogicGates) {
             if (assignment.get(g) == null)
                 return;
         }
@@ -227,7 +325,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     }
 
     @Override
-    public SimulationResult assign() {
+    public MappingResult assign() {
         SearchStatsLogger searchStatsLogger = new SearchStatsLogger(structure, mapConfig, simConfig, reversedLogicGates.length);
 
         Comparator<QueueItem> comparator;
@@ -261,22 +359,24 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         SearchStrategy strategy = getSearchStrategy();
 
-        strategy.addInitialItemToQueue(Double.POSITIVE_INFINITY);
+        strategy.addInitialItemToQueue(new Assignment(outputGate, outputRealization), Double.POSITIVE_INFINITY);
 
         long numberOfItemsAddedAndSkipped = 0;
 
+        double errorThreshold = mapConfig.getBabFast() ? 0.0 : 0.001;
+
         QueueItem currentItem;
         Assignment currentAssignment;
-        //System.out.print("Iteration: " + 0);
+
         long iteration = 0;
         while ((currentItem = strategy.getNext()) != null) {    // Get the next element from queue and repeat until the queue is empty
 
-            searchTreeVisualizer.add(currentItem, bestScore);
+            searchTreeVisualizer.add(currentItem, bestScore, false);
 
             //if (iteration % 100 == 0)  // Only update every hundred iterations
             //    System.out.print("\rIteration: " + iteration + " (" + iNeededSimulations + ")");
 
-            if (currentItem.val <= bestScore) {
+            if (currentItem.val <= bestScore * (1.0 - errorThreshold)) {
                 // Removes item if the best score has changed after this queue item has been added to the queue
                 numberOfItemsAddedAndSkipped++;
                 continue;
@@ -287,20 +387,24 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
             double val;
 
-
             if (bEagerBranchAndBound) {
                 /*
                 Eager Branch and Bound
                 */
                 childs = branch(currentAssignment);
 
+                if (childs.size() == 0)
+                    continue;
+
+                int childSize = childs.get(0).size();
+
                 var ref = new Object() {
                     double highestScore = Double.NEGATIVE_INFINITY;
                 };
 
-                if (currentAssignment.size() < logicGates.length - 1) {    // The child assignments are intermediate nodes (no leaves)
+                if (childSize < logicGates.length - 1) {    // The child assignments are intermediate nodes (no leaves)
 
-                    double finalBestScore = bestScore;
+                    double finalBestScore = bestScore  * (1.0 - errorThreshold);
                     List<QueueItem> queueItems = childs.stream()
                             .map(assignment -> {                                    // Map to QueueItem
 
@@ -318,12 +422,12 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                     for (Assignment assignment : childs) {
                         val = bound(assignment);
                         ref.highestScore = Math.max(ref.highestScore, val);
-                        searchTreeVisualizer.addLeafNode(assignment, val, bestScore);
+                        searchTreeVisualizer.addLeafNode(assignment, val, bestScore, true);
 
-                        double growth = interfaces[assignment.size() - 1].getLastGrowth();
-                        if (val > bestScore && growth >= 0.75) {   // Since the node is a terminal node (leave), one needs to check if it is better than the current best solution
+                        if (val > bestScore) {   // Since the node is a terminal node (leave), one needs to check if it is better than the current best solution
                             bestScore = val;
                             bestAssignment = assignment;
+                            //logger.info("new best score: " + bestScore);
                             searchStatsLogger.notifyNewBestAssignment(iteration, iNeededSimulations);
                         }
                     }
@@ -374,7 +478,13 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             iteration++;
         }
 
-        SimulationResult result = new SimulationResult(structure, bestAssignment, bestScore);
+        if (bestAssignment == null)
+            return null;
+
+        if (!checker.checkSimple(bestAssignment))
+            logger.warn("Resulting assignment contains incompatible device combinations!");
+
+        MappingResult result = new MappingResult(structure, bestAssignment, bestScore);
         result.setNeededSimulations(iNeededSimulations);
         result.setMinimumBranchAndBoundSimulations(minimalNumberOfSimulations(bestAssignment));
 
@@ -401,23 +511,42 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      * @return
      */
     private List<Assignment> branch(Assignment assignment) {
-        int index = assignment.size();
-        LogicGate logicGate = reversedLogicGates[index];
-        List<Assignment> assignments = new ArrayList<>();
+
+        Gate logicGate = reversedLogicGates[assignment.size()];
+
+        boolean checkNaive = false;
+
+        long leftGatesOfType = Arrays.stream(reversedLogicGates)
+                .filter(g -> !assignment.keySet().contains(g))
+                .filter(g -> g.getLogicType() == logicGate.getLogicType()).count();
 
         Set<String> usedGroups = assignment.values().stream().map(GateRealization::getGroup).collect(Collectors.toSet());
 
-        List<GateRealization> availableRealizations = realizations.get(logicGate.getLogicType());
+        List<GateRealization> availableRealizations = realizations.get(logicGate.getLogicType()).stream()
+                .filter(r -> !usedGroups.contains(r.getGroup())).collect(Collectors.toList());
 
-        availableRealizations.stream()
-                .filter(gateRealization -> !usedGroups.contains(gateRealization.getGroup()))
-                .forEach(gateRealization -> {
-                    Assignment a = new Assignment(assignment);
-                    a.put(logicGate, gateRealization);
+        List<Assignment> assignments = new ArrayList<>();
 
-                    if (a.fulfilsConstraints(structure))
-                        assignments.add(a);
-                });
+        for (GateRealization realization : availableRealizations) {
+
+            Assignment a = new Assignment(assignment);
+
+            a.put(logicGate, realization);
+
+            if (checkNaive ? !checker.checkSimple(a) : !checker.checkSat(a)) {
+                //logger.info("suppressed branch of assignment with size " + assignment.size());
+                continue;
+            }
+
+            /* if second last mapping determines mapping of last one --> jump straight to leaf nodes/complete assignments */
+            if ((leftGatesOfType == 2) && (availableRealizations.size() == 2) && (assignment.size() == reversedLogicGates.length - 2)) {
+                assignments.addAll(branch(a));
+            } else {
+                if (a.fulfilsConstraints(structure)) {
+                    assignments.add(a);
+                }
+            }
+        }
 
         if (mapConfig.getBabChildrenOrder() == MappingConfiguration.BAB_Sort_Order.SHUFFLED)
             Collections.shuffle(assignments);
@@ -434,16 +563,15 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      */
     private double bound(Assignment assignment) {
         iNeededSimulations++;
-        int assignmentSize = assignment.size();
-        String additionalArgs;
 
+        SimulatorInterface.PropagationMode mode;
 
-        if (assignmentSize != interfaces.length)    // The assignment to simulate does not belong to a leaf node
-            additionalArgs = getAdditionalSimArgs(assignment);  // Use optimistic values if not leaf node
+        if (assignment.size() == logicGates.length)
+             mode = SimulatorInterface.PropagationMode.NORMAL;
         else
-            additionalArgs = " custom_input_specification=0 substitute=0 "; // Use default values if leaf node
+            mode = mapConfig.getBabFast() ? SimulatorInterface.PropagationMode.ITA : SimulatorInterface.PropagationMode.OPTIMAL;
 
-        return interfaces[assignmentSize - 1].simulate(assignment, additionalArgs);
+        return simulator.simulate(assignment, mode);
     }
 
     /**
@@ -458,7 +586,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         int subProblemPointer = assignment.size() - 1;
         int problemPointer = subProblems.length - 1;
         if (subProblemPointer == problemPointer)
-            return " cis=0 ";
+            return " --cis=0 ";
+
+        Map<String, Pair<Double, Double>> inputIntervals = new HashMap<>();
 
         /*
         Determine which input gates of the original circuit are present in the actual circuit.
@@ -482,7 +612,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         double maxVal = Double.NEGATIVE_INFINITY;
         double minVal = Double.POSITIVE_INFINITY;
-        // Case differentiation for Input Specification Type
+        // Case differentiation for Input Specification Type //TODO: Unused --> tidy up
         if (babInputSpecificationType == MappingConfiguration.BAB_INPUT_SPECIFICATION_TYPE.INPRECISE) {
             maxVal = Math.pow(10, 12);  // Double.POSITIVE_INFINITY can not be transferred to the Simulator -> 10^12
             minVal = 0;
@@ -504,29 +634,34 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                 */
                 Set<String> usedGroups = assignment.values().stream().map(GateRealization::getGroup).collect(Collectors.toSet());
 
+                for (String inputId : artificialInputBufferIDs) {
+
+                    LogicType replacedLogicType = replacedLogicTypes.get(inputId);
                 /*
                 Set up the prerequisites for the maximization of input interval.
                  */
-                double yMax;
-                double yMin;
+                    double yMax;
+                    double yMin;
 
                 /*
                 Determine all realizations which belong to groups not already used.
                  */
-                List<GateRealization.GateCharacterization> availableRealizations = realizations.values().stream().flatMap(Collection::stream)
-                        .filter(realization -> !usedGroups.contains(realization.getGroup()) && realization.isCharacterized())
-                        .map(GateRealization::getCharacterization)
-                        .collect(Collectors.toList());
+                    List<GateRealization.GateCharacterization> availableRealizations = realizations.get(replacedLogicType).stream()
+                            .filter(realization -> !usedGroups.contains(realization.getGroup()) && realization.isCharacterized())
+                            .map(GateRealization::getCharacterization)
+                            .collect(Collectors.toList());
 
                 /*
                 Determine largest ymax and smallest ymin
                  */
-                yMax = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmax).max().orElse(Math.pow(10, 15));
-                yMin = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmin).min().orElse(0);
-                maxVal = Math.max(maxVal, yMax);
-                minVal = Math.min(minVal, yMin);
+                    yMax = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmax).max().orElse(Math.pow(10, 15));
+                    yMin = availableRealizations.stream().mapToDouble(GateRealization.GateCharacterization::getYmin).min().orElse(0);
+                    //maxVal = Math.max(maxVal, yMax);
+                    //minVal = Math.min(minVal, yMin);
 
-                // TODO: uncomment when implementing particle case
+                    inputIntervals.put(inputId, new Pair<>(yMin, yMax));
+
+                    // TODO: uncomment when implementing particle case
                 /*List<Double> yMaxParticles = new ArrayList<>();
                 List<Double> yMinParticles = new ArrayList<>();
                 for (int i = 0; i < 5000; i++) {
@@ -537,11 +672,12 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
                     yMaxParticles.add(i, yMax);
                     yMinParticles.add(i, yMin);
                 }*/
+                }
             }
         }
 
         //TODO: implement additional args for particle case
-        additionalArgs = String.format(" substitute=%s use_custom_input_specification=1 cis=%s", bFastMode ? "0" : "1", BranchAndBoundUtil.createCustomInputSpecification(artificialInputBufferIDs, minVal, maxVal));
+        additionalArgs = String.format(" --substitute=%s --use_custom_input_specification=1 --cis=%s", bFastMode ? "0" : "1", BranchAndBoundUtil.createCustomInputSpecification(inputIntervals));
         return additionalArgs;
     }
 
@@ -585,7 +721,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         long numberOfAvailableRealizations = 0;
         HashSet<String> usedGroups = new HashSet<>();
 
-        for (LogicGate gate : reversedLogicGates) {
+        for (Gate gate : reversedLogicGates) {
             numberOfAvailableRealizations = realizations.get(gate.getLogicType()).stream().filter(realization -> !usedGroups.contains(realization.getGroup())).count();
             min += numberOfAvailableRealizations;
 
@@ -607,9 +743,10 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
      * Shuts down the used interfaces
      */
     private void shutDownInterfaces() {
-        for (SimulatorInterface anInterface : interfaces) {
+        simulator.shutdown();
+        /*for (SimulatorInterface anInterface : interfaces) {
             if (anInterface != null)
                 anInterface.shutdown();
-        }
+        }*/
     }
 }

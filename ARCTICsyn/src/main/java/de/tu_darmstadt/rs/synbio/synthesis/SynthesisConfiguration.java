@@ -12,9 +12,10 @@ public class SynthesisConfiguration {
 
     private static final Logger logger = LoggerFactory.getLogger(SynthesisConfiguration.class);
 
-    /* IO fields */
+    /* system fields */
 
     private String outputDir;
+    private int synLimitThreadsNum;
 
     /* synthesis configuration */
 
@@ -51,6 +52,7 @@ public class SynthesisConfiguration {
         /* output folder */
 
         outputDir = props.getProperty("OUTPUT_DIR");
+        synLimitThreadsNum = Integer.parseInt(props.getProperty("SYN_LIMIT_THREAD_NUM"));
 
         /* synthesis config handling */
 
@@ -93,8 +95,9 @@ public class SynthesisConfiguration {
 
         logger.info("<-- Configuration -->");
 
-        logger.info("IO:");
+        logger.info("System:");
         logger.info("\toutput dir.: " + outputDir);
+        logger.info("\tthread number limit: " + synLimitThreadsNum);
 
         logger.info("Synthesis:");
         logger.info("\tmode: " + synthesisMode);
@@ -125,6 +128,10 @@ public class SynthesisConfiguration {
 
     public String getOutputDir() {
         return outputDir;
+    }
+
+    public int getSynLimitThreadsNum() {
+        return synLimitThreadsNum;
     }
 
     public int getMaxDepth() {

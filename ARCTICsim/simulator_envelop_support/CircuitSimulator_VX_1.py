@@ -660,7 +660,7 @@ def startSimulation_VEC(assignment, simData, simSpec):
                 if (responseFunctions[key]["type"] == "INHIBITORY_HILL_EQUATION"):
                     responseFunctions[key]["equation"] = inhibitoryHillEquation_VEC
                 elif (responseFunctions[key]["type"] == "IMPLICIT_OR"):
-                    responseFunctions[key]["equation"] = nativeImplicitOr
+                    responseFunctions[key]["equation"] = nativeImplicitOr_VEC
                 elif (responseFunctions[key]["type"] == "ENVELOPE"):
                     i = 0  # DO Nothing
             # The case of not native response functions is currently not treated yet, but is intented already by the design of the genetic gate library
@@ -722,7 +722,7 @@ def startSimulation_VEC(assignment, simData, simSpec):
         if (simContext["particles"] == True):
             numberOfParticlesToUse = min([particles["max_number_of_particles"],
                                           simContext["numberOfParticles"]])
-            usermodePrint("Used particles:" + str(numberOfParticlesToUse))
+            #print("Used particles:" + str(numberOfParticlesToUse))
             # Restoring is not necessary, since the transfer characteristics parameters are overwritten subsequently
         else:
             numberOfParticlesToUse = 1
@@ -993,7 +993,7 @@ def startSimulation_VEC(assignment, simData, simSpec):
             else:
                 # Apply the corresponding transfer characteristic to the gates input values
                 bioGate = assignment[node]
-                value_VEC = evaluateGate_VEC(circuitVals_VEC[node], responseFunctions_VEC[bioGate])
+                value_VEC = evaluateGate_VEC(circuitVals_VEC[node], responseFunctions_VEC[bioGate], N)
                 #print("3. " + str(value_VEC))
 
             circuitVals_VEC[node] = value_VEC
@@ -1018,22 +1018,22 @@ def startSimulation_VEC(assignment, simData, simSpec):
     Evaluates a gate for the given response function and the corresponding parameters
     """
 
-    def evaluateGate_VEC(val, responseFunction):
+    def evaluateGate_VEC(val, responseFunction, N):
         if (responseFunction["native"]):
-            return responseFunction["equation"](val, responseFunction["parameters"])
+            return responseFunction["equation"](val, responseFunction["parameters"], N)
         else:
             return -1  # Not implemented yet...
 
     # This inhibitory Hill equation takes vectors and uses numpy's fast vector arithmetic for calculation
-    def inhibitoryHillEquation_VEC(x, parameters):
+    def inhibitoryHillEquation_VEC(x, parameters, N):
         # print(parameters)
-        K = parameters["K"]
-        n = parameters["n"]
-        ymin = parameters["ymin"]
-        ymax = parameters["ymax"]
+        K = parameters["K"][:N]
+        n = parameters["n"][:N]
+        ymin = parameters["ymin"][:N]
+        ymax = parameters["ymax"][:N]
         return ymin + (ymax - ymin) / (1 + np.power(x / K, n))
 
-    def nativeImplicitOr(x, parameters):
+    def nativeImplicitOr_VEC(x, parameters, N):
         return x;
 
     """
@@ -1444,7 +1444,7 @@ cmd, specDict = parseInput(" ".join(sys.argv))
 updateSimContext(specDict)
 
 # Set the maximum number of particles as default
-simContext["numberOfParticles"] = simContext["maxNumberOfParticles"];
+#simContext["numberOfParticles"] = simContext["maxNumberOfParticles"];
 
 # Check if initialisation was successfull.
 if (simContext["structure"] != "NULL" and simContext["gate_lib"] != "NULL"):

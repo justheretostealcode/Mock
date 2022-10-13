@@ -1,36 +1,48 @@
 package de.tu_darmstadt.rs.synbio.simulation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.Map;
-import java.util.Random;
-
-import static java.lang.Math.random;
+import java.util.*;
 
 public class SimulatorInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(SimulatorInterface.class);
+
+    private static final String scorePrefix = "score: ";
 
     private final String pythonBinary;
     private final File simulatorPath;
     private final String simScript;
     private final String simInitArgs;
     private final String simArgs;
-    private final File library;
+    private final GateLibrary library;
 
+    private ProcessBuilder pb;
     private Process simProcess;
+    private File structureFile;
     private BufferedReader reader;
     private BufferedWriter writer;
+    private BufferedReader errorReader;
     private final ObjectMapper mapper = new ObjectMapper();
+    private AssignmentCompiler compiler;
 
-    private Circuit circuit;
+    public enum PropagationMode {
+        NORMAL,
+        _NAIVE_OPTIMAL,
+        _NAIVE_HEURISTIC,
+        ITA,
+        _ITA_HEURISTIC,
+        _FULL_HEURISTIC,
+        OPTIMAL
+    }
 
-    public SimulatorInterface(SimulationConfiguration config, File gateLibrary) {
+    public SimulatorInterface(SimulationConfiguration config, GateLibrary gateLibrary) {
         pythonBinary = config.getPythonBinary();
         simulatorPath = config.getSimPath();
         simScript = config.getSimScript();
@@ -39,94 +51,193 @@ public class SimulatorInterface {
         library = gateLibrary;
     }
 
-    public SimulatorInterface(String pythonBinary, File simPath, String simScript, String simInitArgs, String simArgs, File gateLibrary) {
-        this.pythonBinary = pythonBinary;
-        simulatorPath = simPath;
-        this.simScript = simScript;
-        this.simInitArgs = simInitArgs;
-        this.simArgs = simArgs;
-        this.library = gateLibrary;
-    }
-
-    public void initSimulation(Circuit circuit) {
+    public boolean initSimulation(Circuit circuit) { //TODO: handle return value
 
         if (simProcess!= null && simProcess.isAlive())
             simProcess.destroy();
 
-        this.circuit = circuit;
+        this.compiler = new AssignmentCompiler(circuit, library);
 
         try {
             String structureFileName = "structure_" + circuit.getIdentifier() + "_tid" + Thread.currentThread().getId() + "_" + System.nanoTime() + ".json";
-            File structureFile = new File(simulatorPath, structureFileName);
+            structureFile = new File(simulatorPath, structureFileName);
             circuit.save(structureFile);
 
-            //String dotFileName = structureFileName.replace(".json", ".dot");
-            //File dotFile = new File(simulatorPath, dotFileName);
-            //circuit.print(dotFile);
-            //dotFile.delete();
+            List<String> arguments = new ArrayList<>();
+            arguments.addAll(Arrays.asList(pythonBinary, simScript, "-s=" + structureFileName, "-l=" + library.getSourceFile().getAbsolutePath()));
+            arguments.addAll(Arrays.asList(simInitArgs.split(" ")));
 
-            ProcessBuilder pb = new ProcessBuilder(pythonBinary, simScript, "s_path=" + structureFileName + " lib_path=" + library.getAbsolutePath() + " " + simInitArgs);
+            pb = new ProcessBuilder(arguments.toArray(new String[0]));
             pb.directory(simulatorPath);
+
             simProcess = pb.start();
 
             reader = new BufferedReader(new InputStreamReader(simProcess.getInputStream()));
             writer = new BufferedWriter(new OutputStreamWriter(simProcess.getOutputStream()));
+            errorReader = new BufferedReader(new InputStreamReader(simProcess.getErrorStream()));
 
-            while (!reader.readLine().startsWith("ready:"));
+            String output;
+            do {
+                output = reader.readLine();
 
+                if (!simProcess.isAlive()) {
+                    logger.error("Simulator exited on initialization:\n" + getError());
+                    shutdown();
+                    return false;
+                }
 
-            structureFile.delete();
+            } while (output == null || !output.startsWith("ready"));
+
+            return true;
 
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
 
-    public Double simulate(Assignment assignment, String additionalArgs) {
-        Map<String, String> assignmentIdentifiers = assignment.getIdentifierMap();
+
+
+    public Double simulate(Assignment assignment, PropagationMode mode) {
+
+        SimulationResult result;
+        //int repetitions = 0;
+
+        result = trySimulation(assignment, mode);
+
+        /* this is convergence hack code */
+
+        /*if (result.code == SimulationResult.ReturnCode.NO_CONVERGENCE) {
+
+            do {
+
+                simProcess.destroy();
+                try {
+                    simProcess = pb.start();
+                    reader = new BufferedReader(new InputStreamReader(simProcess.getInputStream()));
+                    writer = new BufferedWriter(new OutputStreamWriter(simProcess.getOutputStream()));
+                    errorReader = new BufferedReader(new InputStreamReader(simProcess.getErrorStream()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+
+                result = trySimulation(assignment, mode);
+                repetitions ++;
+
+                if (repetitions > 10) {
+                    logger.error("Aborted simulation due to non-convergence. Mode: " + mode.name());
+                    return 0.0;
+                }
+
+            } while (result.code == SimulationResult.ReturnCode.NO_CONVERGENCE);
+        }
+
+        if (repetitions > 0)
+            logger.warn("converged after " + repetitions + "repetitions.");*/
+
+        switch (result.code) {
+            case ERROR:
+                return null;
+            case NO_CONVERGENCE:
+                return 0.0;
+            default:
+                return result.score;
+        }
+
+        //return result.code == SimulationResult.ReturnCode.OK ? result.score : null;
+    }
+
+    private static class SimulationResult {
+
+        public Double score;
+        public ReturnCode code;
+
+        public enum ReturnCode {
+            OK,
+            NO_CONVERGENCE,
+            ERROR
+        }
+
+        public SimulationResult(Double score, ReturnCode code) {
+            this.score = score;
+            this.code = code;
+        }
+    }
+    private SimulationResult trySimulation(Assignment assignment, PropagationMode mode) {
+
+        String additionalArgs = "--propagation_mode=" + mode.ordinal();
+
+        Map<String, Map<?, ?>> assignmentMap = compiler.compile(assignment);
 
         double score = 0.0;
 
-        if (!simProcess.isAlive())
-            logger.error("sim process aborted");
-
         try {
-            String assignmentStr = mapper.writeValueAsString(assignmentIdentifiers);
 
-            writer.write("start " + simArgs + additionalArgs + " assignment=" + assignmentStr);
+            if (!simProcess.isAlive()) {
+                logger.error("Simulator exited before simulation start:\n" + getError());
+                shutdown();
+                return new SimulationResult(null, SimulationResult.ReturnCode.ERROR);
+            }
+
+            String assignmentStr = mapper.writeValueAsString(assignmentMap);
+
+            writer.write("update_settings " + simArgs + additionalArgs + " --assignment=" + assignmentStr);
+            writer.newLine();
+            writer.flush();
+            writer.write("start");
             writer.newLine();
             writer.flush();
 
-            String scoreStr = reader.readLine();
-            String growthString = reader.readLine();
+            String output;
+            do {
+                output = reader.readLine();
 
-            if (scoreStr.startsWith("O ")) {
-                scoreStr = scoreStr.substring(2);
-            }
+                if (!simProcess.isAlive()) {
+                    logger.error("Simulator exited during simulation: " + getError());
+                    shutdown();
+                    return new SimulationResult(null, SimulationResult.ReturnCode.ERROR);
+                }
+
+                if (output != null && output.equals("error above tolerance, score dismissed.")) {
+                    return new SimulationResult(null, SimulationResult.ReturnCode.NO_CONVERGENCE);
+                }
+            } while (output == null || !output.startsWith(scorePrefix));
+
+            output = output.substring(scorePrefix.length());
+
             // relevant to correctly parse infinity as returned score
-            score = scoreStr.equals("inf") ? Double.POSITIVE_INFINITY : Double.parseDouble(scoreStr);
-
-            growthString = growthString.substring(7);
-            growth = Double.parseDouble(growthString);
+            try {
+                score = output.equals("inf") ? Double.POSITIVE_INFINITY : Double.parseDouble(output);
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
+            shutdown();
         }
 
-        return score;
-    }
+        /*try {
+            mapper.writerWithDefaultPrettyPrinter().writeValue(new File("assignments", "assignment_00000110_"+ num + "_" + score + ".json"), assignmentMap);
+            num++;
+        } catch (Exception e) {
+        }*/
 
-    Double growth;
-
-    public Double getLastGrowth() {
-        return growth;
-    }
-
-    public Double simulate(Assignment assignment) {
-        return simulate(assignment, "");
+        return new SimulationResult(score, SimulationResult.ReturnCode.OK);
     }
 
     public void shutdown() {
+        structureFile.delete();
         simProcess.destroy();
+    }
+
+    private String getError() throws IOException {
+        String line;
+        StringBuilder error = new StringBuilder();
+        while (errorReader.ready() && (line = errorReader.readLine()) != null) {
+            error.append(line).append("\n");
+        }
+        return error.toString();
     }
 }

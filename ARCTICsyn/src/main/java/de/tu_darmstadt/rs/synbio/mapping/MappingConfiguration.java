@@ -20,6 +20,7 @@ public class MappingConfiguration {
 
     /* global mapping parameters */
     private final File library;
+    private final File compatibilityLibrary;
     private final MappingConfiguration.SearchAlgorithm searchAlgorithm;
     private final MappingConfiguration.OptimizationType optimizationType;
     private final boolean statistics;
@@ -35,7 +36,7 @@ public class MappingConfiguration {
     private BAB_INPUT_SPECIFICATION_TYPE babInputSpecificationType;
 
     public enum SearchAlgorithm {
-        EXHAUSTIVE, ANNEALING, BRANCH_AND_BOUND
+        EXHAUSTIVE, ANNEALING, BRANCH_AND_BOUND, ASSIGNMENT_COUNTER, BOUNDING_VALIDATOR
     }
 
     public enum OptimizationType {
@@ -90,6 +91,11 @@ public class MappingConfiguration {
         if (!library.exists())
             throw new IOException("Gate library file " + library.getAbsolutePath() + " does not exist.");
 
+        compatibilityLibrary = new File(props.getProperty("COMPAT_LIBRARY"));
+
+        if (!compatibilityLibrary.exists())
+            logger.info("Compatibility library file " + compatibilityLibrary.getAbsolutePath() + " does not exist. Assuming full compatibility.");
+
         switch (props.getProperty("SEARCH_ALGORITHM")) {
             case "EXHAUSTIVE":
                 searchAlgorithm = SearchAlgorithm.EXHAUSTIVE;
@@ -98,7 +104,14 @@ public class MappingConfiguration {
                 searchAlgorithm = SearchAlgorithm.ANNEALING;
                 break;
             case "BRANCH_AND_BOUND":
+            case "BNB":
                 searchAlgorithm = SearchAlgorithm.BRANCH_AND_BOUND;
+                break;
+            case "ASSIGNMENT_COUNTER":
+                searchAlgorithm = SearchAlgorithm.ASSIGNMENT_COUNTER;
+                break;
+            case "BOUNDING_VALIDATOR":
+                searchAlgorithm = SearchAlgorithm.BOUNDING_VALIDATOR;
                 break;
             default:
                 throw new IOException("Unknown search algorithm! (Available algorithms: " + Arrays.toString(SearchAlgorithm.values()) + ")");
@@ -204,13 +217,16 @@ public class MappingConfiguration {
         }
     }
 
-    public void print() {
-        logger.info("\tsearch algorithm: " + searchAlgorithm.name());
-        logger.info("\toptimization type: " + optimizationType.name());
+    public String getSearchAlgorithmName() {
+        return searchAlgorithm.name();
     }
 
     public File getLibrary() {
         return library;
+    }
+
+    public File getCompatibilityLibrary() {
+        return compatibilityLibrary.exists() ? compatibilityLibrary : null;
     }
 
     public OptimizationType getOptimizationType() {
@@ -262,6 +278,10 @@ public class MappingConfiguration {
                 return new SimulatedAnnealingSearch(structure, lib, this, simConfig);
             case BRANCH_AND_BOUND:
                 return new BranchAndBoundSearch(structure, lib, this, simConfig);
+            case ASSIGNMENT_COUNTER:
+                return new AssignmentCounter(structure, lib, this, simConfig);
+            case BOUNDING_VALIDATOR:
+                return new BoundingValidator(structure, lib, this, simConfig);
             default:
                 return new ExhaustiveSearch(structure, lib, this, simConfig);
         }

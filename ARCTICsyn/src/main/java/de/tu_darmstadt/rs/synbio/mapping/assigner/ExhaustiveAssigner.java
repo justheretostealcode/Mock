@@ -2,7 +2,7 @@ package de.tu_darmstadt.rs.synbio.mapping.assigner;
 
 import de.tu_darmstadt.rs.synbio.common.*;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
@@ -19,13 +19,15 @@ public class ExhaustiveAssigner implements Assigner {
     private static final Logger logger = LoggerFactory.getLogger(ExhaustiveAssigner.class);
 
     // gates
-    final private HashMap<LogicType, List<GateRealization>> availableGates;
-    final private LinkedHashMap<LogicType, List<LogicGate>> circuitGates; // linked for iteration order
+    private final Map<LogicType, List<GateRealization>> availableGates;
+    private final LinkedHashMap<LogicType, List<Gate>> circuitGates; // linked for iteration order
+    private final Gate outputGate;
+    private final GateRealization outputRealization;
 
     // permutation variables
     private final HashMap<LogicType, PermutationIterator<GateRealization>> permutationIterators;
-    final private HashMap<LogicType, Long> numPermutations;
-    final private long numTotalPermutations;
+    private final HashMap<LogicType, Long> numPermutations;
+    private final long numTotalPermutations;
     private long currentPermutation = 0;
 
     // assignment buffer
@@ -36,16 +38,21 @@ public class ExhaustiveAssigner implements Assigner {
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
 
         // initialize gate library
-        this.availableGates = gateLib.getRealizations();
+        this.availableGates = new HashMap<>(gateLib.getRealizations());
+        availableGates.remove(LogicType.OUTPUT_BUFFER);
+        availableGates.remove(LogicType.OUTPUT_OR2);
 
         // initialize circuit gate map
         this.circuitGates = new LinkedHashMap<>();
         this.numPermutations = new HashMap<>();
         for (LogicType type : availableGates.keySet()) {
-            ArrayList<LogicGate> gates = circuit.vertexSet().stream().filter(g -> g instanceof LogicGate).map(g -> (LogicGate) g).filter(g -> g.getLogicType().equals(type)).collect(Collectors.toCollection(ArrayList::new));
+            ArrayList<Gate> gates = circuit.vertexSet().stream().filter(g -> g.getLogicType() == type).collect(Collectors.toCollection(ArrayList::new));
             circuitGates.put(type, gates);
             numPermutations.put(type, getNumAssignments(type));
         }
+
+        outputGate = circuit.getOutputGate();
+        outputRealization = gateLib.getOutputDevice(outputGate.getLogicType());
 
         // initialize permutation iterators
         this.permutationIterators = new HashMap<>();
@@ -130,11 +137,11 @@ public class ExhaustiveAssigner implements Assigner {
         if (!nextAssignment())
             return null;
 
-        Assignment assignment = new Assignment();
+        Assignment assignment = new Assignment(outputGate, outputRealization);
 
         for (LogicType type : circuitGates.keySet()) {
 
-            List<LogicGate> originalGates = circuitGates.get(type);
+            List<Gate> originalGates = circuitGates.get(type);
             List<GateRealization> replacements = assignedRealizations.get(type);
 
             for (int i = 0; i < originalGates.size(); i++) {

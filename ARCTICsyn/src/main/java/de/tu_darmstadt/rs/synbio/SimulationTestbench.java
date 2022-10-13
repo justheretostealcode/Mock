@@ -2,27 +2,21 @@ package de.tu_darmstadt.rs.synbio;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
-import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
-import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
-import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityChecker;
 import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.CircuitDeserializer;
+import de.tu_darmstadt.rs.synbio.simulation.AssignmentCompiler;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
-import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
-import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
-import de.tu_darmstadt.rs.synbio.mapping.search.BranchAndBoundSearch;
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.SearchStatsLogger;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 
@@ -48,6 +42,9 @@ public class SimulationTestbench {
         options.addOption("mc", "mappingConfig", true, "path to the mapping configuration");
         options.addOption("sc", "simulationConfig", true, "path to the simulation configuration");
         options.addOption("n", "numRepetitions", true, "iteration number for the test bench");
+
+        options.addOption("l", "library", true, "override library from mapping config");
+
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -91,9 +88,20 @@ public class SimulationTestbench {
         MappingConfiguration mapConfig = new MappingConfiguration(mappingConfigFile);
         SimulationConfiguration simConfig = new SimulationConfiguration(simulationConfigFile);
 
-        GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), proxWeights);
+        //GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), proxWeights);
+
+        File library = mapConfig.getLibrary();
+        if (cmd.hasOption("library")) {
+            library = new File(cmd.getOptionValue("library"));
+            if (!library.exists())
+                throw new IOException("Override gate library file " + library.getAbsolutePath() + " does not exist.");
+        }
+
+        GateLibrary gateLib = new GateLibrary(library, mapConfig.getCompatibilityLibrary(), true);
 
         //CompatibilityChecker checker = new CompatibilityChecker(gateLib);
+
+        ObjectMapper mapper = new ObjectMapper();
 
         File inputPath = new File(cmd.getOptionValue("inputPath"));
 
@@ -109,12 +117,24 @@ public class SimulationTestbench {
             }
 
             Arrays.sort(directoryListing);
+
         } else {
             directoryListing = new File[1];
             directoryListing[0] = inputPath;
         }
 
-        File output = new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(), "results_" + System.currentTimeMillis() + ".txt");
+        String runName = library.getName().replaceFirst("[.][^.]+$", "") + " " + mapConfig.getSearchAlgorithmName() + " " +
+                (mapConfig.getBabFast() ? "heuristic" : "optimal") + " " + System.currentTimeMillis();
+
+        File outputDir = new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(), runName);
+
+        if (!outputDir.mkdir()) {
+            logger.error("Could not create output directory.");
+            System.exit(1);
+        }
+
+        File output = new File(outputDir, "results.txt");
+
         PrintWriter out;
         try {
             out = new PrintWriter(output);
@@ -134,7 +154,6 @@ public class SimulationTestbench {
             Circuit structure = null;
 
             final ObjectNode node;
-            ObjectMapper mapper = new ObjectMapper();
             CircuitDeserializer circuitDeserializer = new CircuitDeserializer(Circuit.class);
 
             try {
@@ -151,72 +170,59 @@ public class SimulationTestbench {
 
             if (structure != null) {
 
-                /*Assignment ass = new Assignment();
-
-                LogicGate k = (LogicGate) structure.vertexSet().stream().filter(g -> g instanceof LogicGate).findAny().get();
-                GateRealization l = gateLib.getRealizations().get(k.getLogicType()).get(0);
-                ass.put(k,l);
-                checker.isCompatible(structure, ass);*/
-                
                 try {
                     out.print(child.getName());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
-                int neededSims = 0;
+                AssignmentCompiler compiler = new AssignmentCompiler(structure, gateLib);
 
-                for (int i = 0; i < numRepetitions; i ++) {
+                for (int i = 0; i < numRepetitions; i++) {
+
                     AssignmentSearchAlgorithm search = mapConfig.getSearchAlgorithm(structure, gateLib, simConfig);
+
                     long start = System.nanoTime(); // Added for measuring the execution time.
 
-                    SimulationResult result = search.assign();
+                    MappingResult result = search.assign();
 
-                    long stop = System.nanoTime();
-                    long duration = stop - start;
+                    long duration = System.nanoTime() - start;
 
-                    neededSims += result.getNeededSimulations();
+                    if (result != null) {
 
-                    logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + result.getAssignment().getIdentifierMap());
+                        if (result.getStructure() != null && result.getAssignment() != null) {
+                            logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + result.getAssignment().getIdentifierMap());
 
-                    //result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
-                    //        "result_" + child.getName() + ".dot"), result.getAssignment());
+                        /*AssignmentCounter counter = new AssignmentCounter(structure, gateLib, mapConfig, simConfig);
+                        long maxAssignments = counter.assign().getNeededSimulations();
+                        logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");*/
 
-                    //result.getStructure().saveGml(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
-                    //        "result_" + child.getName() + "_" + i + ".gml"), result.getAssignment());
+                            //result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
+                            //        "result_" + child.getName() + ".dot"), result.getAssignment());
 
-                    /*try {
-                        mapper.writerWithDefaultPrettyPrinter().writeValue(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(), "result_" + result.getStructure().getTruthTable() + "_" + i + "_assignment.json"), result.getAssignment());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }*/
+                            result.getStructure().saveGml(new File(outputDir, child.getName() + ".gml"), result.getAssignment());
 
-                    try {
-                        out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getScore() + "," + result.getAssignment().getIdentifierMap());
-                        out.flush();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                            try {
+                                out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getNeededSimulations() + "," + duration + "," + result.getScore() + "\n");
+                                out.flush();
+                                mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outputDir, "assignment_" + child.getName() + ".json"), compiler.compile(result.getAssignment()));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                            if (mapConfig.getStatistics()) {
+                                SearchStatsLogger logger = new SearchStatsLogger(structure, mapConfig, simConfig);
+                                logger.setResult(result);
+                                logger.setDuration(duration);
+                                logger.save("testbench_statistics/statistics_" + structure.getIdentifier() + "_" + mapConfig.toString().hashCode() + "_" + i + "_" + System.currentTimeMillis() + ".json");
+                            }
+                        }
                     }
-
-                    if (mapConfig.getStatistics()) {
-                        SearchStatsLogger logger = new SearchStatsLogger(structure, mapConfig, simConfig);
-                        logger.setResult(result);
-                        logger.setDuration(duration);
-                        logger.save("testbench_statistics/statistics_" + structure.getIdentifier() + "_" + mapConfig.toString().hashCode() + "_" + i + "_" + System.currentTimeMillis() + ".json");
-                    }
-                }
-
-                try {
-                    out.print("," + neededSims + "\n");
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
         }
 
-        out.println("total time: " + (System.currentTimeMillis() - startTime) + " ms for " + numRepetitions + " repetitions");
         out.close();
-
         System.exit(0);
     }
 }

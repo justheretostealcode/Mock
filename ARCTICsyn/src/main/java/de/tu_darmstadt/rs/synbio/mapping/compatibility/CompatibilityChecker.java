@@ -3,22 +3,23 @@ package de.tu_darmstadt.rs.synbio.mapping.compatibility;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
-import de.tu_darmstadt.rs.synbio.common.circuit.LogicGate;
-import de.tu_darmstadt.rs.synbio.common.circuit.Wire;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import de.tu_darmstadt.rs.synbio.mapping.Assignment;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.logicng.datastructures.Tristate;
 import org.logicng.formulas.Formula;
 import org.logicng.formulas.FormulaFactory;
-import org.logicng.formulas.Variable;
 import org.logicng.io.parsers.PropositionalParser;
 import org.logicng.solvers.MiniSat;
 import org.logicng.solvers.SATSolver;
+import org.logicng.solvers.SolverState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CompatibilityChecker {
 
@@ -27,8 +28,15 @@ public class CompatibilityChecker {
     /* library information */
 
     final GateLibrary library;
-    final List<String> repressors;
-    final Map<String, Set<String>> groups;
+    final Map<LogicType, List<GateRealization>> devices;
+
+    final Map<String, String> deviceToTf;
+    final Map<String, Set<String>> tfToDevice;
+
+    /* circuit information */
+
+    final Set<GateTriple> triples;
+    final Set<Gate> gates;
 
     /* compatibility matrix */
 
@@ -41,19 +49,40 @@ public class CompatibilityChecker {
     final Formula constantTrue;
     final SATSolver miniSat;
 
-    public CompatibilityChecker(GateLibrary library) {
+    /* SAT */
+
+    final SolverState state;
+
+    public CompatibilityChecker(GateLibrary library, Circuit structure) {
 
         this.library = library;
 
-        /* extract repressors and groups from library */
+        /* extract devices and groups from library */
 
-        this.repressors = extractRepressors(library);
+        this.devices = library.getRealizations();
 
-        this.groups = new HashMap<>();
-        for (String repressor : repressors) {
-            groups.putIfAbsent(getGroup(repressor), new HashSet<>());
-            groups.get(getGroup(repressor)).add(repressor);
+        this.deviceToTf = new HashMap<>();
+        this.tfToDevice = new HashMap<>();
+
+        for (List<GateRealization> devicesList : devices.values()) {
+            for (GateRealization device : devicesList) {
+
+                if (device.getLogicType() == LogicType.OUTPUT_BUFFER || device.getLogicType() == LogicType.OUTPUT_OR2)
+                    continue;
+
+                deviceToTf.putIfAbsent(device.getIdentifier(), device.getGroup());
+
+                tfToDevice.putIfAbsent(device.getGroup(), new HashSet<>());
+                tfToDevice.get(device.getGroup()).add(device.getIdentifier());
+            }
         }
+
+        /* compute triples of gates from the circuit topology */
+
+        this.triples = extractTriples(structure);
+        this.gates = structure.vertexSet().stream()
+                .filter(g -> g.getLogicType() != LogicType.OUTPUT_BUFFER && g.getLogicType() != LogicType.OUTPUT_OR2)
+                .collect(Collectors.toSet());
 
         /* initialize formula factory and MiniSAT */
 
@@ -62,63 +91,55 @@ public class CompatibilityChecker {
         this.constantTrue = factory.constant(true);
         this.miniSat = MiniSat.miniSat(factory);
 
-        // dummy matrix
+        this.matrix = library.getCompatibilityMatrix();
+
+        /* dummy matrix
         this.matrix = new CompatibilityMatrix<>();
 
-        Random rand = new Random();
+        Random rand = new Random(123456789);
+        double threshold = 0.25;
 
-        for (String source : repressors) {
-            for (String destination : repressors) {
-
-                if (source.equals(destination)) {
-                    matrix.addEntry(source, destination, false);
-                    continue;
-                }
+        for (String source : deviceToTf.keySet()) {
+            for (String destination : deviceToTf.keySet()) {
 
                 double randomNumber = rand.nextDouble();
-                matrix.addEntry(source, destination, randomNumber > 0.5);
+                matrix.addEntry(source, destination, null, randomNumber > threshold);
+
+                for (String secondSource : deviceToTf.keySet()) {
+
+                    if (source.equals(destination) || secondSource.equals(destination) || source.equals(secondSource)) {
+                        matrix.addEntry(source, destination, secondSource, false);
+                    } else {
+                        randomNumber = rand.nextDouble();
+                        matrix.addEntry(source, destination, secondSource, randomNumber > threshold);
+                    }
+                }
             }
-        }
-    }
+        }*/
 
-    public boolean isCompatible(Circuit structure, Assignment incompleteAssigment) {
+        /* build SAT */
 
-        factory.clear();
-        miniSat.reset();
+        List<Formula> clauses = new ArrayList<>();
 
-        /* extract gates from the circuit */
+        //long start = System.currentTimeMillis();
 
-        List<String> gates = extractGates(structure);
+        /* Clause 1: Every gate has to be assigned one exactly device */
+        /* This clause is not necessary for a compatibility check as it is covered by clause 3 */
+        /* But if included, the SAT model represents a valid assignment */
 
-        /* compute pairs of gates from the circuit topology */
-
-        Map<String, Set<String>> pairs = extractPairs(structure);
-
-        /* determine vars to substitute with constant TRUE to account for incomplete assignment */
-
-        List<Variable> constants = new ArrayList<>();
-
-        if (incompleteAssigment != null) {
-            for (LogicGate gate : incompleteAssigment.keySet()) {
-                constants.add(factory.variable(gate.getIdentifier() + "_" + incompleteAssigment.get(gate).getAltIdenfifier()));
-            }
-        }
-
-        /* Clause 1: Every gate has to be assigned one repressor */
-
-        for (String gate : gates) {
+        for (Gate gate : gates) {
 
             StringBuilder builder = new StringBuilder();
 
-            for (String repressor : repressors) {
+            for (String deviceId : deviceToTf.keySet()) {
 
-                builder.append(gate + "_" + repressor + "& ~(");
+                builder.append(gate + "_" + deviceId + "& ~(");
 
-                for (String repressor2 : repressors) {
-                    if (repressor2.equals(repressor))
+                for (String device2Id : deviceToTf.keySet()) {
+                    if (device2Id.equals(deviceId))
                         continue;
 
-                    builder.append(gate + "_" + repressor2 + "|");
+                    builder.append(gate + "_" + device2Id + "|");
                 }
 
                 builder.deleteCharAt(builder.length() - 1);
@@ -129,41 +150,40 @@ public class CompatibilityChecker {
 
             try {
                 Formula formula = parser.parse(builder.toString());
-                miniSat.add(substituteVars(formula, constants));
+                clauses.add(formula);
             } catch (Exception e) {
                 logger.error(e.getMessage());
             }
-
         }
 
-        /* Clause 2: Every repressor and its group members must be assigned maximally once */
+        /* Clause 2: Every device and its group members must be assigned maximally once */
 
-        for (String repressor : repressors) {
+        for (String deviceId : deviceToTf.keySet()) {
 
             StringBuilder builder = new StringBuilder();
 
-            for (String gate : gates) {
+            for (Gate gate : gates) {
 
-                builder.append(gate + "_" + repressor + "& ~(");
+                builder.append("(" + gate + "_" + deviceId + "& ~(");
 
-                for (String gate2 : gates) {
+                for (Gate gate2 : gates) {
+
                     if (gate2.equals(gate))
                         continue;
 
-                    for (String groupMember : groups.get(getGroup(repressor))) {
+                    for (String groupMember : tfToDevice.get(deviceToTf.get(deviceId))) {
                         builder.append(gate2 + "_" + groupMember + "|");
                     }
                 }
 
                 builder.deleteCharAt(builder.length() - 1);
-                builder.append(")|");
+                builder.append("))|");
             }
 
             builder.append("(");
-            for (String gate : gates) {
-                for (String groupMember : groups.get(getGroup(repressor))) {
-                    builder.append("~" + gate + "_" + groupMember + "&");
-                }
+            for (Gate gate : gates) {
+
+                builder.append("~" + gate + "_" + deviceId + "&");
             }
 
             builder.deleteCharAt(builder.length() - 1);
@@ -171,138 +191,213 @@ public class CompatibilityChecker {
 
             try {
                 Formula formula = parser.parse(builder.toString());
-                miniSat.add(substituteVars(formula, constants));
+                clauses.add(formula);
             } catch (Exception e) {
                 logger.error(e.getMessage());
             }
 
         }
 
-        /* Clause 3: All pairs of source and destination repressors have to be compatible */
+        /* Clause 3: Every gate has to be assigned a device with the right type */
 
-        for (String source : pairs.keySet()) {
+        for (Gate gate : gates) {
 
             StringBuilder builder = new StringBuilder();
 
-            for (String destination : pairs.get(source)) {
-
-                builder.append("(");
-
-                for (String repressor1 : repressors) {
-
-                    builder.append("(" + source + "_" + repressor1 + "&(");
-
-                    for (String repressor2 : repressors) {
-                            builder.append("(" + destination + "_" + repressor2 + "&" +
-                                    (matrix.isCompatible(repressor1, repressor2) ? "$true" : "$false") + ")|");
-                    }
-
-                    builder.deleteCharAt(builder.length() - 1);
-                    builder.append("))|");
-                }
-
-                builder.deleteCharAt(builder.length() - 1);
-                builder.append(")&");
+            for (GateRealization device : devices.get(gate.getLogicType())) {
+                builder.append(gate + "_" + device.getIdentifier() + "|");
             }
 
             builder.deleteCharAt(builder.length() - 1);
 
             try {
                 Formula formula = parser.parse(builder.toString());
-                miniSat.add(substituteVars(formula, constants));
+                clauses.add(formula);
             } catch (Exception e) {
                 logger.error(e.getMessage());
             }
         }
 
-        Tristate result = miniSat.sat();
-        org.logicng.datastructures.Assignment ass = miniSat.model();
+        /* Clause 4: All pairs and triples of devices have to be compatible */
 
+        for (GateTriple triple : triples) {
+
+            StringBuilder builder = new StringBuilder();
+
+            for (String destinationDevice : deviceToTf.keySet()) {
+
+                builder.append("(" + triple.destination + "_" + destinationDevice + "&(");
+
+                for (String sourceDevice : deviceToTf.keySet()) {
+
+                    if (sourceDevice.equals(destinationDevice))
+                        continue;
+
+                    builder.append(triple.source + "_" + sourceDevice + "&(");
+
+                    if (triple.secondSource == null) {
+                        builder.append("(" + (matrix.isCompatible(sourceDevice, destinationDevice, null) ? "$true" : "$false") + ")|");
+                    } else {
+
+                        for (String secondSourceDevice : deviceToTf.keySet()) {
+
+                            if (secondSourceDevice.equals(destinationDevice) || secondSourceDevice.equals(sourceDevice))
+                                continue;
+
+                            builder.append("(" + triple.secondSource + "_" + secondSourceDevice + "&" +
+                                    (matrix.isCompatible(sourceDevice, destinationDevice, secondSourceDevice) ? "$true" : "$false") + ")|");
+                        }
+                    }
+
+                    builder.deleteCharAt(builder.length() - 1);
+                    builder.append(")|");
+                }
+
+                builder.deleteCharAt(builder.length() - 1);
+                builder.append("))|");
+            }
+
+            builder.deleteCharAt(builder.length() - 1);
+
+            try {
+                Formula formula = parser.parse(builder.toString());
+                clauses.add(formula);
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+            }
+        }
+
+        /* add clauses */
+
+        for (Formula clause : clauses) {
+            miniSat.add(clause);
+        }
+
+        state = miniSat.saveState();
+    }
+
+    public boolean checkSat(Assignment assignment) {
+
+        miniSat.loadState(state);
+
+        /* determine vars to substitute with constant TRUE to account for (incomplete) assignment */
+
+        for (Gate gate : assignment.keySet()) {
+            if (gate.getLogicType() != LogicType.OUTPUT_BUFFER && gate.getLogicType() != LogicType.OUTPUT_OR2)
+                miniSat.add(factory.variable(gate.getIdentifier() + "_" + assignment.get(gate).getIdentifier()));
+        }
+
+        /* solve SAT */
+
+        Tristate result = miniSat.sat();
+
+        /*logger.info(partialAssignment.getIdentifierMap()+"");
+        org.logicng.datastructures.Assignment ass = miniSat.model();
         if (ass != null) {
             logger.info("SAT model:");
             for (Variable pos : ass.positiveLiterals()) {
                 if (!pos.name().startsWith("@"))
                     logger.info(pos.name());
             }
-        }
+        }*/
 
         return result == Tristate.TRUE;
     }
 
-    public boolean isCompatible(Circuit structure) {
-        return isCompatible(structure, null);
+    public List<org.logicng.datastructures.Assignment> getAllAssignments() {
+
+        miniSat.loadState(state);
+        Tristate result = miniSat.sat();
+
+        List<org.logicng.datastructures.Assignment> assignments = miniSat.enumerateAllModels();
+
+        return assignments;
+    }
+
+    public boolean checkSimple(Assignment assignment) {
+
+        for (GateTriple triple : triples) {
+
+            GateRealization destination = assignment.get(triple.destination);
+            GateRealization source = assignment.get(triple.source);
+            GateRealization secondSource = triple.secondSource != null ? assignment.get(triple.secondSource) : null;
+
+            if (destination == null || source == null || (triple.secondSource != null && assignment.get(triple.secondSource) == null))
+                continue;
+
+            if (!matrix.isCompatible(source.getIdentifier(), destination.getIdentifier(), secondSource != null ? secondSource.getIdentifier() : null))
+                return false;
+        }
+
+        return true;
     }
 
     /* private helper functions */
 
-    private List<String> extractRepressors(GateLibrary library) {
+    private Set<GateTriple> extractTriples(Circuit circuit) {
 
-        List<String> extractedRepressors = new ArrayList<>();
+        Set<GateTriple> triples = new HashSet<>();
 
-        for (List<GateRealization> realizations : library.getRealizations().values()) {
-            for(GateRealization realization : realizations) {
-                if (realization.isCharacterized()) {
+        for (Gate destination : circuit.vertexSet()) {
 
-                    String repressor = realization.getAltIdenfifier();
-
-                    if (!extractedRepressors.contains(repressor))
-                        extractedRepressors.add(repressor);
-                }
-            }
-        }
-        return extractedRepressors;
-    }
-
-    private String getGroup(String altIdentifier) {
-        String[] repressorString = altIdentifier.split("_");
-        return repressorString[repressorString.length - 1];
-    }
-
-    private Formula substituteVars(Formula formula, List<Variable> vars) {
-
-        for (Variable var : vars) {
-            formula = formula.substitute(var, constantTrue);
-        }
-
-        return formula;
-    }
-
-    private List<String> extractGates(Circuit structure) {
-
-        List<String> extractedGates = new ArrayList<>();
-
-        for (Gate gate : structure.vertexSet()) {
-            if (gate instanceof LogicGate && ((LogicGate) gate).getLogicType() != LogicType.OR2) {
-                extractedGates.add(gate.getIdentifier());
-            }
-        }
-        return extractedGates;
-    }
-
-    private Map<String, Set<String>> extractPairs(Circuit circuit) {
-
-        Map<String, Set<String>> pairs = new HashMap<>();
-
-        for (Gate gate : circuit.vertexSet()) {
-
-            if (!(gate instanceof LogicGate))
+            if (!destination.isLogicGate())
                 continue;
 
-            LogicGate logicGate = (LogicGate) gate;
+            List<Gate> sources = new ArrayList<>();
+            circuit.incomingEdgesOf(destination).forEach(w -> sources.add(circuit.getEdgeSource(w)));
 
-            if (logicGate.getLogicType() == LogicType.OR2)
-                continue;
+            if (sources.size() > 1)
+                triples.add(new GateTriple(sources.get(0), destination, sources.get(1)));
+            else
+                triples.add(new GateTriple(sources.get(0), destination));
 
-            for (Wire wire : circuit.outgoingEdgesOf(gate)) {
-
-                Gate target = circuit.getEdgeTarget(wire);
-
-                if (target instanceof LogicGate && ((LogicGate) target).getLogicType() != LogicType.OR2) {
-                    pairs.putIfAbsent(gate.getIdentifier(), new HashSet<>());
-                    pairs.get(gate.getIdentifier()).add(target.getIdentifier());
-                }
-            }
         }
-        return pairs;
+        return triples;
+    }
+
+    private static class GateTriple {
+
+        public final Gate source;
+        public final Gate destination;
+        public final Gate secondSource;
+
+        public GateTriple(Gate source, Gate destination, Gate secondSource) {
+            this.source = source;
+            this.destination = destination;
+            this.secondSource = secondSource;
+        }
+
+        public GateTriple(Gate source, Gate destination) {
+            this(source, destination, null);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+
+            if (o == this) {
+                return true;
+            }
+
+            if (!(o instanceof GateTriple)) {
+                return false;
+            }
+
+            GateTriple t = (GateTriple) o;
+
+            return new EqualsBuilder()
+                    .append(this.source, t.source)
+                    .append(this.destination, t.destination)
+                    .append(this.secondSource, t.secondSource)
+                    .isEquals();
+        }
+
+        @Override
+        public int hashCode() {
+           return new HashCodeBuilder()
+                   .append(source)
+                   .append(destination)
+                   .append(secondSource)
+                   .toHashCode();
+        }
     }
 }

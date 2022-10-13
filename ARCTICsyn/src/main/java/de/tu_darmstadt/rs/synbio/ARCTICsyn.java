@@ -1,15 +1,16 @@
 package de.tu_darmstadt.rs.synbio;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
-import de.tu_darmstadt.rs.synbio.simulation.SimulationResult;
+import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import de.tu_darmstadt.rs.synbio.synthesis.SynthesisConfiguration;
-import de.tu_darmstadt.rs.synbio.synthesis.enumeration.Enumerator;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
+import de.tu_darmstadt.rs.synbio.synthesis.enumeration.EnumeratorFast;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,15 +50,23 @@ public class ARCTICsyn {
 
         /* initialize gate library */
 
-        final GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), new Double[]{0.9,0.1,0.0});
+        //final GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), new Double[]{0.9,0.1,0.0});
+        final GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), mapConfig.getCompatibilityLibrary(),true);
         logger.info("Loaded gate library " + gateLib.getSourceFile() + ".");
+
+        if (inputTruthTable.getSupportSize() > gateLib.getNumAvailableGates(LogicType.INPUT)) {
+            logger.error("Number of available input gates (" + gateLib.getNumAvailableGates(LogicType.INPUT) +
+                    ") < number of input function support (" +inputTruthTable.getSupportSize() + ")." );
+            return;
+        }
 
         /* circuit enumeration */
 
         logger.info("Enumeration of circuit variants...");
-        Enumerator enumerator = new Enumerator(gateLib, inputTruthTable, synConfig.getMaxDepth(), synConfig.getMaxWeight(), synConfig.getWeightRelaxation());
+        EnumeratorFast enumerator = new EnumeratorFast(gateLib, inputTruthTable, synConfig);
+
         enumerator.enumerate();
-        List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().values());
+        List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().get(inputTruthTable));
 
         if (circuits.isEmpty()) {
             logger.info("No circuit structures found.");
@@ -85,7 +94,7 @@ public class ARCTICsyn {
 
             logger.info("Technology mapping...");
 
-            SimulationResult[] bestResults = new SimulationResult[synConfig.getWeightRelaxation() + 1];
+            MappingResult[] bestResults = new MappingResult[synConfig.getWeightRelaxation() + 1];
             int minSize = circuits.get(circuits.size() - 1).getWeight();
 
             for (int i = circuits.size() - 1; i >= 0; i--) {
@@ -93,7 +102,7 @@ public class ARCTICsyn {
                 AssignmentSearchAlgorithm sim = mapConfig.getSearchAlgorithm(circuits.get(i), gateLib, simConfig);
 
                 try {
-                    SimulationResult result = sim.assign();
+                    MappingResult result = sim.assign();
                     int relSize = circuits.get(i).getWeight() - minSize;
 
                     if (bestResults[relSize] == null || result.getScore() > bestResults[relSize].getScore())
@@ -107,7 +116,7 @@ public class ARCTICsyn {
             double currentBestScore = 0.0;
 
             for(int i = 0; i < bestResults.length; i++) {
-                SimulationResult result = bestResults[i];
+                MappingResult result = bestResults[i];
 
                 if (result != null && result.getScore() > currentBestScore) {
                     result.getStructure().save(new File(outputDir, "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax.json"));

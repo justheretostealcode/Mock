@@ -15,7 +15,7 @@ public class BestFirstSearch implements SearchStrategy {
     private final ArrayList<QueueItem> queue;
 
     /**
-     * The queueitems are sorted descending to their value. <br>
+     * The queue items are sorted descending to their value. <br>
      * By this, the first item is the one with the highest score.
      */
     private static final Comparator<QueueItem> comparator = (o1, o2) -> (int) Math.signum(o2.val - o1.val);
@@ -32,8 +32,8 @@ public class BestFirstSearch implements SearchStrategy {
     }
 
     @Override
-    public void addInitialItemToQueue(double val) {
-        QueueItem item = new QueueItem(new Assignment(), val);
+    public void addInitialItemToQueue(Assignment assignment, double val) {
+        QueueItem item = new QueueItem(assignment, val);
         queue.add(item);
 
         updateStatistics();

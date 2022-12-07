@@ -481,9 +481,6 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
         if (bestAssignment == null)
             return null;
 
-        if (!checker.checkSimple(bestAssignment))
-            logger.warn("Resulting assignment contains incompatible device combinations!");
-
         MappingResult result = new MappingResult(structure, bestAssignment, bestScore);
         result.setNeededSimulations(iNeededSimulations);
         result.setMinimumBranchAndBoundSimulations(minimalNumberOfSimulations(bestAssignment));

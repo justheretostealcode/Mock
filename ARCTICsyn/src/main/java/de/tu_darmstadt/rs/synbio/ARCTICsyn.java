@@ -90,7 +90,7 @@ public class ARCTICsyn {
 
         /* technology mapping */
 
-        if (simConfig.isSimEnabled()) {
+        if (synConfig.proceedWithTM()) {
 
             logger.info("Technology mapping...");
 

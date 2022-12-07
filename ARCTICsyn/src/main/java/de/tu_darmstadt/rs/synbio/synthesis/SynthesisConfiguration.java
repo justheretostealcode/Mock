@@ -14,16 +14,18 @@ public class SynthesisConfiguration {
 
     /* system fields */
 
-    private String outputDir;
-    private int synLimitThreadsNum;
+    private final String outputDir;
+    private final int synLimitThreadsNum;
 
     /* synthesis configuration */
 
-    private int maxDepth;
-    private int maxWeight;
-    private int weightRelaxation;
-    private SynthesisMode synthesisMode;
-    private int limitStructuresNum;
+    private final int maxDepth;
+    private final int maxWeight;
+    private final int weightRelaxation;
+    private final SynthesisMode synthesisMode;
+    private final int limitStructuresNum;
+
+    private final Boolean proceedWithTM;
 
     public enum SynthesisMode {
         SUPERGATES, EXHAUSTIVE
@@ -36,8 +38,6 @@ public class SynthesisConfiguration {
     private int[] supergateFeasibilities;
     private int maxSupergateDepth;
     private int maxSupergateWeight;
-
-    public SynthesisConfiguration() {}
 
     public SynthesisConfiguration(String configFile) throws Exception {
 
@@ -66,7 +66,7 @@ public class SynthesisConfiguration {
         maxWeight = Integer.parseInt(props.getProperty("SYNTHESIS_WEIGHT"));
         weightRelaxation = Integer.parseInt(props.getProperty("SYNTHESIS_WEIGHT_RELAXATION"));
         limitStructuresNum = Integer.parseInt(props.getProperty("SYNTHESIS_LIMIT_STRUCTURES_NUM"));
-
+        proceedWithTM = Boolean.parseBoolean(props.getProperty("SYNTHESIS_PROCEED_WITH_TM"));
 
         /* supergate config handling */
 
@@ -143,6 +143,10 @@ public class SynthesisConfiguration {
     }
 
     public int getWeightRelaxation() { return weightRelaxation; }
+
+    public Boolean proceedWithTM() {
+        return proceedWithTM;
+    }
 
     public SynthesisMode getSynthesisMode() {
         return synthesisMode;

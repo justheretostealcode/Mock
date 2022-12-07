@@ -14,14 +14,12 @@ public class SimulationConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(SimulationConfiguration.class);
 
     /* simulation configuration */
-
-    private final boolean simEnabled;
-    private String pythonBinary;
-    private int simLimitThreadsNum;
-    private File simPath;
-    private String simScript;
-    private String simInitArgs;
-    private String simArgs;
+    private final String pythonBinary;
+    private final int simLimitThreadsNum;
+    private final File simPath;
+    private final String simScript;
+    private final String simInitArgs;
+    private final String simArgs;
 
     public SimulationConfiguration(String configFile) throws Exception {
 
@@ -34,46 +32,33 @@ public class SimulationConfiguration {
 
         /* simulation config handling */
 
-        simEnabled = Boolean.parseBoolean(props.getProperty("SIM_ENABLED"));
+        pythonBinary = props.getProperty("PYTHON_BINARY");
 
-        if (simEnabled) {
+        simLimitThreadsNum = Integer.parseInt(props.getProperty("SIM_LIMIT_THREADS_NUM"));
 
-            pythonBinary = props.getProperty("PYTHON_BINARY");
+        simPath = new File(props.getProperty("SIM_PATH"));
 
-            simLimitThreadsNum = Integer.parseInt(props.getProperty("SIM_LIMIT_THREADS_NUM"));
+        simScript = props.getProperty("SIM_SCRIPT");
 
-            simPath = new File(props.getProperty("SIM_PATH"));
+        if (!new File(simPath, simScript).exists())
+            throw new IOException("Simulator script " + simScript + " does not exist.");
 
-            simScript = props.getProperty("SIM_SCRIPT");
+        simInitArgs = props.getProperty("SIM_INIT_ARGS");
 
-            if (!new File(simPath, simScript).exists())
-                throw new IOException("Simulator script " + simScript + " does not exist.");
-
-            simInitArgs = props.getProperty("SIM_INIT_ARGS");
-
-            simArgs = props.getProperty("SIM_ARGS");
-        }
+        simArgs = props.getProperty("SIM_ARGS");
     }
 
     public void print() {
-
-        if (simEnabled) {
-            logger.info("Simulation:");
-            logger.info("\tpython binary: " + pythonBinary);
-            logger.info("\tsimulator path: " + simPath);
-            logger.info("\tsimulator script: " + simScript);
-            logger.info("\tsimulator initialization arguments: " + simInitArgs);
-            logger.info("\tsimulator arguments: " + simArgs);
-            logger.info("\tthread limit: " + simLimitThreadsNum);
-        }
+        logger.info("Simulation:");
+        logger.info("\tpython binary: " + pythonBinary);
+        logger.info("\tsimulator path: " + simPath);
+        logger.info("\tsimulator script: " + simScript);
+        logger.info("\tsimulator initialization arguments: " + simInitArgs);
+        logger.info("\tsimulator arguments: " + simArgs);
+        logger.info("\tthread limit: " + simLimitThreadsNum);
     }
 
     /* getter */
-
-    public boolean isSimEnabled() {
-        return simEnabled;
-    }
-
     public String getPythonBinary() {
         return pythonBinary;
     }

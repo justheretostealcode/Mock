@@ -31,7 +31,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         super(structure, lib, mapConfig, simConfig);
     }
 
-    private static final boolean printTrajectory = false;
+    private static final boolean printTrajectory = true;
     private static final boolean useRadius = true;
 
     private double maxDistance = 0.0;
@@ -55,18 +55,12 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
         realizations = gateLib.getRealizations();
 
-        for (List<GateRealization> allRealizations : realizations.values()) {
-
-            if (allRealizations.size() < 2)
-                continue;
-
-            for (GateRealization r1 : allRealizations) {
-                for (GateRealization r2 : allRealizations) {
-                    if (!r1.equals(r2) && r1.isCharacterized() && r2.isCharacterized()) {
-                        double distance = r1.getCharacterization().getEuclidean(r2.getCharacterization(), gateLib.getProxNormalization(), gateLib.getProxWeights());
-                        maxDistance = Math.max(maxDistance, distance);
-                        minDistance = Math.min(minDistance, distance);
-                    }
+        for (GateRealization r1 : realizations.get(LogicType.NOR2)) {
+            for (GateRealization r2 : realizations.get(LogicType.NOR2)) {
+                if (!r1.equals(r2) && r1.isCharacterized() && r2.isCharacterized()) {
+                    double distance = r1.getCharacterization().getEuclidean(r2.getCharacterization(), gateLib.getProxNormalization(), gateLib.getProxWeights());
+                    maxDistance = Math.max(maxDistance, distance);
+                    minDistance = Math.min(minDistance, distance);
                 }
             }
         }
@@ -81,7 +75,6 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         ExhaustiveAssigner exhaustiveAssigner = new ExhaustiveAssigner(gateLib, structure);
         RandomAssigner randomAssigner = new RandomAssigner(gateLib, structure);
 
-
         Assignment current;
         long problemSize;
         double currentScore;
@@ -92,7 +85,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             problemSize = exhaustiveAssigner.getNumTotalPermutations();
             currentScore = simulator.simulate(current, SimulatorInterface.PropagationMode.NORMAL);
             currentGrowth = 1.0;//simulator.getLastGrowth();
-            currentScore = currentScore * (currentGrowth< 0.75 ? Math.pow(currentGrowth * 1.33, 1) : 1.0);
+            currentScore = currentScore * (currentGrowth < 0.75 ? Math.pow(currentGrowth * 1.33, 1) : 1.0);
         } while (!current.fulfilsConstraints(structure) || currentGrowth < 0.75);
 
         // initialize search

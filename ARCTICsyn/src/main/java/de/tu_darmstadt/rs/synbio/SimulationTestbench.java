@@ -88,8 +88,6 @@ public class SimulationTestbench {
         MappingConfiguration mapConfig = new MappingConfiguration(mappingConfigFile);
         SimulationConfiguration simConfig = new SimulationConfiguration(simulationConfigFile);
 
-        //GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), proxWeights);
-
         File library = mapConfig.getLibrary();
         if (cmd.hasOption("library")) {
             library = new File(cmd.getOptionValue("library"));
@@ -97,7 +95,7 @@ public class SimulationTestbench {
                 throw new IOException("Override gate library file " + library.getAbsolutePath() + " does not exist.");
         }
 
-        GateLibrary gateLib = new GateLibrary(library, mapConfig.getCompatibilityLibrary(), true);
+        GateLibrary gateLib = new GateLibrary(library, mapConfig.getCompatibilityLibrary(), true, proxWeights);
 
         //CompatibilityChecker checker = new CompatibilityChecker(gateLib);
 

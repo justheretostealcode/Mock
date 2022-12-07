@@ -17,8 +17,6 @@ public class GateLibrary {
 
     private final File sourceFile;
 
-    private final File compatibilityFile;
-
     private final Map<LogicType, List<GateRealization>> gateRealizations = new HashMap<>();
     private final Map<String, Map<String, Double>> devicePromoterFactors = new HashMap<>();
 
@@ -28,7 +26,6 @@ public class GateLibrary {
     public GateLibrary(File libraryFile, File compatibilityFile, boolean isThermo) {
 
         this.sourceFile = libraryFile;
-        this.compatibilityFile = compatibilityFile;
 
         if (isThermo) {
             if (compatibilityFile != null)
@@ -39,9 +36,9 @@ public class GateLibrary {
         }
     }
 
-    public GateLibrary(File libraryFile, Double[] proxWeights) {
+    public GateLibrary(File libraryFile, File compatibilityFile, boolean isThermo, Double[] proxWeights) {
 
-        this(libraryFile, null,false);
+        this(libraryFile, compatibilityFile,isThermo);
 
         this.proxWeights = proxWeights;
         proxNormalization = calcProxNormalization();
@@ -158,17 +155,27 @@ public class GateLibrary {
             }
         }
 
-        /* get mapping of devices to promoters and maximum promoter levels */
+        /* get mapping of devices to promoters, maximum promoter levels and hill parameters */
 
         Map<String, String> deviceToPromoter = new HashMap<>();
         Map<String, Pair<Double, Double>> promoterLevels = new HashMap<>();
-
+        Map<String, Double> k = new HashMap<>(), n = new HashMap<>();
+        
         for (JsonNode promoter : promoters) {
 
             String name = promoter.get("name").textValue();
 
             if (!promoterLevels.containsKey(name))
                 promoterLevels.put(name, new Pair<>(promoter.get("levels").get("off").asDouble(), promoter.get("levels").get("on").asDouble()));
+
+            if (promoter.get("hill_parameters") != null) {
+
+                if (!k.containsKey(name))
+                    k.put(name, promoter.get("hill_parameters").get("K").asDouble());
+
+                if (!n.containsKey(name))
+                    n.put(name, promoter.get("hill_parameters").get("n").asDouble());
+            }
 
             if (promoter.get("associated_devices").size() != 1) {
                 logger.error("Thermo library invalid: Promoter " + name + " has invalid number (!= 1) of associated devices.");
@@ -212,8 +219,8 @@ public class GateLibrary {
                                         function == LogicType.INPUT ? promoterLevels.get(promoterName).second() : outputs3dB.get(deviceName).get(1),
                                         function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(0),
                                         function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(1),
-                                        0,
-                                        0,
+                                        k.getOrDefault(deviceName, 0.0),
+                                        n.getOrDefault(deviceName, 0.0),
                                         null));
                     }
                     addGateRealization(newGate);
@@ -323,21 +330,14 @@ public class GateLibrary {
         double xm_min = Double.POSITIVE_INFINITY;
         double grad_min = Double.POSITIVE_INFINITY;
 
-        for (List<GateRealization> allRealizations : gateRealizations.values()) {
+        for (GateRealization realization : gateRealizations.get(LogicType.NOR2)) {
+            ym_max = Math.max(ym_max, realization.getCharacterization().getYm());
+            xm_max = Math.max(xm_max, realization.getCharacterization().getXm());
+            grad_max = Math.max(grad_max, realization.getCharacterization().getGrad());
 
-            if (allRealizations.size() < 2)
-                continue;
-
-            for (GateRealization r1 : allRealizations) {
-
-                ym_max = Math.max(ym_max, r1.getCharacterization().getYm());
-                xm_max = Math.max(xm_max, r1.getCharacterization().getXm());
-                grad_max = Math.max(grad_max, r1.getCharacterization().getGrad());
-
-                ym_min = Math.min(ym_min, r1.getCharacterization().getYm());
-                xm_min = Math.min(xm_min, r1.getCharacterization().getXm());
-                grad_min = Math.min(grad_min, r1.getCharacterization().getGrad());
-            }
+            ym_min = Math.min(ym_min, realization.getCharacterization().getYm());
+            xm_min = Math.min(xm_min, realization.getCharacterization().getXm());
+            grad_min = Math.min(grad_min, realization.getCharacterization().getGrad());
         }
 
         normalizationValues[0] = xm_max - xm_min;

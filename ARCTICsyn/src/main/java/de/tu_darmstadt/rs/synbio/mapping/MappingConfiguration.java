@@ -20,7 +20,7 @@ public class MappingConfiguration {
 
     /* global mapping parameters */
     private final File library;
-    private final File compatibilityLibrary;
+    private File compatibilityLibrary;
     private final MappingConfiguration.SearchAlgorithm searchAlgorithm;
     private final MappingConfiguration.OptimizationType optimizationType;
     private final boolean statistics;
@@ -91,10 +91,13 @@ public class MappingConfiguration {
         if (!library.exists())
             throw new IOException("Gate library file " + library.getAbsolutePath() + " does not exist.");
 
-        compatibilityLibrary = new File(props.getProperty("COMPAT_LIBRARY"));
-
-        if (!compatibilityLibrary.exists())
-            logger.info("Compatibility library file " + compatibilityLibrary.getAbsolutePath() + " does not exist. Assuming full compatibility.");
+        if (props.containsKey("COMPAT_LIBRARY")) {
+            compatibilityLibrary = new File(props.getProperty("COMPAT_LIBRARY"));
+            if (!compatibilityLibrary.exists())
+                logger.info("Compatibility library file " + compatibilityLibrary.getAbsolutePath() + " does not exist. Assuming full compatibility.");
+        } else {
+            logger.info("No compatibility library given. Assuming full compatibility.");
+        }
 
         switch (props.getProperty("SEARCH_ALGORITHM")) {
             case "EXHAUSTIVE":
@@ -226,7 +229,7 @@ public class MappingConfiguration {
     }
 
     public File getCompatibilityLibrary() {
-        return compatibilityLibrary.exists() ? compatibilityLibrary : null;
+        return (compatibilityLibrary != null && compatibilityLibrary.exists()) ? compatibilityLibrary : null;
     }
 
     public OptimizationType getOptimizationType() {

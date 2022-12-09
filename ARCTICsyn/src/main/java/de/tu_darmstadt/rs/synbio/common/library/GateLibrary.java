@@ -195,6 +195,8 @@ public class GateLibrary {
 
         /* add gate for each tf by getting its device and promoter */
 
+        Boolean compat = compatibilityMatrixLoaded();
+
         for (JsonNode tf : tfs) {
 
             String tfName = tf.get("name").textValue();
@@ -215,10 +217,10 @@ public class GateLibrary {
                                 new GateRealization.GateCharacterization(
                                         promoterLevels.get(promoterName).second(),
                                         promoterLevels.get(promoterName).first(),
-                                        function == LogicType.INPUT ? promoterLevels.get(promoterName).first() : outputs3dB.get(deviceName).get(0),
-                                        function == LogicType.INPUT ? promoterLevels.get(promoterName).second() : outputs3dB.get(deviceName).get(1),
-                                        function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(0),
-                                        function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(1),
+                                        compat ? function == LogicType.INPUT ? promoterLevels.get(promoterName).first() : outputs3dB.get(deviceName).get(0) : 0.0,
+                                        compat ? function == LogicType.INPUT ? promoterLevels.get(promoterName).second() : outputs3dB.get(deviceName).get(1) : 0.0,
+                                        compat ? function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(0) : 0.0,
+                                        compat ? function == LogicType.INPUT ? 0.0 : inputs3dB.get(deviceName).get(1) : 0.0,
                                         k.getOrDefault(deviceName, 0.0),
                                         n.getOrDefault(deviceName, 0.0),
                                         null));

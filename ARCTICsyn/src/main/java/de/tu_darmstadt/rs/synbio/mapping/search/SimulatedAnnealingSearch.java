@@ -108,7 +108,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         double temperature = getInitialTemperature(simulator);
         double coolingFactor;
 
-        int movesPerTemp = 60 * (int) Math.pow(problemSize, 0.25);
+        int movesPerTemp = 10 * (int) Math.pow(problemSize, 0.25);
 
         double histBestSDev = Math.abs(bestScore);
 
@@ -251,35 +251,59 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             if (realizationsOfType.size() == 1) {
                 continue;
             }
+            long numUsedOfType = neighbor.values().stream()
+                    .filter(r -> r.getLogicType() == selectedCircuitGate.getLogicType())
+                    .count();
 
-            int numConsideredRealizations = Math.max(5, (int) Math.round(radius * realizationsOfType.size()) - 1);
+            /* all available realizations used in circuit --> swap in circuit */
+            if (numUsedOfType == realizationsOfType.size()) {
 
-            List<GateRealization> realizationsInRadius = new ArrayList<>(realizationsOfType);
+                List<Gate> swapCandidates = gates.stream()
+                        .filter(g -> g.getLogicType() == selectedCircuitGate.getLogicType())
+                        .collect(Collectors.toList());
 
-            if (useRadius) {
+                Gate selectedForSwap = swapCandidates.get(rand.nextInt(swapCandidates.size()));
 
-                double increaseStep = (maxDistance - minDistance) / 20;
+                if (selectedForSwap == selectedCircuitGate)
+                    continue;
 
-                for (double realizationRadius = minDistance; realizationRadius <= 2 * maxDistance; realizationRadius += increaseStep) {
+                GateRealization realizationToSwap = neighbor.get(selectedForSwap);
 
-                    double finalRadius = realizationRadius;
-                    realizationsInRadius = realizationsOfType.stream()
-                            .filter(g -> !g.equals(currentRealization))
-                            .filter(g -> g.getCharacterization().getEuclidean(currentRealization.getCharacterization(),
-                                    gateLib.getProxNormalization(), gateLib.getProxWeights()) <= finalRadius)
-                            .collect(Collectors.toList());
+                neighbor.put(selectedCircuitGate, realizationToSwap);
+                neighbor.put(selectedForSwap, currentRealization);
 
-                    if (realizationsInRadius.size() >= numConsideredRealizations)
-                        break;
+            } else { /* more realizations available in library --> swap external */
+
+                realizationsOfType.remove(currentRealization); // remove current realization from list of candidates
+                List<GateRealization> selectedRealizations = new ArrayList<>();
+
+                if (useRadius) {
+
+                    Map<GateRealization, Double> distances = new HashMap<>();
+
+                    for (GateRealization r : realizationsOfType) {
+                        distances.put(r, r.getCharacterization().getEuclidean(currentRealization.getCharacterization(),
+                                gateLib.getProxNormalization(),
+                                gateLib.getProxWeights()));
+                    }
+
+                    List<Map.Entry<GateRealization, Double>> distanceList = new LinkedList<>(distances.entrySet());
+                    distanceList.sort(Map.Entry.comparingByValue());
+
+                    for (Map.Entry<GateRealization, Double> e : distanceList) {
+                        if (selectedRealizations.size() < 5 || e.getValue() <= radius)
+                            selectedRealizations.add(e.getKey());
+                    }
+
+                } else {
+                    selectedRealizations = realizationsOfType;
                 }
+
+                if (selectedRealizations.size() < 1)
+                    continue;
+
+                neighbor.put(selectedCircuitGate, selectedRealizations.get(rand.nextInt(selectedRealizations.size())));
             }
-
-            int realizationListSize = realizationsInRadius.size();
-
-            if (realizationListSize < 1)
-                continue;
-
-            neighbor.put(selectedCircuitGate, realizationsInRadius.get(rand.nextInt(realizationsInRadius.size())));
 
         } while (!neighbor.isValid() || !neighbor.fulfilsConstraints(structure) || (neighbor.equals(current)));
 

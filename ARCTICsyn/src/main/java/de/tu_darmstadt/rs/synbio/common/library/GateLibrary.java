@@ -375,6 +375,10 @@ public class GateLibrary {
         return compatibilityMatrix;
     }
 
+    public Boolean compatibilityMatrixLoaded() {
+        return compatibilityMatrix != null;
+    }
+
     public void print() {
 
         logger.info("Circuit library:");

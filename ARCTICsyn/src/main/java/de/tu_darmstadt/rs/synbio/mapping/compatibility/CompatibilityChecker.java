@@ -28,34 +28,37 @@ public class CompatibilityChecker {
     /* library information */
 
     final GateLibrary library;
-    final Map<LogicType, List<GateRealization>> devices;
+    private Map<LogicType, List<GateRealization>> devices;
 
-    final Map<String, String> deviceToTf;
-    final Map<String, Set<String>> tfToDevice;
+    private Map<String, String> deviceToTf;
+    private Map<String, Set<String>> tfToDevice;
 
     /* circuit information */
 
-    final Set<GateTriple> triples;
-    final Set<Gate> gates;
+    private Set<GateTriple> triples;
+    private Set<Gate> gates;
 
     /* compatibility matrix */
 
-    final CompatibilityMatrix<String> matrix;
+    private CompatibilityMatrix<String> matrix;
 
     /* SAT utilities */
 
-    final FormulaFactory factory;
-    final PropositionalParser parser;
-    final Formula constantTrue;
-    final SATSolver miniSat;
+    private FormulaFactory factory;
+    private PropositionalParser parser;
+    private Formula constantTrue;
+    private SATSolver miniSat;
 
     /* SAT */
 
-    final SolverState state;
+    private SolverState state;
 
     public CompatibilityChecker(GateLibrary library, Circuit structure) {
 
         this.library = library;
+
+        if (!library.compatibilityMatrixLoaded())
+            return;
 
         /* extract devices and groups from library */
 
@@ -278,6 +281,9 @@ public class CompatibilityChecker {
 
     public boolean checkSat(Assignment assignment) {
 
+        if (!library.compatibilityMatrixLoaded())
+            return true;
+
         miniSat.loadState(state);
 
         /* determine vars to substitute with constant TRUE to account for (incomplete) assignment */
@@ -315,6 +321,9 @@ public class CompatibilityChecker {
     }
 
     public boolean checkSimple(Assignment assignment) {
+
+        if (!library.compatibilityMatrixLoaded())
+            return true;
 
         for (GateTriple triple : triples) {
 

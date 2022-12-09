@@ -9,6 +9,7 @@ import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.ExhaustiveAssigner;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.RandomAssigner;
+import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityChecker;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
 import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
@@ -36,6 +37,8 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
     private double maxDistance = 0.0;
     private double minDistance = Double.MAX_VALUE;
+
+    private CompatibilityChecker checker;
 
     public MappingResult assign() {
 
@@ -75,6 +78,9 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         ExhaustiveAssigner exhaustiveAssigner = new ExhaustiveAssigner(gateLib, structure);
         RandomAssigner randomAssigner = new RandomAssigner(gateLib, structure);
 
+        // compatibility checker
+        checker = new CompatibilityChecker(gateLib, structure);
+
         Assignment current;
         long problemSize;
         double currentScore;
@@ -86,7 +92,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             currentScore = simulator.simulate(current, SimulatorInterface.PropagationMode.NORMAL);
             currentGrowth = 1.0;//simulator.getLastGrowth();
             currentScore = currentScore * (currentGrowth < 0.75 ? Math.pow(currentGrowth * 1.33, 1) : 1.0);
-        } while (!current.fulfilsConstraints(structure) || currentGrowth < 0.75);
+        } while (!checker.checkSimple(current) || !current.fulfilsConstraints(structure) || currentGrowth < 0.75);
 
         // initialize search
 
@@ -306,7 +312,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
                 neighbor.put(selectedCircuitGate, selectedRealizations.get(rand.nextInt(selectedRealizations.size())));
             }
 
-        } while (!neighbor.isValid() || !neighbor.fulfilsConstraints(structure) || (neighbor.equals(current)));
+        } while (!neighbor.isValid() || !checker.checkSimple(neighbor) || !neighbor.fulfilsConstraints(structure) || (neighbor.equals(current)));
 
         return neighbor;
     }

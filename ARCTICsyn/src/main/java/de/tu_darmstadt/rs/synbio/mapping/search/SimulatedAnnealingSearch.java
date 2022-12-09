@@ -274,14 +274,15 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
             } else { /* more realizations available in library --> swap external */
 
-                realizationsOfType.remove(currentRealization); // remove current realization from list of candidates
+                List<GateRealization> relizationCandidates = new ArrayList<>(realizationsOfType);
+                relizationCandidates.remove(currentRealization); // remove current realization from list of candidates
                 List<GateRealization> selectedRealizations = new ArrayList<>();
 
                 if (useRadius) {
 
                     Map<GateRealization, Double> distances = new HashMap<>();
 
-                    for (GateRealization r : realizationsOfType) {
+                    for (GateRealization r : relizationCandidates) {
                         distances.put(r, r.getCharacterization().getEuclidean(currentRealization.getCharacterization(),
                                 gateLib.getProxNormalization(),
                                 gateLib.getProxWeights()));
@@ -291,12 +292,12 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
                     distanceList.sort(Map.Entry.comparingByValue());
 
                     for (Map.Entry<GateRealization, Double> e : distanceList) {
-                        if (selectedRealizations.size() < 5 || e.getValue() <= radius)
+                        if (selectedRealizations.size() < 5 || e.getValue() <= radius * maxDistance)
                             selectedRealizations.add(e.getKey());
                     }
 
                 } else {
-                    selectedRealizations = realizationsOfType;
+                    selectedRealizations = relizationCandidates;
                 }
 
                 if (selectedRealizations.size() < 1)

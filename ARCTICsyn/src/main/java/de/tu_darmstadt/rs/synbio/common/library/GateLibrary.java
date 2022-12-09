@@ -231,73 +231,41 @@ public class GateLibrary {
 
     private void loadConvLibrary(File libraryFile) {
 
-        HashMap<String, Object>[] parsedRealizations;
-
         ObjectMapper mapper = new ObjectMapper();
 
+        JsonNode content;
+
         try {
-            parsedRealizations = mapper.readValue(libraryFile, HashMap[].class);
+            content = mapper.readTree(libraryFile);
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
 
-        for (HashMap<String, Object> realization : parsedRealizations) {
+        for (JsonNode r : content) {
 
-            String primitiveIdentifier = (String) Optional.ofNullable(realization.get("primitiveIdentifier"))
-                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"primitiveIdentifier\" not found!"));
+            String primitiveIdentifier = r.get("primitiveIdentifier").textValue();
 
-            String identifier = (String) Optional.ofNullable(realization.get("identifier"))
-                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"identifier\" not found!"));
+            if (primitiveIdentifier.equals("OR2"))
+                primitiveIdentifier = "OUTPUT_OR2";
 
-            String group = (String) Optional.ofNullable(realization.get("group"))
-                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"group\" not found!"));
+            String identifier = r.get("identifier").textValue();
+            String group = r.get("group").textValue();
 
-            LinkedHashMap biorep = (LinkedHashMap) Optional.ofNullable(realization.get("biorep"))
-                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"biorep\" not found!"));
+            JsonNode parameters = r.get("biorep").get("response_function").get("parameters");
 
-            LinkedHashMap responseFunction = (LinkedHashMap) Optional.ofNullable(biorep.get("response_function"))
-                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"response_function\" not found!"));
+            if (r.get("biorep").get("response_function").get("parameters").has("ymax")) {
 
-            LinkedHashMap parameters = (LinkedHashMap) Optional.ofNullable(responseFunction.get("parameters"))
-                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"parameters\" not found!"));
+                double yMax = parameters.get("ymax").asDouble();
+                double yMin = parameters.get("ymin").asDouble();
+                double k = parameters.get("K").asDouble();
+                double n = parameters.get("n").asDouble();
 
-            Optional ymaxOpt = Optional.ofNullable(parameters.get("ymax"));
-            Optional yminOpt = Optional.ofNullable(parameters.get("ymin"));
-            Optional kOpt = Optional.ofNullable(parameters.get("K"));
-            Optional nOpt = Optional.ofNullable(parameters.get("n"));
-
-            LinkedHashMap particles = (LinkedHashMap) Optional.ofNullable(biorep.get("particles"))
-                    .orElseThrow(() -> new RuntimeException("Invalid gate library: Key \"particles\" not found!"));
-
-            Optional ymaxParticles = Optional.ofNullable(particles.get("ymax"));
-            Optional yminParticles = Optional.ofNullable(particles.get("ymin"));
-
-            GateRealization newRealization;
-
-            if (ymaxOpt.isPresent() && yminOpt.isPresent() && kOpt.isPresent() && nOpt.isPresent()) {
-
-                double ymax = (double) ymaxOpt.get();
-                double ymin = (double) yminOpt.get();
-                double k = (double) kOpt.get();
-                double n = (double) nOpt.get();
-
-                GateRealization.Particles gateParticles = null;
-
-                if (ymaxParticles.isPresent() && yminParticles.isPresent()) {
-                    List<Double> ymaxList = (ArrayList<Double>) ymaxParticles.get();
-                    List<Double> yminList = (ArrayList<Double>) yminParticles.get();
-                    gateParticles = new GateRealization.Particles(ymaxList, yminList);
-                }
-
-                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group,
-                        new GateRealization.GateCharacterization(ymax, ymin, 0.0, 0.0, 0.0, 0.0, k ,n, gateParticles));
-
+                addGateRealization(new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group,
+                        new GateRealization.GateCharacterization(yMax, yMin, 0.0, 0.0, 0.0, 0.0, k ,n, null)));
             } else {
-                newRealization = new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group);
+                addGateRealization(new GateRealization(identifier, LogicType.valueOf(primitiveIdentifier), group));
             }
-
-            addGateRealization(newRealization);
         }
 
         /* add input gates */
@@ -310,6 +278,10 @@ public class GateLibrary {
 
         addGateRealization(new GateRealization("pBAD", LogicType.INPUT, "pBAD",
                 new GateRealization.GateCharacterization(2.5, 0.0082 , 0.0, 0.0, 0.0, 0.0, 0, 0, null)));
+
+        /* add output buffer */
+
+        addGateRealization(new GateRealization("output_1", LogicType.OUTPUT_BUFFER, "YFP"));
     }
 
     private void addGateRealization(GateRealization newGate) {

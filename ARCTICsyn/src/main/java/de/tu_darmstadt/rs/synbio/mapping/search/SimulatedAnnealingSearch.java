@@ -142,7 +142,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
                 scoreHistory.remove(scoreHistory.size() - 1);
             }
 
-            if (mapConfig.getOptimizationType().compare(bestScore, currentScore) && currentGrowth >= 0.75) {
+            if (mapConfig.getOptimizationType().compare(bestScore, currentScore) && checker.checkSimple(current) && currentGrowth >= 0.75) {
                 best = current;
                 bestScore = currentScore;
             }
@@ -312,7 +312,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
                 neighbor.put(selectedCircuitGate, selectedRealizations.get(rand.nextInt(selectedRealizations.size())));
             }
 
-        } while (!neighbor.isValid() || !checker.checkSimple(neighbor) || !neighbor.fulfilsConstraints(structure) || (neighbor.equals(current)));
+        } while (!neighbor.isValid() || !neighbor.fulfilsConstraints(structure) || (neighbor.equals(current)));
 
         return neighbor;
     }

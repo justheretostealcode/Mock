@@ -1,12 +1,10 @@
-package de.tu_darmstadt.rs.synbio.mapping.util;
+package de.tu_darmstadt.rs.synbio.mapping.search.branchandbound;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.circuit.*;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
-import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
-import de.tu_darmstadt.rs.synbio.common.library.GateRealization;
 import org.logicng.datastructures.Assignment;
 import org.logicng.formulas.Variable;
 import org.logicng.util.Pair;

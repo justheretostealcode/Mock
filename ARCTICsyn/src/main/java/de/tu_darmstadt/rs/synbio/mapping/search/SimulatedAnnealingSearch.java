@@ -178,7 +178,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
 
             if (printTrajectory) {
-                out.println(simCount + "," + bestScore + "," + temperature + "," + radius);
+                out.println(simCount + "," + neighborScore + "," + temperature + "," + radius + "," + acceptanceRate);
                 out.flush();
             }
         }

@@ -2,10 +2,10 @@ package de.tu_darmstadt.rs.synbio.synthesis.enumeration;
 
 public class EnumerationResult {
 
-    private final PrimitiveCircuit circuit;
+    private final TreeCircuit circuit;
     private final String inputMapping;
 
-    public EnumerationResult(PrimitiveCircuit circuit, String inputMapping) {
+    public EnumerationResult(TreeCircuit circuit, String inputMapping) {
         this.circuit = circuit;
         this.inputMapping = inputMapping;
     }
@@ -14,7 +14,7 @@ public class EnumerationResult {
         return inputMapping;
     }
 
-    public PrimitiveCircuit getCircuit() {
+    public TreeCircuit getCircuit() {
         return circuit;
     }
 }

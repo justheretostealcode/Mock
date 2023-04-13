@@ -5,11 +5,11 @@ import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import de.tu_darmstadt.rs.synbio.common.circuit.*;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.synthesis.SynthesisConfiguration;
+import de.tu_darmstadt.rs.synbio.synthesis.util.ExpressionParser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.logicng.formulas.Formula;
-import org.logicng.formulas.Variable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,7 +101,7 @@ public class EnumeratorFast {
 
         int availableProcessors = Runtime.getRuntime().availableProcessors() - 1;
 
-        List<PrimitiveCircuit> rawCircuits = new ArrayList<>();
+        List<TreeCircuit> rawCircuits = new ArrayList<>();
         resultCircuits = new HashMap<>();
 
         OptionalInt maxGateFeasibility = gateTypes.stream().mapToInt(LogicType::getNumInputs).max();
@@ -110,7 +110,7 @@ public class EnumeratorFast {
 
         /* generate valid combinations of gates */
 
-        // max number of gates in uppermost level
+        // max number of gates in upper most level
         int maxRowLength = (int) Math.pow(maxGateFeasibility.getAsInt(), synConfig.getMaxDepth() - 1);
 
         // lists containing combinations
@@ -146,12 +146,9 @@ public class EnumeratorFast {
 
         List<BuildWorker> buildWorkers = new ArrayList<>();
 
-        PrimitiveCircuit emptyCircuit = new PrimitiveCircuit(synConfig.getMaxDepth());
-
         /* initialize build workers with differing start gates */
         for (int i = 0; i < combinations.get(0).size(); i++) {
-            PrimitiveCircuit newCircuit = new PrimitiveCircuit(emptyCircuit);
-            newCircuit.insertEntry(0, i);
+            TreeCircuit newCircuit = new TreeCircuit(combinations.get(0).get(i).get(0));
             buildWorkers.add(new BuildWorker(this, newCircuit, 1, synConfig.getMaxDepth()));
         }
 
@@ -160,7 +157,7 @@ public class EnumeratorFast {
         logger.info("number of threads resulting from hardware and synthesis settings: " + numThreads);
 
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
-        List<Future<List<PrimitiveCircuit>>> buildResults = Collections.emptyList();
+        List<Future<List<TreeCircuit>>> buildResults = Collections.emptyList();
 
         try {
             buildResults = executor.invokeAll(buildWorkers);
@@ -168,7 +165,7 @@ public class EnumeratorFast {
             logger.error(e.getMessage());
         }
 
-        for (Future<List<PrimitiveCircuit>> resultList : buildResults) {
+        for (Future<List<TreeCircuit>> resultList : buildResults) {
 
             try {
                 rawCircuits.addAll(resultList.get());
@@ -193,7 +190,7 @@ public class EnumeratorFast {
         List<EnumerationWorker> workers = new ArrayList<>();
 
         // generate input mapping (primary inputs --> unbounded circuit inputs)
-        for (PrimitiveCircuit circuit : rawCircuits){
+        for (TreeCircuit circuit : rawCircuits){
             workers.add(new EnumerationWorker(this, circuit, feasibility, targetTruthTable));
         }
 
@@ -223,94 +220,85 @@ public class EnumeratorFast {
         executor.shutdownNow();
     }
 
-    boolean circuitAllowedByPreFilter(PrimitiveCircuit circuit) {
+    boolean circuitAllowedByPreFilter(TreeCircuit circuit) {
 
         // check if circuit is implementable with library
-        if (!isCoveredByLibrary(circuit.getList().stream().map(this::mapEntryToRow).flatMap(Collection::stream).collect(Collectors.toCollection(ArrayList::new))))
+        if (!isCoveredByLibrary(circuit.serializePreOrder().stream().map(n -> n.type).collect(Collectors.toList())))
             return false;
 
         // check is feasibility is met
-        if (getNumberOfUnboundInputs(circuit) < feasibility)
+        if (circuit.getNumOpenInputs(true) < feasibility)
             return false;
 
         // check circuit weight. if it exceeds maximum --> continue
-        if (getCircuitWeight(circuit) > synConfig.getMaxWeight())
-            return false;
-
-        // check if circuit contains redundant inverters
-        if (hasRedundantInverters(circuit))
+        if (circuit.getWeight() > synConfig.getMaxWeight())
             return false;
 
         return true;
     }
 
-    private void buildCircuitGraph(PrimitiveCircuit candidate, String inputMapping) {
+    private void buildCircuitGraph(TreeCircuit candidate, String inputMapping) {
 
         Circuit circuit = new Circuit();
         int gateCounter = 0;
 
-        // add first logic gate after output
-        LogicType type = mapEntryToRow(candidate.getEntry(0)).get(0);
-        Gate newGate = new Gate(type.name() + "_" + gateCounter, type);
-        circuit.addVertex(newGate);
+        List<TreeNode> gates = candidate.serializePostOrder();
+        Map<TreeNode, Gate> transformation = new HashMap<>();
+        int inputCount = 0;
+
+        for (TreeNode gate : gates) {
+
+            if (gate.type == LogicType.EMPTY)
+                continue;
+
+            gateCounter++;
+            Gate newGate = new Gate(gate.type.name() + "_" + gateCounter, gate.type);
+            circuit.addVertex(newGate);
+            transformation.put(gate, newGate);
+
+            if (gate.child0 != null && gate.child0.type != LogicType.EMPTY) {
+                circuit.addEdge(transformation.get(gate.child0), newGate, new Wire(ExpressionParser.parse("x").variables().first()));
+            }
+
+            if (gate.child1 != null && gate.child1.type != LogicType.EMPTY) {
+                circuit.addEdge(transformation.get(gate.child1), newGate, new Wire(ExpressionParser.parse("y").variables().first()));
+            }
+
+            if (gate.child0 == null || gate.child0.type == LogicType.EMPTY) {
+                Gate inputGate = inputGates.get(Integer.parseInt(String.valueOf(inputMapping.charAt(inputCount))));
+
+                if (!circuit.containsVertex(inputGate))
+                    circuit.addVertex(inputGate);
+
+                if (circuit.containsEdge(inputGate, transformation.get(gate)))
+                    return;
+
+                circuit.addEdge(inputGate, newGate, new Wire(ExpressionParser.parse("x").variables().first()));
+
+                inputCount ++;
+            }
+
+            if (gate.type != LogicType.NOT && (gate.child1 == null || gate.child1.type == LogicType.EMPTY)) {
+                Gate inputGate = inputGates.get(Integer.parseInt(String.valueOf(inputMapping.charAt(inputCount))));
+
+                if (!circuit.containsVertex(inputGate))
+                    circuit.addVertex(inputGate);
+
+                if (circuit.containsEdge(inputGate, transformation.get(gate)))
+                    return;
+
+                circuit.addEdge(inputGate, newGate, new Wire(ExpressionParser.parse("y").variables().first()));
+
+                inputCount ++;
+            }
+        }
 
         // if or gate (which serves as buffer) is not the last gate, add buffer
-        if (type != LogicType.OUTPUT_OR2) {
+        if (candidate.getRootNode().type != LogicType.OUTPUT_OR2) {
             gateCounter ++;
             Gate outputBuffer = new Gate(LogicType.OUTPUT_BUFFER.name() + "_" + gateCounter, LogicType.OUTPUT_BUFFER);
             circuit.addVertex(outputBuffer);
-            circuit.addEdge(newGate, outputBuffer, new Wire(outputBuffer.getExpression().variables().first()));
-        }
-
-        // add rows of gates and wire them
-        List<Gate> prevRow = new ArrayList<>();
-        List<Gate> currentRow = new ArrayList<>();
-        prevRow.add(newGate);
-
-        int inputCount = 0;
-
-        for (int level = 1; level <= candidate.getDepth(); level ++) {
-
-            int column = 0;
-
-            for (Gate anchorGate : prevRow) {
-
-                for (Variable anchorVariable : anchorGate.getExpression().variables()) {
-
-                    if (level < candidate.getDepth())
-                        type = mapEntryToRow(candidate.getEntry(level)).get(column);
-                    else
-                        type = LogicType.EMPTY;
-
-                    if (type != LogicType.EMPTY) {
-
-                        gateCounter++;
-                        newGate = new Gate(type.name() + "_" + gateCounter, type);
-                        circuit.addVertex(newGate);
-                        circuit.addEdge(newGate, anchorGate, new Wire(anchorVariable));
-
-                        currentRow.add(newGate);
-                    } else {
-
-                        Gate inputGate = inputGates.get(Integer.parseInt(String.valueOf(inputMapping.charAt(inputCount))));
-
-                        if (!circuit.containsVertex(inputGate))
-                            circuit.addVertex(inputGate);
-
-                        if (circuit.containsEdge(inputGate, anchorGate))
-                            return;
-
-                        circuit.addEdge(inputGate, anchorGate, new Wire(anchorVariable));
-
-                        inputCount ++;
-                    }
-
-                    column++;
-                }
-            }
-
-            prevRow = new ArrayList<>(currentRow);
-            currentRow.clear();
+            circuit.addEdge(transformation.get(candidate.getRootNode()), outputBuffer, new Wire(outputBuffer.getExpression().variables().first()));
         }
 
         // remove redundant gates
@@ -366,16 +354,12 @@ public class EnumeratorFast {
 
     /* helper functions for handling of primitive circuits */
 
-    List<LogicType> mapEntryToRow(PrimitiveCircuit.Entry entry) {
-        return combinations.get(entry.combId).get(entry.index);
-    }
-
-    private boolean isCoveredByLibrary(List<LogicType> row) {
+    private boolean isCoveredByLibrary(List<LogicType> gates) {
 
         // check if enough gate groups are available
         int numGates = 0;
 
-        for (LogicType element : row) {
+        for (LogicType element : gates) {
             if (element != LogicType.EMPTY)
                 numGates ++;
         }
@@ -391,7 +375,7 @@ public class EnumeratorFast {
 
             int occurrences = 0;
 
-            for (LogicType gateType : row) {
+            for (LogicType gateType : gates) {
                 if (gateType == type)
                     occurrences++;
             }
@@ -403,77 +387,6 @@ public class EnumeratorFast {
         return true;
     }
 
-    int getNumberOfInputs(List<LogicType> row) {
-
-        int numInputs = 0;
-
-        for (LogicType gateType : row) {
-            if (gateType != LogicType.EMPTY)
-                numInputs += gateType.getNumInputs();
-        }
-
-        return numInputs;
-    }
-
-    int getNumberOfUnboundInputs(PrimitiveCircuit circuit) {
-
-        // get total number of gate inputs
-        int totalInputs = circuit.getList().stream().map(this::mapEntryToRow).mapToInt(this::getNumberOfInputs).sum();
-
-        // get number of gates above level 0 (bound inputs)
-        int boundInputs = 0;
-
-        for (int level = 1; level < circuit.getDepth(); level ++) {
-
-            PrimitiveCircuit.Entry entry = circuit.getEntry(level);
-
-            for(LogicType gateType : mapEntryToRow(entry)) {
-                if (gateType != LogicType.EMPTY)
-                    boundInputs ++;
-            }
-        }
-
-        return totalInputs - boundInputs;
-    }
-
-    private int getCircuitWeight(PrimitiveCircuit circuit) {
-
-        int weight = 0;
-
-        for (PrimitiveCircuit.Entry entry : circuit.getList()) {
-
-            for (LogicType gateType : mapEntryToRow(entry)) {
-                weight += gateType.getWeight();
-            }
-        }
-
-        return weight;
-    }
-
-    private boolean hasRedundantInverters(PrimitiveCircuit circuit) {
-
-        for (int level = 0; level < (circuit.getDepth() - 1); level ++) {
-
-            int upperColumn = 0;
-
-            PrimitiveCircuit.Entry entry = circuit.getEntry(level);
-
-            for (LogicType gateType : mapEntryToRow(entry)) {
-
-                if (gateType == LogicType.NOT) {
-
-                    PrimitiveCircuit.Entry upperEntry = circuit.getEntry(level + 1);
-                    List<LogicType> upperRow = mapEntryToRow(upperEntry);
-
-                    if (upperRow.get(upperColumn) == LogicType.NOT)
-                        return true;
-                }
-
-                upperColumn += gateType.getNumInputs();
-            }
-        }
-        return false;
-    }
 
     private boolean isNotEmpty(List<LogicType> row) {
 
@@ -485,99 +398,35 @@ public class EnumeratorFast {
         return false;
     }
 
-    String evaluatePrimitiveCircuit(PrimitiveCircuit circuit, String inputMapping) {
+    String evaluateTreeCircuit(TreeCircuit circuit, String inputMapping) {
 
-        int varCount = 0;       /* counter for instantiating intermediate variables */
-        Integer gateCount = 0;  /* counter for identifying gates */
+        List<TreeNode> postOrder = circuit.serializePostOrder();
 
-        /* list of currently unconnected variables */
-        List<String> currentVars = new ArrayList<>();
+        int i = 0;
 
-        /* map of variables to gate IDs */
-        Map<String, Integer> varsToGates = new HashMap<>();
+        for (TreeNode node : postOrder) {
 
-        /* list of variables to be connected to primary inputs */
-        List<String> finalVars = new ArrayList<>();
+            if (node.type == LogicType.EMPTY)
+                continue;
 
-        /* temporary list of replaced variables */
-        List<String> replacedVars = new ArrayList<>();
-
-        String varName;
-        String expression = "";
-
-        for (int row = 0; row < circuit.getDepth(); row ++) {
-
-            List<LogicType> currentRow = mapEntryToRow(circuit.getEntry(row));
-
-            /* update current vars */
-            currentVars.removeAll(replacedVars);
-            currentVars.removeAll(finalVars);
-            Collections.sort(currentVars);
-
-            replacedVars.clear();
-
-            for (int column = 0; column < currentRow.size(); column ++) {
-
-                /* empty type means gate input will be connected to circuit input */
-                if (row > 0 && currentRow.get(column) == LogicType.EMPTY) {
-                    finalVars.add(currentVars.get(column));
-                    continue;
+            if (node.type == LogicType.NOT) {
+                if (node.child0 == null || node.child0.type == LogicType.EMPTY) {
+                    node.expression = "~" + intermediateVariables.get(i++);
+                } else {
+                    node.expression = "~(" + node.child0.expression + ")";
                 }
-
-                /* insert expression of gate */
-                String gateExpression = currentRow.get(column).getExpressionString();
-
-                if (expression.isBlank()) {   /* output gate: add expression */
-                    expression = gateExpression;
-                } else {                    /* every other gate: replace variable by expression */
-                    String varToReplace = currentVars.get(column);
-                    expression = expression.replaceAll(varToReplace, gateExpression);
-                    replacedVars.add(varToReplace);
-                }
-
-                /* replace gate inputs by intermediate variables */
-                for (String inputName : gateInputNames) {
-                    if (expression.contains(inputName)) {
-                        varName = intermediateVariables.get(varCount);
-                        expression = expression.replaceAll(inputName, varName);
-                        currentVars.add(varName);
-                        varsToGates.put(varName, gateCount);
-                        varCount++;
-                    }
-                }
-
-                gateCount ++;
+            } else {
+                String left = (node.child0 == null || node.child0.type == LogicType.EMPTY) ? intermediateVariables.get(i++) : node.child0.expression;
+                String right = (node.child1 == null || node.child1.type == LogicType.EMPTY) ? intermediateVariables.get(i++) : node.child1.expression;
+                node.expression = (node.type == LogicType.NOR2 ? "~(" : "(") + left + "|" + right + ")";
             }
         }
 
-        /* update current variables. all left current and final variables are connected to inputs */
-        currentVars.removeAll(finalVars);
-        currentVars.removeAll(replacedVars);
+        String expression = circuit.getRootNode().expression;
 
-        List<String> allVars = new ArrayList<>();
-        allVars.addAll(currentVars);
-        allVars.addAll(finalVars);
-        Collections.sort(allVars);
-
-        /* map of gate IDs to substituted inputs */
-        Map<Integer, String> gatesToSubstitutions = new HashMap<>(); // TODO: for 3 or more input gates: replace values by sets of formulas
-
-        int substCount = 0;
-        for (String var : allVars) {
-
-            /* get input to substitute according to input mapping */
-            String substitution = inputVars.get(Character.getNumericValue(inputMapping.charAt(substCount)));
-
-            /* check if input is already connected to other variable of gate and abort */
-            if (gatesToSubstitutions.containsKey(varsToGates.get(var)) && gatesToSubstitutions.get(varsToGates.get(var)).equals(substitution)) {
-                return null;
-            }
-
-            if (varsToGates.containsKey(var))
-                gatesToSubstitutions.put(varsToGates.get(var), substitution);
-
-            expression = expression.replaceAll(var, substitution);
-            substCount ++;
+        for (int j = 0; j < i; j++) {
+            String substitution = inputVars.get(Character.getNumericValue(inputMapping.charAt(j)));
+            expression = expression.replaceAll(intermediateVariables.get(j), substitution);
         }
 
         return expression;
@@ -585,221 +434,55 @@ public class EnumeratorFast {
 
     /* structural equivalence check */
 
-    private List<HashMap<Coordinates, List<List<LogicType>>>> pathDB;
+    Map<List<Integer>, Integer> equivalenceClasses;
+    int equivalenceClassCount;
 
-    private List<PrimitiveCircuit> filterRedundantCircuits(List<PrimitiveCircuit> inputCircuits) {
+    private List<TreeCircuit> filterRedundantCircuits(List<TreeCircuit> inputCircuits) {
 
-        // calculate all paths
-        pathDB = new ArrayList<>();
+        equivalenceClasses = new HashMap<>();
+        equivalenceClassCount = 0;
 
-        for (PrimitiveCircuit circuit : inputCircuits) {
-            pathDB.add(getAllPaths(circuit));
+        Map<Integer, TreeCircuit> results = new HashMap<>();
+
+        for (TreeCircuit circuit : inputCircuits) {
+            int equiv = getEquivalenceClass(circuit);
+            results.putIfAbsent(equiv, circuit);
         }
 
-        // filter structurally equivalent circuits
-        List<Integer> resultCircuitIndices = new ArrayList<>();
-        resultCircuitIndices.add(0);
-
-        for (int i = 0; i < inputCircuits.size(); i ++) {
-
-            boolean isUnique = true;
-
-            for (Integer cmpIndex : resultCircuitIndices) {
-
-                if (structurallyEquivalent(inputCircuits.get(i), i, inputCircuits.get(cmpIndex), cmpIndex)) {
-                    isUnique = false;
-                    break;
-                }
-            }
-
-            if (isUnique) {
-                resultCircuitIndices.add(i);
-                //logger.info("circuit " + i + " added");
-            }
-        }
-
-        // build list of filtered circuits
-        List<PrimitiveCircuit> filteredCircuits = new ArrayList<>();
-
-        for (Integer index : resultCircuitIndices) {
-            filteredCircuits.add(inputCircuits.get(index));
-        }
-
-        return filteredCircuits;
+        return new ArrayList<>(results.values());
     }
 
-    private boolean structurallyEquivalent(PrimitiveCircuit circuit1, int circuit1Index, PrimitiveCircuit circuit2, int circuit2Index) {
+    private int getEquivalenceClass(TreeCircuit circuit) {
 
-        if (circuit1.getDepth() != circuit2.getDepth())
-            return false;
+        List<TreeNode> postOrder = circuit.serializePostOrder();
 
-        if (getCircuitWeight(circuit1) != getCircuitWeight(circuit2))
-            return false;
+        for (TreeNode node : postOrder) {
 
-        // get paths
-        HashMap<Coordinates, List<List<LogicType>>> paths1 = pathDB.get(circuit1Index);
-        HashMap<Coordinates, List<List<LogicType>>> paths2 = pathDB.get(circuit2Index);
+            List<Integer> list = new LinkedList<>();
 
-        // create mark list
-        List<List<Boolean>> circuit2Marks = new ArrayList<>();
+            if (node.child0 == null && node.child1 == null)
+                list.add(0);
+            else if (node.child1 == null)
+                list.add(node.child0.equivalenceClass);
+            else {
+                list.add(node.child0.equivalenceClass);
+                list.add(node.child1.equivalenceClass);
+            }
 
-        for (PrimitiveCircuit.Entry entry : circuit2.getList()) {
+            list.sort(Integer::compareTo);
 
-            ArrayList<Boolean> markRow = new ArrayList<>();
-            circuit2Marks.add(markRow);
+            list.add(0, node.type.ordinal());
 
-            for (LogicType ignored : mapEntryToRow(entry)) {
-                markRow.add(false);
+            if (equivalenceClasses.containsKey(list))
+                node.equivalenceClass = equivalenceClasses.get(list);
+            else {
+                equivalenceClasses.put(list, equivalenceClassCount);
+                node.equivalenceClass = equivalenceClassCount;
+                equivalenceClassCount++;
             }
         }
 
-        // iterate over elements of circuit 1 and search equivalents in circuit 2
-        for (int level = 0; level < circuit1.getDepth(); level ++) {
-
-            if (mapEntryToRow(circuit1.getEntry(level)).size() != mapEntryToRow(circuit2.getEntry(level)).size())
-                return false;
-
-            int numColumns = mapEntryToRow(circuit1.getEntry(level)).size();
-
-            for (int column = 0; column < numColumns; column ++) {
-
-                LogicType element = mapEntryToRow(circuit1.getEntry(level)).get(column);
-                Coordinates coords1 = new Coordinates(level, column);
-                List<List<LogicType>> element1Paths = paths1.get(coords1);
-
-                boolean equivalentFound = false;
-
-                // search equivalent gate in circuit 2
-                for (int column2 = 0; column2 < numColumns; column2 ++) {
-
-                    // if element is same type and is not yet marked
-                    if (mapEntryToRow(circuit2.getEntry(level)).get(column2) == element && !circuit2Marks.get(level).get(column2)) {
-
-                        Coordinates coords2 = new Coordinates(level, column2);
-                        List<List<LogicType>> element2Paths = paths2.get(coords2);
-
-                        if (element2Paths.containsAll(element1Paths) && element1Paths.containsAll(element2Paths)) {
-                            circuit2Marks.get(level).set(column2, true);
-                            equivalentFound = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!equivalentFound)
-                    return false;
-            }
-        }
-
-        // check if every element of circuit 2 is marked
-        for (List<Boolean> level : circuit2Marks) {
-            for (Boolean marked : level) {
-                if (!marked)
-                    return false;
-            }
-        }
-
-        return true;
-    }
-
-    private HashMap<Coordinates, List<List<LogicType>>> getAllPaths(PrimitiveCircuit circuit) {
-
-        HashMap<Coordinates, List<List<LogicType>>> paths = new HashMap<>();
-
-        for (int level = circuit.getDepth() - 1; level >= 0; level --) {
-
-            int rowLength = mapEntryToRow(circuit.getEntry(level)).size();
-
-            for (int column = 0; column < rowLength; column ++) {
-
-                Coordinates currentNode = new Coordinates(level, column);
-                List<Coordinates> connectedNodes = getInputNodes(circuit, currentNode);
-
-                paths.putIfAbsent(currentNode, new ArrayList<>());
-
-                if (connectedNodes.isEmpty()) {
-
-                    ArrayList<LogicType> path = new ArrayList<>();
-                    path.add(mapEntryToRow(circuit.getEntry(level)).get(column));
-                    paths.get(currentNode).add(path);
-                }
-
-                for (Coordinates node : connectedNodes) {
-
-                    for (List<LogicType> path : paths.get(node)) {
-
-                        ArrayList<LogicType> extendedPath = new ArrayList<>(path);
-                        extendedPath.add(mapEntryToRow(circuit.getEntry(level)).get(column));
-                        paths.get(currentNode).add(extendedPath);
-                    }
-
-                }
-            }
-        }
-
-        return paths;
-    }
-
-    private List<Coordinates> getInputNodes(PrimitiveCircuit circuit, Coordinates coords) {
-
-        List<Coordinates> inputNodes = new ArrayList<>();
-
-        LogicType element = mapEntryToRow(circuit.getEntry(coords.level)).get(coords.column);
-        int numInputs = element.getNumInputs();
-
-        // if element is on uppermost level --> return empty list
-        if (coords.level == (circuit.getDepth() - 1)) {
-            return inputNodes;
-        }
-
-        int upperInput = 0;
-
-        for (int currentColumn = 0; currentColumn < coords.column; currentColumn ++) {
-
-            LogicType currentElement = mapEntryToRow(circuit.getEntry(coords.level)).get(currentColumn);
-
-            if (currentElement != LogicType.EMPTY)
-                upperInput += currentElement.getNumInputs();
-        }
-
-        for (int input = upperInput; input < (upperInput + numInputs); input ++) {
-
-            inputNodes.add(new Coordinates(coords.level + 1, input));
-        }
-
-        return inputNodes;
-
-    }
-
-    static private class Coordinates {
-
-        public final Integer level;
-        public final Integer column;
-
-        public Coordinates(Integer level, Integer column) {
-            this.level = level;
-            this.column = column;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof Coordinates)) {
-                return false;
-            }
-            Coordinates cmp  = (Coordinates) o;
-            EqualsBuilder builder = new EqualsBuilder();
-            builder.append(level, cmp.level);
-            builder.append(column, cmp.column);
-            return builder.isEquals();
-        }
-
-        @Override
-        public int hashCode() {
-            HashCodeBuilder builder = new HashCodeBuilder();
-            builder.append(level);
-            builder.append(column);
-            return builder.hashCode();
-        }
+        return circuit.getRootNode().equivalenceClass;
     }
 
     /* getter */

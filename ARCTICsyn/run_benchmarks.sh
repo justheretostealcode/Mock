@@ -1,9 +1,9 @@
 #!/bin/bash
 
-NUM_JOBS=33
+NUM_JOBS=1
 
 OUTDIR=benchmarks
-LOGFILE=proposed_scores_$(date +%s%N).txt
+LOGFILE=enumeration_$(date +%s%N).txt
 
 function handler {
     kill -- -$$
@@ -21,11 +21,13 @@ function wait_jobs {
 	done
 }
 
+export GRADLE_OPTS=-Xmx20G
+
 while IFS=\n read -r truthtable
 do
 	wait_jobs
-    	echo "mapping truth table $truthtable ..."
-	./gradlew -q run --args="-t $truthtable </dev/null >> $OUTDIR/$LOGFILE &
+    echo "mapping truth table $truthtable ..."
+	./gradlew -q run --args="-t $truthtable" </dev/null >> $OUTDIR/$LOGFILE &
 done < cello_functions.csv
 
 for job in `jobs -pr`; do

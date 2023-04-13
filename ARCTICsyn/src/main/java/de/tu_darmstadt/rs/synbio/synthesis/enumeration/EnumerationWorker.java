@@ -1,6 +1,5 @@
 package de.tu_darmstadt.rs.synbio.synthesis.enumeration;
 
-import de.tu_darmstadt.rs.synbio.common.LogicType;
 import de.tu_darmstadt.rs.synbio.common.TruthTable;
 import org.apache.commons.lang3.StringUtils;
 import org.logicng.formulas.Formula;
@@ -15,13 +14,13 @@ import java.util.concurrent.Callable;
 public class EnumerationWorker implements Callable<List<EnumerationResult>> {
 
     private final EnumeratorFast enumerator;
-    private final PrimitiveCircuit circuit;
+    private final TreeCircuit circuit;
     private final int feasibility;
     private final TruthTable targetTruthTable;
 
     private final List<EnumerationResult> results;
 
-    public EnumerationWorker(EnumeratorFast enumerator, PrimitiveCircuit circuit, int feasibility, TruthTable targetTruthTable) {
+    public EnumerationWorker(EnumeratorFast enumerator, TreeCircuit circuit, int feasibility, TruthTable targetTruthTable) {
         this.enumerator = enumerator;
         this.circuit = circuit;
         this.feasibility = feasibility;
@@ -35,7 +34,7 @@ public class EnumerationWorker implements Callable<List<EnumerationResult>> {
         FormulaFactory factory =  new FormulaFactory();
         PropositionalParser parser = new PropositionalParser(factory);
 
-        int numUnboundInputs = enumerator.getNumberOfUnboundInputs(circuit);
+        int numUnboundInputs = circuit.getNumOpenInputs(true);
 
         for (int i = 0; i < (int) Math.pow(feasibility, numUnboundInputs); i++) {
 
@@ -54,7 +53,7 @@ public class EnumerationWorker implements Callable<List<EnumerationResult>> {
                 continue;
 
             // evaluate primitive circuit with input mapping
-            String circuitExpression = enumerator.evaluatePrimitiveCircuit(circuit, inputMapping);
+            String circuitExpression = enumerator.evaluateTreeCircuit(circuit, inputMapping);
 
             if (circuitExpression == null)
                 continue;

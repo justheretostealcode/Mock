@@ -71,8 +71,10 @@ public enum LogicType {
     }
 
     public int getWeight() {
-        if (this.equals(EMPTY) || this.equals(INPUT) || this.equals(OUTPUT_BUFFER) || this.equals(OUTPUT_OR2))
+        if (this.equals(EMPTY) || this.equals(INPUT) || this.equals(OUTPUT_BUFFER))
             return 0;
+        else if (this.equals(OUTPUT_OR2))
+            return 1;
         else
             return 1;
     }

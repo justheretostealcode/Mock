@@ -6,16 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public class BuildWorker implements Callable<List<PrimitiveCircuit>> {
+public class BuildWorker implements Callable<List<TreeCircuit>> {
 
     private final EnumeratorFast enumerator;
-    private final PrimitiveCircuit startCircuit;
+    private final TreeCircuit startCircuit;
     private final int level;
     private final int maxDepth;
 
-    List<PrimitiveCircuit> results;
+    List<TreeCircuit> results;
 
-    public BuildWorker(EnumeratorFast enumerator, PrimitiveCircuit startCircuit, int level, int maxDepth) {
+    public BuildWorker(EnumeratorFast enumerator, TreeCircuit startCircuit, int level, int maxDepth) {
         this.enumerator = enumerator;
         this.startCircuit = startCircuit;
         this.level = level;
@@ -23,7 +23,7 @@ public class BuildWorker implements Callable<List<PrimitiveCircuit>> {
     }
 
     @Override
-    public List<PrimitiveCircuit> call() throws Exception {
+    public List<TreeCircuit> call() throws Exception {
 
         results = new ArrayList<>();
 
@@ -32,42 +32,30 @@ public class BuildWorker implements Callable<List<PrimitiveCircuit>> {
         return results;
     }
 
-    private void buildCircuits(PrimitiveCircuit circuit, int level) {
+    private void buildCircuits(TreeCircuit circuit, int level) {
 
         // if max depth reached --> abort
         if (level >= maxDepth)
             return;
 
-        // if circuit is empty --> build start circuits and recurse
-        if (level == 0) {
+        int numberOfInputs = circuit.getNumOpenInputs(false);
 
-            for (int i = 0; i < enumerator.combinations.get(0).size(); i++) {
-                PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);
-                newCircuit.insertEntry(0, i);
-                buildCircuits(newCircuit, 1);
-            }
+        // iterate over rows with corresponding number of gates/entries
+        for (int i = 0; i < enumerator.combinations.get(numberOfInputs - 1).size(); i++) {
 
-            // if circuit is not empty --> extend by next row
-        } else {
+            if (enumerator.combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OUTPUT_OR2)) // limit or gate to output row
+                continue;
 
-            // get number of inputs of lower level
-            PrimitiveCircuit.Entry entry = circuit.getEntry(level - 1);
-            int numberOfInputs = enumerator.getNumberOfInputs(enumerator.mapEntryToRow(entry));
+            TreeCircuit newCircuit = new TreeCircuit(circuit);
+            boolean noRedundantInverters = newCircuit.addLevel(enumerator.combinations.get(numberOfInputs - 1).get(i));
 
-            // iterate over rows with corresponding number of gates/entries
-            for (int i = 0; i < enumerator.combinations.get(numberOfInputs - 1).size(); i++) {
+            if (!noRedundantInverters)
+                continue;
 
-                if (enumerator.combinations.get(numberOfInputs - 1).get(i).contains(LogicType.OUTPUT_OR2)) // limit or gate to output row
-                    continue;
+            if (enumerator.circuitAllowedByPreFilter(newCircuit))
+                results.add(newCircuit);
 
-                PrimitiveCircuit newCircuit = new PrimitiveCircuit(circuit);
-                newCircuit.addEntry(level, numberOfInputs - 1, i);
-
-                if (enumerator.circuitAllowedByPreFilter(newCircuit))
-                    results.add(newCircuit);
-
-                buildCircuits(newCircuit, level + 1);
-            }
+            buildCircuits(newCircuit, level + 1);
         }
     }
 }

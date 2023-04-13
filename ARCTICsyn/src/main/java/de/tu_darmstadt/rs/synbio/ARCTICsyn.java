@@ -77,7 +77,7 @@ public class ARCTICsyn {
 
         circuits.sort(Circuit::compareTo);
 
-        if (circuits.size() > synConfig.getLimitStructuresNum()) {
+        if (synConfig.getLimitStructuresNum() != 0 && circuits.size() > synConfig.getLimitStructuresNum()) {
             circuits = circuits.subList(circuits.size() - synConfig.getLimitStructuresNum(), circuits.size());
         }
 
@@ -87,6 +87,11 @@ public class ARCTICsyn {
             circ.print(new File(outputDir, inputTruthTable.toString() + "_" + circ.getIdentifier() + ".dot"));
             circ.save(new File(outputDir, inputTruthTable.toString() + "_" + circ.getIdentifier() + ".json"));
         }
+
+        int minWeight = circuits.stream().map(Circuit::getWeight).min(Integer::compareTo).orElse(0);
+        logger.warn(inputTruthTable + "," + minWeight + "," + circuits.stream().filter(c -> c.getWeight() == minWeight).count() + "," +
+                circuits.stream().filter(c -> c.getWeight() == minWeight + 1).count() + "," +
+                circuits.stream().filter(c -> c.getWeight() == minWeight + 2).count());
 
         /* technology mapping */
 

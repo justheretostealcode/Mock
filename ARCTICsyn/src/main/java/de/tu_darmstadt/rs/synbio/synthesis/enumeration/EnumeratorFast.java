@@ -34,7 +34,7 @@ public class EnumeratorFast {
     private int currentMinSize;
 
     private final int numGroupsInLib;
-    private final List<LogicType> gateTypes;
+    final List<LogicType> gateTypes;
 
     private HashMap<TruthTable, Set<Circuit>> resultCircuits;
 
@@ -104,52 +104,18 @@ public class EnumeratorFast {
         List<TreeCircuit> rawCircuits = new ArrayList<>();
         resultCircuits = new HashMap<>();
 
-        OptionalInt maxGateFeasibility = gateTypes.stream().mapToInt(LogicType::getNumInputs).max();
-        if (maxGateFeasibility.isEmpty())
-            return;
-
-        /* generate valid combinations of gates */
-
-        // max number of gates in upper most level
-        int maxRowLength = (int) Math.pow(maxGateFeasibility.getAsInt(), synConfig.getMaxDepth() - 1);
-
-        // lists containing combinations
-        combinations = new ArrayList<>(maxRowLength);
-
-        for (int i = 0; i < maxRowLength; i ++) {
-            combinations.add(i, new ArrayList<>());
-        }
-
-        // generate rows (combinations of gates and empty slots)
-        for (int rowLength = 1; rowLength <= maxRowLength; rowLength ++) {
-
-            List<List<LogicType>> lengthCombinations = combinations.get(rowLength - 1);
-
-            for (int i = 0; i < (int) Math.pow(gateTypes.size(), rowLength); i ++) {
-
-                String combination = Integer.toString(i, gateTypes.size());
-                combination = StringUtils.leftPad(combination, rowLength, '0');
-
-                ArrayList<LogicType> row = new ArrayList<>(rowLength);
-
-                for (int j = 0; j < combination.length(); j++) {
-                    row.add(j, gateTypes.get(Character.getNumericValue(combination.charAt(j))));
-                }
-
-                if (isCoveredByLibrary(row) && isNotEmpty(row))
-                    if (!(rowLength != 1 && (row.contains(LogicType.OUTPUT_BUFFER) || row.contains(LogicType.OUTPUT_OR2)))) // limit output gates to output row
-                        lengthCombinations.add(row);
-            }
-        }
-
         /* call recursive circuit build function */
 
         List<BuildWorker> buildWorkers = new ArrayList<>();
 
         /* initialize build workers with differing start gates */
-        for (int i = 0; i < combinations.get(0).size(); i++) {
-            TreeCircuit newCircuit = new TreeCircuit(combinations.get(0).get(i).get(0));
-            buildWorkers.add(new BuildWorker(this, newCircuit, 1, synConfig.getMaxDepth()));
+        for (LogicType type : gateTypes) {
+
+            if (type == LogicType.EMPTY)
+                continue;
+
+            TreeCircuit newCircuit = new TreeCircuit(type);
+            buildWorkers.add(new BuildWorker(this, gateLib, newCircuit, gateTypes, 1, synConfig.getMaxDepth(), synConfig.getMaxWeight()));
         }
 
         int numThreads = synConfig.getSynLimitThreadsNum() == 0 ? availableProcessors : Math.min(synConfig.getSynLimitThreadsNum(), availableProcessors);
@@ -354,7 +320,7 @@ public class EnumeratorFast {
 
     /* helper functions for handling of primitive circuits */
 
-    private boolean isCoveredByLibrary(List<LogicType> gates) {
+    boolean isCoveredByLibrary(List<LogicType> gates) {
 
         // check if enough gate groups are available
         int numGates = 0;
@@ -387,8 +353,18 @@ public class EnumeratorFast {
         return true;
     }
 
+    boolean fulfillsMaxWeight(List<LogicType> row) {
 
-    private boolean isNotEmpty(List<LogicType> row) {
+        int weight = 0;
+
+        for (LogicType type : row) {
+            weight += type.getWeight();
+        }
+
+        return weight <= synConfig.getMaxWeight();
+    }
+
+    boolean isNotEmpty(List<LogicType> row) {
 
         for (LogicType type : row) {
             if (type != LogicType.EMPTY)
@@ -401,6 +377,8 @@ public class EnumeratorFast {
     String evaluateTreeCircuit(TreeCircuit circuit, String inputMapping) {
 
         List<TreeNode> postOrder = circuit.serializePostOrder();
+
+        Map<String, TreeNode> inputVariableMapping = new HashMap<>();
 
         int i = 0;
 
@@ -416,17 +394,46 @@ public class EnumeratorFast {
                     node.expression = "~(" + node.child0.expression + ")";
                 }
             } else {
-                String left = (node.child0 == null || node.child0.type == LogicType.EMPTY) ? intermediateVariables.get(i++) : node.child0.expression;
-                String right = (node.child1 == null || node.child1.type == LogicType.EMPTY) ? intermediateVariables.get(i++) : node.child1.expression;
+
+                String left;
+                String right;
+
+                if (node.child0 == null || node.child0.type == LogicType.EMPTY) {
+                    left = intermediateVariables.get(i++);
+                    inputVariableMapping.put(left, node);
+                } else {
+                    left = node.child0.expression;
+                }
+
+                if (node.child1 == null || node.child1.type == LogicType.EMPTY) {
+                    right = intermediateVariables.get(i++);
+                    inputVariableMapping.put(right, node);
+                } else {
+                    right = node.child1.expression;
+                }
+
                 node.expression = (node.type == LogicType.NOR2 ? "~(" : "(") + left + "|" + right + ")";
             }
         }
 
         String expression = circuit.getRootNode().expression;
 
+        Map<TreeNode, Set<String>> primaryInputMapping = new HashMap<>();
+
         for (int j = 0; j < i; j++) {
+
+            String varToReplace = intermediateVariables.get(j);
+
             String substitution = inputVars.get(Character.getNumericValue(inputMapping.charAt(j)));
-            expression = expression.replaceAll(intermediateVariables.get(j), substitution);
+
+            TreeNode gate = inputVariableMapping.get(varToReplace);
+            if (gate != null) {
+                primaryInputMapping.putIfAbsent(gate, new HashSet<>());
+                if (!primaryInputMapping.get(gate).add(substitution))
+                    return null;
+            }
+
+            expression = expression.replaceAll(varToReplace, substitution);
         }
 
         return expression;

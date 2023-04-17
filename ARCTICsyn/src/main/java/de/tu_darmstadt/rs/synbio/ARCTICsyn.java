@@ -66,12 +66,13 @@ public class ARCTICsyn {
         EnumeratorFast enumerator = new EnumeratorFast(gateLib, inputTruthTable, synConfig);
 
         enumerator.enumerate();
-        List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().get(inputTruthTable));
 
-        if (circuits.isEmpty()) {
+        if (enumerator.getResultCircuits().get(inputTruthTable) == null) {
             logger.info("No circuit structures found.");
             return;
         }
+
+        List<Circuit> circuits = new ArrayList<>(enumerator.getResultCircuits().get(inputTruthTable));
 
         logger.info("Found " + circuits.size() + " circuits.");
 

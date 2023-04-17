@@ -115,7 +115,7 @@ public class EnumeratorFast {
                 continue;
 
             TreeCircuit newCircuit = new TreeCircuit(type);
-            buildWorkers.add(new BuildWorker(this, gateLib, newCircuit, gateTypes, 1, synConfig.getMaxDepth(), synConfig.getMaxWeight()));
+            buildWorkers.add(new BuildWorker(this, gateLib, newCircuit, Arrays.asList(LogicType.NOT, LogicType.NOR2, LogicType.EMPTY), 1, synConfig.getMaxDepth(), synConfig.getMaxWeight()));
         }
 
         int numThreads = synConfig.getSynLimitThreadsNum() == 0 ? availableProcessors : Math.min(synConfig.getSynLimitThreadsNum(), availableProcessors);

@@ -50,7 +50,7 @@ public class BuildWorker implements Callable<List<TreeCircuit>> {
         int numberOfInputs = circuit.getNumOpenInputs(false);
 
         // iterate over rows with corresponding number of gates/entries
-        for (int i = 0; i < (int) Math.pow(enumerator.gateTypes.size(), numberOfInputs); i++) {
+        for (int i = 0; i < (int) Math.pow(gateTypes.size(), numberOfInputs); i++) {
 
             List<LogicType> row = generateRow(numberOfInputs, i);
 

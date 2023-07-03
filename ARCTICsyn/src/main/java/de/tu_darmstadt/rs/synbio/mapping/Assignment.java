@@ -96,12 +96,10 @@ public class Assignment {
     }
 
     public boolean fulfilsConstraints(Circuit structure) {
-        return true;
-    }/*
 
         for (Gate dest : keySet()) {
 
-            if (dest.getLogicType() != LogicType.NOR2)
+            if (dest.getLogicType() != LogicType.NOR2 || dest.getLogicType() != LogicType.OUTPUT_OR2)
                 continue;
 
             Set<Wire> wires = structure.incomingEdgesOf(dest);
@@ -129,7 +127,24 @@ public class Assignment {
 
         }
         return true;
-    }*/
+    }
+
+    public boolean adheresFixedInputs() {
+
+        for (Gate gate : map.keySet()) {
+
+            if (gate.getIdentifier().equals("a") && !map.get(gate).getIdentifier().equals("input_1"))
+                return false;
+
+            if (gate.getIdentifier().equals("b") && !map.get(gate).getIdentifier().equals("input_2"))
+                return false;
+
+            if (gate.getIdentifier().equals("c") && !map.get(gate).getIdentifier().equals("input_3"))
+                return false;
+        }
+
+        return true;
+    }
 
     @Override
     public String toString() {

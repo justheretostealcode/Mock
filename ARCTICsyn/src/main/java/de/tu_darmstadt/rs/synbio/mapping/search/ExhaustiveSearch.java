@@ -20,6 +20,8 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
 
     private final ExhaustiveAssigner assigner;
 
+    private final boolean fixedInputs = true;
+
     public ExhaustiveSearch(Circuit structure, GateLibrary lib, MappingConfiguration mapConfig, SimulationConfiguration simConfig) {
         super(structure, lib, mapConfig, simConfig);
         assigner = new ExhaustiveAssigner(lib, structure);
@@ -34,7 +36,7 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
         //logger.info("Simulating \"" + structure.getIdentifier() + "\" (up to " + assigner.getNumTotalPermutations() + " assignments) with " + availableProcessors + " threads");
 
         for (int i = 0; i < availableProcessors; i ++) {
-            workers.add(new ExhaustiveSearchWorker(assigner, structure, mapConfig, simConfig, gateLib));
+            workers.add(new ExhaustiveSearchWorker(assigner, structure, mapConfig, simConfig, gateLib, fixedInputs));
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(availableProcessors);

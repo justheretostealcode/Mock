@@ -40,6 +40,8 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private final boolean bEagerBranchAndBound;
     private final boolean bVisualize;
 
+    private final boolean fixedInputs = true;
+
     public BranchAndBoundSearch(Circuit structure, GateLibrary lib, MappingConfiguration mapConfig, SimulationConfiguration simConfig) {
         super(structure, lib, mapConfig, simConfig);
 
@@ -365,6 +367,9 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
             Assignment a = new Assignment(assignment);
 
             a.put(logicGate, realization);
+
+            if (fixedInputs && !a.adheresFixedInputs())
+                continue;
 
             if (checkNaive ? !checker.checkSimple(a) : !checker.checkSat(a)) {
                 //logger.info("suppressed branch of assignment with size " + assignment.size());

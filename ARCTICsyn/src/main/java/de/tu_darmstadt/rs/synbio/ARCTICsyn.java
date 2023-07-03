@@ -65,7 +65,9 @@ public class ARCTICsyn {
         logger.info("Enumeration of circuit variants...");
         EnumeratorFast enumerator = new EnumeratorFast(gateLib, inputTruthTable, synConfig);
 
+        long startTime = System.currentTimeMillis();
         enumerator.enumerate();
+        logger.info("duration (ms): " + (System.currentTimeMillis() - startTime));
 
         if (enumerator.getResultCircuits().get(inputTruthTable) == null) {
             logger.info("No circuit structures found.");
@@ -85,14 +87,14 @@ public class ARCTICsyn {
         for (int i = 0; i < circuits.size(); i ++) {
             Circuit circ = circuits.get(i);
             circ.setIdentifier("structure_" + i);
-            circ.print(new File(outputDir, inputTruthTable.toString() + "_" + circ.getIdentifier() + ".dot"));
-            circ.save(new File(outputDir, inputTruthTable.toString() + "_" + circ.getIdentifier() + ".json"));
+            circ.print(new File(outputDir, inputTruthTable + "_" + circ.getIdentifier() + ".dot"));
+            circ.save(new File(outputDir, inputTruthTable + "_" + circ.getIdentifier() + ".json"));
         }
 
-        int minWeight = circuits.stream().map(Circuit::getWeight).min(Integer::compareTo).orElse(0);
+        /*int minWeight = circuits.stream().map(Circuit::getWeight).min(Integer::compareTo).orElse(0);
         logger.warn(inputTruthTable + "," + minWeight + "," + circuits.stream().filter(c -> c.getWeight() == minWeight).count() + "," +
                 circuits.stream().filter(c -> c.getWeight() == minWeight + 1).count() + "," +
-                circuits.stream().filter(c -> c.getWeight() == minWeight + 2).count());
+                circuits.stream().filter(c -> c.getWeight() == minWeight + 2).count());*/
 
         /* technology mapping */
 

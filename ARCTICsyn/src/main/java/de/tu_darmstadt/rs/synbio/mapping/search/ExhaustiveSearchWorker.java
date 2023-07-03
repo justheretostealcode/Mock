@@ -25,14 +25,18 @@ public class ExhaustiveSearchWorker implements Callable<MappingResult> {
 
     private final CompatibilityChecker checker;
 
+    private final boolean fixedInputs;
+
     public ExhaustiveSearchWorker(ExhaustiveAssigner assigner, Circuit structure, MappingConfiguration mapConfig,
-                                  SimulationConfiguration simConfig, GateLibrary gateLibrary) {
+                                  SimulationConfiguration simConfig, GateLibrary gateLibrary, boolean fixedInputs) {
         this.mapConfig = mapConfig;
         this.simulator = new SimulatorInterface(simConfig, gateLibrary);
         this.assigner = assigner;
         this.structure = structure;
 
         this.checker = new CompatibilityChecker(gateLibrary, structure);
+
+        this.fixedInputs = fixedInputs;
     }
 
     @Override
@@ -43,7 +47,7 @@ public class ExhaustiveSearchWorker implements Callable<MappingResult> {
 
         do {
             assignment = assigner.getNextAssignment();
-        } while(assignment != null && !checker.checkSimple(assignment));
+        } while(assignment != null && (!checker.checkSimple(assignment) || !assignment.fulfilsConstraints(structure) || (fixedInputs && !assignment.adheresFixedInputs())));
 
         MappingResult bestRes = null;
         long numSims = 0;
@@ -61,7 +65,7 @@ public class ExhaustiveSearchWorker implements Callable<MappingResult> {
 
             do {
                 assignment = assigner.getNextAssignment();
-            } while(assignment != null && !checker.checkSimple(assignment));
+            } while(assignment != null && (!checker.checkSimple(assignment) || !assignment.fulfilsConstraints(structure) || (fixedInputs && !assignment.adheresFixedInputs())));
         }
 
         simulator.shutdown();

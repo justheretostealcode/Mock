@@ -99,7 +99,7 @@ public class Assignment {
 
         for (Gate dest : keySet()) {
 
-            if (dest.getLogicType() != LogicType.NOR2 || dest.getLogicType() != LogicType.OUTPUT_OR2)
+            if (!(dest.getLogicType().equals(LogicType.NOR2) || dest.getLogicType().equals(LogicType.OUTPUT_OR2)))
                 continue;
 
             Set<Wire> wires = structure.incomingEdgesOf(dest);

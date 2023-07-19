@@ -114,7 +114,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         double temperature = getInitialTemperature(simulator);
         double coolingFactor;
 
-        int movesPerTemp = 10 * (int) Math.pow(problemSize, 0.25);
+        int movesPerTemp = 1 * (int) Math.pow(problemSize, 0.5);
 
         double histBestSDev = Math.abs(bestScore);
 
@@ -257,12 +257,16 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             if (realizationsOfType.size() == 1) {
                 continue;
             }
+
             long numUsedOfType = neighbor.values().stream()
                     .filter(r -> r.getLogicType() == selectedCircuitGate.getLogicType())
                     .count();
 
+            double swapTargetSelect = Math.random();
+            double swapTargetSelectThreshold = (double) numUsedOfType / realizationsOfType.size();
+
             /* all available realizations used in circuit --> swap in circuit */
-            if (numUsedOfType == realizationsOfType.size()) {
+            if (numUsedOfType == realizationsOfType.size() || swapTargetSelect < swapTargetSelectThreshold) {
 
                 List<Gate> swapCandidates = gates.stream()
                         .filter(g -> g.getLogicType() == selectedCircuitGate.getLogicType())

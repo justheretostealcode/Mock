@@ -15,7 +15,7 @@ import os
 import inspect
 import itertools
 import shlex
-import libsim_coop as sim
+import libsim_iwbda as sim
 
 # standard configuration path
 version = '1.2'
@@ -77,13 +77,13 @@ def check_load_and_create(input, file, cluss):
 def real_from_logic_input_matrix(linputs, library, circuit):
     n_ins = len(linputs[0])
     on_off = ['off', 'on']
+    real_inputs = [[0.0034, 2.8], [0.0013, 4.4], [0.0082, 2.5]]
     inputs = np.zeros([len(linputs), n_ins])
     for n in range(len(linputs)):
         for m in range(n_ins):
             lin_to_rin = circuit.gates[circuit.node_idx[sim.input_encoding[m]]].dev
             if not lin_to_rin.startswith('_'):
-                pr = library.devices[lin_to_rin]['promoters'][0]
-                inputs[n][m] = library.parts['promoters'][pr]['typical'][on_off[int(not bool(linputs[n][m]))]]
+                inputs[n][m] = real_inputs[m][int(not bool(linputs[n][m]))]
             else:  # dummy
                 inputs[n][m] = 0.
     return inputs
@@ -117,7 +117,7 @@ def prepare_simulation():
     # check and load bb additional library
     #supplement = check_load_and_create(settings['bb_library'], bb_file, sim.circuit_supplement)
     # build the circuit
-    circuit = sim.nor_circuit(structure, assignment, library, solver=sim.nor_circuit_solver_powell)
+    circuit = sim.nor_circuit(structure, assignment, library, solver=sim.nor_circuit_solver_banach)
     # generate the inputs (I assume, I have a valid truthtable given)
     # we further assume, the inputs are numerated in an alphabethical order
     n_ins = int(round(math.log(len(circuit.structure.truthtable), 2)))
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     for k, v in settings.items():
         argp.add_argument('-' + k[0], '--' + k, required=False, type=type_dict[types[k]], help=comments[k])
     argp.add_argument('--autostart', required=False, action='store_true', default=False, help='if set, simulation starts immediately (no CLI beforehand)')
-    argp.add_argument('--autoexit', required=False, action='store_true', default=False, help='if set, termination after immediately after first simulation (no CLI afterwards)')
+    argp.add_argument('--autoexit', required=False, action='store_true', default=False, help='if set, termination immediately after first simulation (no CLI afterwards)')
     argp.add_argument('--no_cli', required=False, action='store_true', default=False, help='if set, no CLI is called at all (immediate start, immediate exit)')
     settings.update({k: v for k, v in vars(argp.parse_args()).items() if v is not None})
 

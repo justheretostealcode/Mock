@@ -34,7 +34,7 @@
     },
     {
         "primitiveIdentifier": [
-            "OR2"
+            "OUTPUT_OR2"
         ],
         "identifier": "OR_IMPL",
         "group": "OR_IMPL",

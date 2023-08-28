@@ -34,17 +34,12 @@
     },
     {
         "primitiveIdentifier": [
+            "OUTPUT_BUFFER",
             "OUTPUT_OR2"
         ],
-        "identifier": "OR_IMPL",
-        "group": "OR_IMPL",
-        "biorep": {
-            "response_function": {
-                "type": "IMPLICIT_OR",
-                "equation": "x",
-                "parameters": {}
-            }
-        }
+        "identifier": "output_1",
+        "group": "YFP",
+        "biorep": ""
     },
     {
         "primitiveIdentifier": [

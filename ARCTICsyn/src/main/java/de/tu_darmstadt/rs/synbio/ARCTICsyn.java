@@ -111,6 +111,8 @@ public class ARCTICsyn {
 
                 try {
                     MappingResult result = sim.assign();
+                    logger.info(result.getStructure().getIdentifier() + "," + result.getStructure().getWeight() + "," + result.getScore());
+
                     int relSize = circuits.get(i).getWeight() - minSize;
 
                     if (bestResults[relSize] == null || result.getScore() > bestResults[relSize].getScore())
@@ -139,7 +141,7 @@ public class ARCTICsyn {
 
                     result.getStructure().saveGml(new File(outputDir.getParent(), "result_" + result.getStructure().getTruthTable() + "_" + i + "_relax.gml"), result.getAssignment());
 
-                    logger.info(result.getStructure().getTruthTable() + "," + i + "," + result.getStructure().getNumberLogicGates() + "," + result.getScore());
+                    logger.info(result.getStructure().getTruthTable() + "," + i + "," + result.getStructure().getNumberLogicGates() + "," + result.getScore() + "," + result.getNeededSimulations());
 
                     currentBestScore = result.getScore();
 

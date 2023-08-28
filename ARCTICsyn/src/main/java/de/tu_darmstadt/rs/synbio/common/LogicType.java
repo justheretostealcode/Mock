@@ -74,7 +74,7 @@ public enum LogicType {
         if (this.equals(EMPTY) || this.equals(INPUT) || this.equals(OUTPUT_BUFFER))
             return 0;
         else if (this.equals(OUTPUT_OR2))
-            return 1;
+            return 0;
         else
             return 1;
     }

@@ -1,8 +1,6 @@
 """
 Author: Erik Kubaczka
 """
-import json
-from collections import OrderedDict
 
 from models.four_state_promoter_model import FourStatePromoterModel
 import numpy as np

@@ -74,9 +74,11 @@ class CircuitEvaluator:
         circuit_output_vals = []
         circuit_energy_rates = []
 
+        input_ids = list(structure.inputs)
+        input_ids.sort()
 
         for input_vals, output_val in truthtable.input_output_truthtable():
-            input_vals_dict = dict(zip(structure.inputs, input_vals))
+            input_vals_dict = dict(zip(input_ids, input_vals))
             gate_output_vals = circuit(input_vals_dict=input_vals_dict)
             cur_energy_rate = circuit.energy_rate
 
@@ -87,6 +89,8 @@ class CircuitEvaluator:
 
             circuit_output_vals.append(cur_out_vals)
             circuit_energy_rates.append(cur_energy_rate)
+
+            print(gate_output_vals)
             pass
 
         circuit_output_vals = np.array(circuit_output_vals)
@@ -100,6 +104,8 @@ class CircuitEvaluator:
             cur_score = self.functional_score(dataON=dataON, dataOFF=dataOFF)
 
             functional_scores[out_id] = cur_score
+
+
 
         energy_score = self.energy_score(circuit_energy_rates)
 

@@ -7,16 +7,11 @@ Created on Mon Oct 12 13:52:04 2020
 
 import numpy as np
 import numpy.linalg as nla
-import csv
-import math
-import matplotlib.pyplot as plt
 import json
-import time
-import os
 import sys
 import scipy.optimize as so
 from copy import copy, deepcopy
-from autograd import elementwise_grad as grad
+
 
 
 # The interfacing in the simulator methods and marshalling and demarshalling

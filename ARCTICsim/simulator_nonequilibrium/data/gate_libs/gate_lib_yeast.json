@@ -38,8 +38,7 @@
             "OUTPUT_OR2"
         ],
         "identifier": "output_1",
-        "group": "YFP",
-        "biorep": ""
+        "group": "YFP"
     },
     {
         "primitiveIdentifier": [
@@ -48,6 +47,13 @@
         ],
         "identifier": "P1_PhlF",
         "group": "PhlF",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 37333367.298620015,
+                "y_m": 616179852.5732179,
+                "d_y_m": -11.748066684573487
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -94,6 +100,13 @@
         ],
         "identifier": "P1_BM3RI",
         "group": "BM3RI",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 36386621.63281493,
+                "y_m": 830282203.355136,
+                "d_y_m": -20.225887886016704
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -140,6 +153,13 @@
         ],
         "identifier": "P1_QacR",
         "group": "QacR",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 52164284.01253006,
+                "y_m": 439885255.0682882,
+                "d_y_m": -6.445957974099717
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -186,6 +206,13 @@
         ],
         "identifier": "P1_CI",
         "group": "CI",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 13864721.65198792,
+                "y_m": 371290760.3184957,
+                "d_y_m": -13.49301580585684
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -232,6 +259,13 @@
         ],
         "identifier": "P2_CI",
         "group": "CI",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 23344803.844337277,
+                "y_m": 649512081.9596479,
+                "d_y_m": -15.545910704844866
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -278,6 +312,13 @@
         ],
         "identifier": "P1_LexA",
         "group": "LexA",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 18041660.665838808,
+                "y_m": 277188351.7715645,
+                "d_y_m": -8.16375092131899
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -324,6 +365,13 @@
         ],
         "identifier": "P2_LexA",
         "group": "LexA",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 35902494.19198769,
+                "y_m": 451908257.9544572,
+                "d_y_m": -7.686032911315735
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -370,6 +418,13 @@
         ],
         "identifier": "P1_CI434",
         "group": "CI434",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 56843577.26098035,
+                "y_m": 695172698.8325454,
+                "d_y_m": -10.66706839185854
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -416,6 +471,13 @@
         ],
         "identifier": "P2_CI434",
         "group": "CI434",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 48321784.77706762,
+                "y_m": 427124810.3873386,
+                "d_y_m": -6.443176248933714
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -462,6 +524,13 @@
         ],
         "identifier": "P1_HKCI",
         "group": "HKCI",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 36793921.152447134,
+                "y_m": 464504651.0822567,
+                "d_y_m": -7.868103162277569
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -508,6 +577,13 @@
         ],
         "identifier": "P1_PsrA",
         "group": "PsrA",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 54217100.20863965,
+                "y_m": 483471253.6793171,
+                "d_y_m": -6.87266063229788
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {
@@ -554,6 +630,13 @@
         ],
         "identifier": "P1_IcaR",
         "group": "IcaR",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 28843950.4468304,
+                "y_m": 559454318.1817154,
+                "d_y_m": -10.835797949752084
+            }
+        },
         "biorep": {
             "model": {
                 "GENE": {

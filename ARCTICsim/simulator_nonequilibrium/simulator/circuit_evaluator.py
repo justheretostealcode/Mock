@@ -65,6 +65,8 @@ class CircuitEvaluator:
         # Evaluate Circuit
         # Extract relevant Values from circuit vals
         # Extract Energy Level
+        mode = sim_settings["mode"]
+        n_samples = sim_settings["n_samples"] if mode == "samp" else 1
 
         structure = circuit.structure
         truthtable = structure.truthtable
@@ -75,11 +77,20 @@ class CircuitEvaluator:
 
         input_ids = list(structure.inputs)
         input_ids.sort()
+        node_order = structure.combinational_order()
 
         for input_vals, output_val in truthtable.input_output_truthtable():
             input_vals_dict = dict(zip(input_ids, input_vals))
-            gate_output_vals = circuit(input_vals_dict=input_vals_dict, sim_settings=sim_settings)
-            cur_energy_rate = circuit.energy_rate
+            gate_output_vals = {id: np.empty(shape=(n_samples)) for id in node_order}
+            energy_rates = np.empty(shape=(n_samples))
+            for iN in range(n_samples):
+
+                cur_gate_output_vals = circuit(input_vals_dict=input_vals_dict, sim_settings=sim_settings)
+                cur_energy_rate = circuit.energy_rate
+
+                for id in cur_gate_output_vals:
+                    gate_output_vals[id][iN] = cur_gate_output_vals[id]
+                energy_rates[iN] = cur_energy_rate
 
             cur_out_vals = []
             for out_id in structure.outputs:
@@ -87,23 +98,25 @@ class CircuitEvaluator:
                 cur_out_vals.append(gate_output_vals[out_id])
 
             circuit_output_vals.append(cur_out_vals)
-            circuit_energy_rates.append(cur_energy_rate)
+            circuit_energy_rates.append(energy_rates)
 
-            #print(gate_output_vals)
+            # print(gate_output_vals)
             pass
 
         circuit_output_vals = np.array(circuit_output_vals)
         circuit_energy_rates = np.array(circuit_energy_rates)
 
-
         functional_scores = {}
         for out_id in circuit_output_vals_dict:
             cur_entry = circuit_output_vals_dict[out_id]
-            dataON = np.array(cur_entry[1])
-            dataOFF = np.array(cur_entry[0])
-            cur_score = self.functional_score(dataON=dataON, dataOFF=dataOFF)
+            functional_score = np.infty
+            for dataON in cur_entry[1]:
+                for dataOFF in cur_entry[0]:
+                    cur_score = self.functional_score(dataON=dataON, dataOFF=dataOFF)
+                    if cur_score < functional_score:
+                        functional_score = cur_score
 
-            functional_scores[out_id] = cur_score
+            functional_scores[out_id] = functional_score
 
         energy_score = self.energy_score(circuit_energy_rates)
 

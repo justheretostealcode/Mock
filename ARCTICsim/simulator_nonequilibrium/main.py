@@ -20,10 +20,14 @@ settings_config_path = './settings_config.cfg'
 
 
 def sim_run(lineargs, json_str=None):
-    global evaluator, argp
+    global evaluator, argp, settings
     args = " ".join(lineargs)
-    sim_settings = {k: v for k, v in vars(argp.parse_args(shlex.split(args, posix=False))).items() if v is not None}
+    sim_settings = {}
+    sim_settings.update(settings)
+    sim_settings_update = {k: v for k, v in vars(argp.parse_args(shlex.split(args, posix=False))).items() if v is not None}
+    sim_settings.update(sim_settings_update)
     assignment_string = sim_settings["assignment"]
+
     #
 
     assignment_string = assignment_string.replace("\'", "")

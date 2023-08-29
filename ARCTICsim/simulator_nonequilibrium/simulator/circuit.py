@@ -47,7 +47,7 @@ class Circuit:
 
 
 
-    def __call__(self, input_vals_dict):
+    def __call__(self, input_vals_dict, sim_settings):
         assignment = self.assignment
         propagation_graph = self.propagation_graph
         # inputs_graph = self.inputs_graph
@@ -68,7 +68,7 @@ class Circuit:
             in_vals = gate_input_vals[gate_id]
             assert not (any(np.isnan(in_vals)) or any([val < 0 for val in in_vals]))
 
-            out_val = device(*in_vals)
+            out_val = device(*in_vals, sim_settings=sim_settings)
             gate_output_vals[gate_id] = out_val
 
             # Propagate device output to subsequent gates

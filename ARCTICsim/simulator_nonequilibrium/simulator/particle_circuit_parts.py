@@ -17,9 +17,8 @@ class Device:
         return f"{self.__class__.__name__} ({self.identifier})"
 
 
-
 class InputOutput(Device):
-    def __call__(self, val):
+    def __call__(self, val, sim_settings):
         return val
 
 
@@ -27,6 +26,7 @@ class Input(InputOutput):
     def __init__(self, id):
         super().__init__(id)
         self.type = "INPUT"
+
 
 class LutInput(InputOutput):
     def __init__(self, input_entry):
@@ -38,7 +38,7 @@ class LutInput(InputOutput):
 
         self.entry = input_entry
 
-    def __call__(self, bool_val):
+    def __call__(self, bool_val, sim_settings):
         return self.values[str(bool_val)]
 
 
@@ -56,8 +56,9 @@ class OutputOR(InputOutput):
         self.type = "OUTPUT_OR2"
         pass
 
-    def __call__(self, val1, val2):
+    def __call__(self, val1, val2, sim_settings):
         return val1 + val2
+
 
 class OutputBuffer(InputOutput):
     def __init__(self, gate_entry):
@@ -68,7 +69,6 @@ class OutputBuffer(InputOutput):
         pass
 
 
-
 class Gate(Device):
     def __init__(self, gate_entry):
         id = gate_entry["identifier"]
@@ -77,7 +77,7 @@ class Gate(Device):
         self.gate_entry = gate_entry
         self.energy_rate = np.nan
 
-        #self.identifier = gate_entry["identifier"]
+        # self.identifier = gate_entry["identifier"]
         self.group = gate_entry["group"]
 
         pass
@@ -86,9 +86,6 @@ class Gate(Device):
     def get_model_entry(gate_entry):
         model_entry = gate_entry["biorep"]["model"]
         return model_entry
-
-
-
 
 
 class NOTGate(Gate):
@@ -101,22 +98,30 @@ class NOTGate(Gate):
 
         pass
 
-    def __call__(self, val):
+    def __call__(self, val, sim_settings):
         model = self.model
+
+        mode = sim_settings["mode"]
 
         mean_P, var_P, mean_M, var_M, energy_rate = model.get_distributions_and_energy_rate(val)
 
         # The energy is computed via the expected value
         self.energy_rate = energy_rate
 
-        # The function value is sampled from the distribution
-        common_val = var_P / mean_P ** 2 + 1
-        mu = np.log(mean_P / np.sqrt(common_val))
-        sigma = np.sqrt(np.log(common_val))
+        if mode == "samp":
+            # The function value is sampled from the distribution
+            common_val = var_P / mean_P ** 2 + 1
+            mu = np.log(mean_P / np.sqrt(common_val))
+            sigma = np.sqrt(np.log(common_val))
 
-        sample = np.random.lognormal(mu, sigma, 1)
+            sample = np.random.lognormal(mu, sigma, 1)
 
-        output = sample[0]
+            output = sample[0]
+        elif mode == "det":
+            output = mean_P
+        else:
+            raise Exception(f"Mode {mode} is not supported.")
+
         return output
 
 
@@ -126,14 +131,14 @@ class NORGate(Gate):
         super().__init__(gate_entry=gate_entry)
         self.type = "NOR2"
 
-        #self.or_gate = OutputOR(gate_entry)
+        # self.or_gate = OutputOR(gate_entry)
         self.not_gate = NOTGate(gate_entry)
         pass
 
-    def __call__(self, val1, val2):
-        #val = self.or_gate(val1, val2)
+    def __call__(self, val1, val2, sim_settings):
+        # val = self.or_gate(val1, val2)
         val = val1 + val2
-        output = self.not_gate(val)
+        output = self.not_gate(val, sim_settings=sim_settings)
 
         self.energy_rate = self.not_gate.energy_rate
 

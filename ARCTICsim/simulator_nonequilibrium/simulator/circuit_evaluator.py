@@ -78,7 +78,7 @@ class CircuitEvaluator:
 
         for input_vals, output_val in truthtable.input_output_truthtable():
             input_vals_dict = dict(zip(input_ids, input_vals))
-            gate_output_vals = circuit(input_vals_dict=input_vals_dict)
+            gate_output_vals = circuit(input_vals_dict=input_vals_dict, sim_settings=sim_settings)
             cur_energy_rate = circuit.energy_rate
 
             cur_out_vals = []

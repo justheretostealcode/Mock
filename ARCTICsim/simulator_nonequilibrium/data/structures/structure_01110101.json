@@ -1,61 +1,54 @@
 {
   "truthtable": "01110101",
+  "gate_truthtables": {
+    "NOR2_3": "00110000",
+    "NOT_4": "00001111",
+    "b": "11001100",
+    "NOR2_1": "10001010",
+    "NOT_2": "01010101",
+    "c": "10101010",
+    "a": "11110000",
+    "O": "01110101",
+    "NOT_0": "01110101"
+  },
   "graph": {
     "creator": "JGraphT JSON Exporter",
     "version": "1",
     "nodes": [
       {
         "id": "O",
-        "expression": "x",
-        "primitiveIdentifier": "",
-        "type": "OUTPUT"
+        "type": "OUTPUT_BUFFER"
       },
       {
         "id": "NOT_0",
-        "expression": "~x",
-        "primitiveIdentifier": "NOT",
-        "type": "LOGIC"
+        "type": "NOT"
       },
       {
         "id": "NOR2_1",
-        "expression": "~(x | y)",
-        "primitiveIdentifier": "NOR2",
-        "type": "LOGIC"
+        "type": "NOR2"
       },
       {
         "id": "NOT_2",
-        "expression": "~x",
-        "primitiveIdentifier": "NOT",
-        "type": "LOGIC"
+        "type": "NOT"
       },
       {
         "id": "c",
-        "expression": "c",
-        "primitiveIdentifier": "",
         "type": "INPUT"
       },
       {
         "id": "NOR2_3",
-        "expression": "~(x | y)",
-        "primitiveIdentifier": "NOR2",
-        "type": "LOGIC"
+        "type": "NOR2"
       },
       {
         "id": "NOT_4",
-        "expression": "~x",
-        "primitiveIdentifier": "NOT",
-        "type": "LOGIC"
+        "type": "NOT"
       },
       {
         "id": "a",
-        "expression": "a",
-        "primitiveIdentifier": "",
         "type": "INPUT"
       },
       {
         "id": "b",
-        "expression": "b",
-        "primitiveIdentifier": "",
         "type": "INPUT"
       }
     ],

@@ -2,7 +2,7 @@ import cProfile
 
 from matplotlib import pyplot as plt
 
-from simulator.particle_circuit_parts import ImplicitOrGate, NORGate, NOTGate, LutInput
+from simulator.particle_circuit_parts import OutputOR, NORGate, NOTGate, LutInput, OutputBuffer
 from simulator.utils import JsonFile
 
 
@@ -21,36 +21,38 @@ class GateLib:
 
         self.gates_by_type_and_name = {}
         for gate in self.gates:
-            prim_ident = gate.primitive_identifier
+            gate_type = gate.type
             ident = gate.identifier
-            if prim_ident not in self.gates_by_type_and_name:
-                self.gates_by_type_and_name[prim_ident] = {}
+            if gate_type not in self.gates_by_type_and_name:
+                self.gates_by_type_and_name[gate_type] = {}
 
-            if ident in self.gates_by_type_and_name[prim_ident]:
+            if ident in self.gates_by_type_and_name[gate_type]:
                 raise Exception(f"{ident} is already in the lookup dict")
 
-            self.gates_by_type_and_name[prim_ident][ident] = gate
+            self.gates_by_type_and_name[gate_type][ident] = gate
         pass
 
     @staticmethod
     def _populate_gate_entry(gate_entry):
-        def _get_gate_implementation(primitive_identifier):
-            if primitive_identifier == "NOT":
+        def _get_gate_implementation(gate_type):
+            if gate_type == "NOT":
                 return NOTGate
-            elif primitive_identifier == "NOR2":
+            elif gate_type == "NOR2":
                 return NORGate
-            elif primitive_identifier == "OR2":
-                return ImplicitOrGate
-            elif primitive_identifier == "INPUT":
+            elif gate_type == "INPUT":
                 return LutInput
+            elif gate_type == "OUTPUT_OR2":
+                return OutputOR
+            elif gate_type == "OUTPUT_BUFFER":
+                return OutputBuffer
             else:
-                raise Exception(f"Primitive Identifier \"{primitive_identifier}\" not supported")
+                raise Exception(f"Type \"{gate_type}\" not supported")
             pass
 
         gates = []
 
-        for primitive_identifier in gate_entry["primitiveIdentifier"]:
-            gate_implementation = _get_gate_implementation(primitive_identifier)
+        for gate_type in gate_entry["primitiveIdentifier"]:
+            gate_implementation = _get_gate_implementation(gate_type)
 
             gate = gate_implementation(gate_entry)
             gates.append(gate)

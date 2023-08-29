@@ -24,9 +24,10 @@ def sim_run(lineargs, json_str=None):
     args = " ".join(lineargs)
     sim_settings = {k: v for k, v in vars(argp.parse_args(shlex.split(args, posix=False))).items() if v is not None}
     assignment_string = sim_settings["assignment"]
+    #
+
     assignment_string = assignment_string.replace("\'", "")
     json_assignment = JsonFile(content=assignment_string)
-
     assignment = CircuitAssignment(json_file=json_assignment, gate_lib=evaluator.gate_lib)
 
     old_structure = evaluator.structure
@@ -43,7 +44,7 @@ def sim_run(lineargs, json_str=None):
 
 
 # start -a {"a":1}
-# start -a '{"a": "input_3",   "b": "input_1",   "c": "input_2",   "NOT_0": "P1_PhlF",   "NOT_2": "P1_BM3RI",   "NOT_4": "P1_QacR",   "NOR2_1": "P1_CI",   "NOR2_3": "P2_CI",   "O": "output_1"}'
+# start -a={"a":"input_3","b":"input_1","c":"input_2","NOT_0":"P1_PsrA","NOT_2":"P1_IcaR","NOT_4":"P1_PhlF","NOR2_1":"P1_QacR","NOR2_3":"P1_HKCI","O":"output_1"}
 
 def sim_exit(lineargs):
     # Finish the simulator

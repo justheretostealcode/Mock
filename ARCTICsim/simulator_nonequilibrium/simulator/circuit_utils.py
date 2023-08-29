@@ -19,8 +19,9 @@ class CircuitStructure(circuit_structure):
     class NodeInfo:
         def __init__(self, node_info_dict):
             self.type = node_info_dict["type"]
-            self.primitiveIdentifier = node_info_dict["primitiveIdentifier"]
-            self.expression = node_info_dict["expression"]
+            # Legacy fields
+            # self.primitiveIdentifier = node_info_dict["primitiveIdentifier"]
+            # self.expression = node_info_dict["expression"]
             self.id = node_info_dict["id"]
 
     def __init__(self, json: JsonFile):
@@ -61,24 +62,33 @@ class CircuitAssignment:
         self.gate_lib = gate_lib
 
     def __call__(self, node_info: CircuitStructure.NodeInfo) -> Device:
-        # ToDo Return the realized gate
+
         id = node_info.id
-        primitiveIdentifier = node_info.primitiveIdentifier
+        # Legacy field
+        #primitiveIdentifier = node_info.primitiveIdentifier
         node_type = node_info.type
 
         device_id = self.mapping[id]
 
-        if node_type == "INPUT":
-            gate = Input(id)
-            if device_id in self.gate_lib.gates_by_type_and_name["INPUT"]:
-                gate = self.gate_lib.gates_by_type_and_name["INPUT"][device_id]
-        elif node_type == "OUTPUT":
-            gate = Output(id)
-        elif node_type == "LOGIC":
-            gate = self.gate_lib.gates_by_type_and_name[primitiveIdentifier][device_id]
-        else:
-            raise Exception(
-                f"The node type {node_type} is not supported. It needs to be either of 'INPUT', 'OUTPUT', and 'LOGIC'.")
+        # if node_type == "INPUT":
+        #     gate = Input(id)
+        #     if device_id in self.gate_lib.gates_by_type_and_name["INPUT"]:
+        #         gate = self.gate_lib.gates_by_type_and_name["INPUT"][device_id]
+        # elif node_type == "OUTPUT":
+        #     gate = Output(id)
+        # elif node_type == "NOT" or node_type == "NOR2":
+        #     gate = self.gate_lib.gates_by_type_and_name[node_type][device_id]
+        # else:
+        #     raise Exception(
+        #         f"The node type {node_type} is not supported. It needs to be either of {self.gate_lib.gates_by_type_and_name.keys()}.")
+        gates_by_type_and_name = self.gate_lib.gates_by_type_and_name
+        if node_type not in gates_by_type_and_name:
+            raise Exception(f"The node type {node_type} is not supported. It needs to be either of {self.gate_lib.gates_by_type_and_name.keys()}.")
+
+        if device_id not in gates_by_type_and_name[node_type]:
+            raise Exception(f"The device {device_id} is not known. The known devices for node type {node_type} are {self.gate_lib.gates_by_type_and_name[node_type].keys()}.")
+
+        gate = self.gate_lib.gates_by_type_and_name[node_type][device_id]
         return gate
 
 

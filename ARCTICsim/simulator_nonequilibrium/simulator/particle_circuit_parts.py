@@ -1,6 +1,8 @@
 """
 Author: Erik Kubaczka
 """
+import json
+from collections import OrderedDict
 
 from models.four_state_promoter_model import FourStatePromoterModel
 import numpy as np
@@ -9,9 +11,11 @@ import numpy as np
 class Device:
     def __init__(self, id):
         self.identifier = id
+        self.energy_rate = 0
 
     def __str__(self):
         return f"{self.__class__.__name__} ({self.identifier})"
+
 
 
 class InputOutput(Device):
@@ -30,10 +34,8 @@ class LutInput(InputOutput):
         super().__init__(id)
 
         self.values = input_entry["biorep"]
-        self.primitive_identifier = "INPUT"
-
-
         self.type = "INPUT"
+
         self.entry = input_entry
 
     def __call__(self, bool_val):
@@ -44,6 +46,27 @@ class Output(InputOutput):
     def __init__(self, id):
         super().__init__(id)
         self.type = "OUTPUT"
+
+
+class OutputOR(InputOutput):
+    def __init__(self, gate_entry):
+        id = gate_entry["identifier"]
+        super().__init__(id)
+        self.gate_entry = gate_entry
+        self.type = "OUTPUT_OR2"
+        pass
+
+    def __call__(self, val1, val2):
+        return val1 + val2
+
+class OutputBuffer(InputOutput):
+    def __init__(self, gate_entry):
+        id = gate_entry["identifier"]
+        super().__init__(id)
+        self.gate_entry = gate_entry
+        self.type = "OUTPUT_BUFFER"
+        pass
+
 
 
 class Gate(Device):
@@ -65,21 +88,13 @@ class Gate(Device):
         return model_entry
 
 
-class ImplicitOrGate(Gate):
-    def __init__(self, gate_entry):
-        super().__init__(gate_entry=gate_entry)
-        self.primitive_identifier = "OR2"
-        pass
 
-    def __call__(self, val1, val2):
-        self.energy_rate = 0
-        return val1 + val2
 
 
 class NOTGate(Gate):
     def __init__(self, gate_entry):
         super().__init__(gate_entry=gate_entry)
-        self.primitive_identifier = "NOT"
+        self.type = "NOT"
 
         model_entry = Gate.get_model_entry(gate_entry)
         self.model = FourStatePromoterModel(model_entry)
@@ -109,14 +124,15 @@ class NORGate(Gate):
 
     def __init__(self, gate_entry):
         super().__init__(gate_entry=gate_entry)
-        self.primitive_identifier = "NOR2"
+        self.type = "NOR2"
 
-        self.or_gate = ImplicitOrGate(gate_entry)
+        #self.or_gate = OutputOR(gate_entry)
         self.not_gate = NOTGate(gate_entry)
         pass
 
     def __call__(self, val1, val2):
-        val = self.or_gate(val1, val2)
+        #val = self.or_gate(val1, val2)
+        val = val1 + val2
         output = self.not_gate(val)
 
         self.energy_rate = self.not_gate.energy_rate

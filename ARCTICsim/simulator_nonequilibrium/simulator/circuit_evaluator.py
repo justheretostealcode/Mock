@@ -7,7 +7,6 @@ from simulator.scores import FunctionalScore, EnergyScore
 from simulator.circuit_utils import CircuitAssignment, CircuitStructure
 
 
-
 # ToDos
 # 1. Implement Interface    ✓
 #   - Load Stucture             ✓
@@ -90,11 +89,12 @@ class CircuitEvaluator:
             circuit_output_vals.append(cur_out_vals)
             circuit_energy_rates.append(cur_energy_rate)
 
-            print(gate_output_vals)
+            #print(gate_output_vals)
             pass
 
         circuit_output_vals = np.array(circuit_output_vals)
         circuit_energy_rates = np.array(circuit_energy_rates)
+
 
         functional_scores = {}
         for out_id in circuit_output_vals_dict:
@@ -104,8 +104,6 @@ class CircuitEvaluator:
             cur_score = self.functional_score(dataON=dataON, dataOFF=dataOFF)
 
             functional_scores[out_id] = cur_score
-
-
 
         energy_score = self.energy_score(circuit_energy_rates)
 

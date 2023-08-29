@@ -75,8 +75,8 @@ class Circuit:
             for subsidary in propagation_graph[gate_id]:
                 gate_input_vals[subsidary].append(out_val)
 
-            if node_info.type == "LOGIC":
-                energy_rate += device.energy_rate
+            #if node_info.type == "LOGIC":
+            energy_rate += device.energy_rate
 
             #print("")
             #print(gate_id)
@@ -90,10 +90,10 @@ class Circuit:
 
 
 if __name__ == '__main__':
-    json_structure = JsonFile(path="../data/structures/01110101.json")
+    json_structure = JsonFile(path="data/structures/structure_01110101.json")
     json_gatelib = JsonFile(path="../data/gate_libs/gate_lib_yeast.json")
     gatelib = GateLib(json_gatelib)
-    # json = JSON_FILE(path="../data/structures/10000000.json")
+
     # assignment_json = '{"a":"input_3","b":"input_1","c":"input_2","NOT_0":"H1_HlyIIR","NOT_2":"S2_SrpR","NOT_4":"B3_BM3R1","NOR2_1":"L1_LitR","NOR2_3":"P2_PhlF","O":"output_1"}'
     json_assignment = JsonFile(path="../data/assignments/assignment_01110101.json")
     assignment = CircuitAssignment(json_assignment.content, gate_lib=gatelib)

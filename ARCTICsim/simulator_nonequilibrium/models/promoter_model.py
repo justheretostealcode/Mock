@@ -2,9 +2,13 @@
 Author: Erik Kubaczka
 E-Mail: erik.kubaczka@tu-darmstadt.de
 """
+
+
 import numpy as np
 
 from models.steady_state_ctmc import SteadyStateCTMC
+
+from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this
 
 
 class PromoterModel(SteadyStateCTMC):
@@ -37,6 +41,7 @@ class PromoterModel(SteadyStateCTMC):
             str_to_expr(c, r0, l12, l21, l23, l32, l34, l43, l41, l14, self._LAMMERS_SHARPNESS_EXPRESSION)
         pass
 
+    @cache_this
     def E_mu1(self, external_concentrations):
         vals = super().distribution(external_concentrations) * self._mu1_rates
         E_mu1 = np.sum(vals)

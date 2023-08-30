@@ -78,6 +78,8 @@ class FourStatePromoterModel(EnergyAwareMomentModel):
         return k12, k21, k23, k32, k34, k43, k41, k14
 
     def get_infinitesimal_generator_function(cls, rates=None, lammers_rates=None, atp=1, adp_pi=1, c_func=None):
+        def infinitesimal_generator_func(i1, i2, l):
+            return promoter_rates[i1][i2](l)
         if c_func is None:
             c_func = lambda l: l
             # gamma = 100
@@ -119,7 +121,8 @@ class FourStatePromoterModel(EnergyAwareMomentModel):
                           [zero_func, k32, k33, k34],
                           [k41, zero_func, k43, k44]]
 
-        K = lambda i1, i2, l: promoter_rates[i1][i2](l)
+        #K = lambda i1, i2, l: promoter_rates[i1][i2](l)
+        K = infinitesimal_generator_func
 
         return K
 

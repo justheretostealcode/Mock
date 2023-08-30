@@ -2,9 +2,13 @@
 Author: Erik Kubaczka
 E-Mail: erik.kubaczka@tu-darmstadt.de
 """
-import scipy as scp
+
+import itertools
+
 import numpy as np
-import inspect
+
+from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this, clear_cache
+
 
 class SteadyStateCTMC:
 
@@ -12,35 +16,31 @@ class SteadyStateCTMC:
                  N_states,
                  infinitesimal_generator_function):
         self.N_states = N_states
-        self.infinitesimal_generator_function = infinitesimal_generator_function
-        self.cache = {}
+        self.update_infinitesimal_generator_function(infinitesimal_generator_function)
+        # self.infinitesimal_generator_function = infinitesimal_generator_function
+
         pass
 
     def update_infinitesimal_generator_function(self, new_function):
         self.infinitesimal_generator_function = new_function
 
-        # self.cache = {}
-        # Invalidate cache
+        clear_cache()
+        pass
 
-
+    @cache_this
     def propensity_matrix(self, external_concentrations):
-        # external_concentrations_ID = str(external_concentrations)
-        # cur_func = str(inspect.stack()[0][3])
-        # calling_func = str(inspect.stack()[1][3])
-        # if cur_func in self.cache and external_concentrations_ID in self.cache[cur_func]:
-        #     return self.cache[cur_func][external_concentrations_ID]
 
-        propensity_mat = np.array([[self.infinitesimal_generator_function(iR, iC, external_concentrations)
-                                    for iC in range(self.N_states)]
-                                   for iR in range(self.N_states)], dtype=float)
-
-
+        # propensity_mat_legacy = np.array([[self.infinitesimal_generator_function(iR, iC, external_concentrations)
+        #                             for iC in range(self.N_states)]
+        #                            for iR in range(self.N_states)], dtype=float)
+        propensity_mat = np.array([self.infinitesimal_generator_function(index[0], index[1], external_concentrations)
+                                   for index in itertools.product(range(self.N_states), range(self.N_states))],
+                                  dtype=float)
+        propensity_mat = propensity_mat.reshape(self.N_states, -1)
         return propensity_mat
 
+    @cache_this
     def distribution(self, external_concentrations):
-        # external_concentrations_ID = str(external_concentrations)
-        # if "DISTRIBUTION" in self.cache and external_concentrations_ID in self.cache["DISTRIBUTION"]:
-        #     return self.cache["DISTRIBUTION"][str(external_concentrations)]
 
         # The Steady State distribution is derived by
         #   1. Getting the propensity matrix
@@ -54,8 +54,8 @@ class SteadyStateCTMC:
         eigvals, eigvecs = np.linalg.eig(propensity_matrix_transposed)
         # Thresholding is required due to successfully identify
         eps_float = 2.220446049250313e-16
-        zero_threshold = eps_float * np.product(propensity_matrix_transposed.shape) * np.max(
-            propensity_matrix_transposed)
+        # zero_threshold = eps_float * np.product(propensity_matrix_transposed.shape) * np.max(
+        #     propensity_matrix_transposed)
         # eig_index = np.where(np.abs(eigvals) < zero_threshold)[0][0]
         eig_index = np.argmin(np.abs(eigvals))
         state_weights = eigvecs[:, eig_index]
@@ -69,10 +69,9 @@ class SteadyStateCTMC:
         #
         # state_weights = null_space_basis[:, 0]
 
-        state_weights = np.abs(state_weights) # Currently required as the eigenvalue method is of approximative nature only
+        # Currently required as the eigenvalue method is of approximative nature only
+        state_weights = np.abs(state_weights)
         distribution = state_weights / np.sum(state_weights)
-
-        # self.cache["VALID"] and external_concentrations_ID in self.cache["DISTRIBUTION"]
 
         return distribution
 
@@ -95,6 +94,7 @@ class SteadyStateCTMC:
         upper_bound = relaxation_time * np.log(1 / (eps * pi_min))
         return lower_bound, upper_bound
 
+    @cache_this
     def entropy_production_rate(self, external_concentrations):
         # Four State Code
         # if self._N_states != 4:

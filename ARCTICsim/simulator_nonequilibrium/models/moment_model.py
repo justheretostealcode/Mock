@@ -2,9 +2,13 @@
 Author: Erik Kubaczka
 E-Mail: erik.kubaczka@tu-darmstadt.de
 """
+
+
 import numpy as np
 
 from models.promoter_model import PromoterModel
+
+from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this
 
 
 class MomentModel:
@@ -41,12 +45,13 @@ class MomentModel:
         E_P = E_M * self.mu2 / self.d2
         return E_P
 
+    @cache_this
     def func(self, external_concentrations, factor):
         N_states = self.promoter_model.N_states
         LAMBDA = self.promoter_model.propensity_matrix(external_concentrations=external_concentrations)
 
         M = factor * np.eye(N_states) - np.transpose(LAMBDA)
-        #M = M.astype(np.longdouble)
+        # M = M.astype(np.longdouble)
         try:
             M_inv = np.linalg.inv(M)
         except np.linalg.LinAlgError:
@@ -55,6 +60,7 @@ class MomentModel:
             M_inv = np.linalg.inv(M + np.max(M) * np.eye(N_states))
         return M_inv
 
+    @cache_this
     def E_M_Xx(self, external_concentrations):
         M_inv = self.func(external_concentrations=external_concentrations, factor=self.d1)
         E_mu1x_Xx_squared = self.promoter_model.E_mu1x_Xx_squared(external_concentrations=external_concentrations)
@@ -94,6 +100,7 @@ class MomentModel:
         E_M_P = E_M_P / (self.d1 + self.d2)
         return E_M_P
 
+    @cache_this
     def E_M_squared(self, external_concentrations):
         E_mu1 = self.promoter_model.E_mu1(external_concentrations)
         E_M_mu1 = self.E_M_mu1(external_concentrations)

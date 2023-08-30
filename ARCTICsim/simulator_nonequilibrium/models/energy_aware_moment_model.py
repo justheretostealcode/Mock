@@ -2,7 +2,7 @@
 Author: Erik Kubaczka
 E-Mail: erik.kubaczka@tu-darmstadt.de
 """
-import scipy as scp
+
 import numpy as np
 
 from models.moment_model import MomentModel

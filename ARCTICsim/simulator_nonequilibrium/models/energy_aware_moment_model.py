@@ -55,9 +55,9 @@ class EnergyAwareMomentModel(MomentModel):
         pass
 
     def energy_rate(self, external_concentrations):
-        mean_P, var_P, mean_M, var_M, energy_rate = self.get_distributions_and_energy_rate(self, external_concentrations)
+        mean_P, var_P, mean_M, var_M, energy_rate = self.get_distributions_and_energy_rate(self,
+                                                                                           external_concentrations)
         return energy_rate
-
 
     def get_distributions_and_energy_rate(self, external_concentrations):
         def get_energy_per_molecule(molecule_data):

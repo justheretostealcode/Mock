@@ -8,7 +8,7 @@ import numpy as np
 
 from models.promoter_model import PromoterModel
 
-from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this
+from models.custom_cache import cache_this
 
 
 class MomentModel:

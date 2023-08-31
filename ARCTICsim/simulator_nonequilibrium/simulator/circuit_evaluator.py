@@ -33,6 +33,8 @@ class CircuitEvaluator:
         self.set_structure(structure)
 
         self.update_settings(settings)
+
+        # print("Use Python Implementation")
         pass
 
     def set_structure(self, structure: CircuitStructure):

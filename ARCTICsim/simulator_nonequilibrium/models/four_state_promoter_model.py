@@ -13,7 +13,7 @@ class FourStatePromoterModel(EnergyAwareMomentModel):
 
     def __init__(self,
                  gate_params, rates=None):
-
+        #print("FourStatePromoterModel Constructor Called")
         model_params = dict(gate_params)
         promoter_model = model_params["GENE"]
 

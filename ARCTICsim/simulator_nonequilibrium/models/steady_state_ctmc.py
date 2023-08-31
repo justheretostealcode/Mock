@@ -41,27 +41,21 @@ class SteadyStateCTMC:
 
     @cache_this
     def distribution(self, external_concentrations):
-        distribution = np.empty(self.N_states)
-        if False and self.N_states == 4:
+        #distribution = np.empty(self.N_states)
+        if self.N_states == 4:
             # Infinitesimal_generator_function is too slow.
             K = self.infinitesimal_generator_function
             c = external_concentrations
-            state_weights = [K(1, 0, c) * K(2, 1, c) * K(3, 0, c)
-                             + K(1, 0, c) * K(2, 3, c) * K(3, 0, c)
-                             + K(1, 2, c) * K(2, 3, c) * K(3, 0, c)
-                             + K(1, 0, c) * K(2, 1, c) * K(3, 2, c),
-                             K(0, 1, c) * K(2, 1, c) * K(3, 0, c)
-                             + K(0, 1, c) * K(2, 3, c) * K(3, 0, c)
-                             + K(0, 1, c) * K(2, 1, c) * K(3, 2, c)
-                             + K(0, 3, c) * K(2, 1, c) * K(3, 2, c),
-                             K(0, 1, c) * K(1, 2, c) * K(3, 0, c)
-                             + K(0, 3, c) * K(1, 0, c) * K(3, 2, c)
-                             + K(0, 1, c) * K(1, 2, c) * K(3, 2, c)
-                             + K(0, 3, c) * K(1, 2, c) * K(3, 2, c),
-                             K(0, 3, c) * K(1, 0, c) * K(2, 1, c)
-                             + K(0, 3, c) * K(1, 0, c) * K(2, 3, c)
-                             + K(0, 1, c) * K(1, 2, c) * K(2, 3, c)
-                             + K(0, 3, c) * K(1, 2, c) * K(2, 3, c)]
+
+            k10, k12 = K(1, 0, c), K(1, 2, c)
+            k21, k23 = K(2, 1, c), K(2, 3, c)
+            k32, k30 = K(3, 2, c), K(3, 0, c)
+            k01, k03 = K(0, 1, c), K(0, 3, c)
+
+            state_weights = [k10 * k21 * k30 + k10 * k23 * k30 + k12 * k23 * k30 + k10 * k21 * k32,
+                             k01 * k21 * k30 + k01 * k23 * k30 + k01 * k21 * k32 + k03 * k21 * k32,
+                             k01 * k12 * k30 + k03 * k10 * k32 + k01 * k12 * k32 + k03 * k12 * k32,
+                             k03 * k10 * k21 + k03 * k10 * k23 + k01 * k12 * k23 + k03 * k12 * k23]
 
             distribution = state_weights / np.sum(state_weights)
         else:

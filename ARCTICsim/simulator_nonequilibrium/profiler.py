@@ -15,12 +15,12 @@ def start_profiler():
     return profiler
 
 
-def stop_profiler(profiler):
+def stop_profiler(profiler, suffix=""):
     # Get the current timestamp
     current_timestamp = datetime.now()
     formatted_timestamp = current_timestamp.strftime("%Y-%m-%d_%H-%M-%S")
     profiler.disable()
-    file_name = f"profile_results_{formatted_timestamp}.prof"
+    file_name = f"profile_results_{formatted_timestamp}{suffix}.prof"
     profiler.dump_stats(file_name)
     print(f"Visualize results with: snakeviz {file_name}")
     pass

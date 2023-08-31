@@ -18,7 +18,7 @@ class Device:
 
 
 class InputOutput(Device):
-    def __call__(self, val, sim_settings):
+    def __call__(self, val:float, sim_settings) -> float:
         return val
 
 
@@ -38,10 +38,10 @@ class LutInput(InputOutput):
 
         self.entry = input_entry
 
-    def __call__(self, bool_val, sim_settings):
+    def __call__(self, bool_val: int, sim_settings) -> float:
         # ToDo Remove Conversion to RPU
         output = self.values[str(bool_val)]
-        out_val = output# / 2000
+        out_val = output  # / 2000
         return out_val
 
 
@@ -59,7 +59,7 @@ class OutputOR(InputOutput):
         self.type = "OUTPUT_OR2"
         pass
 
-    def __call__(self, val1, val2, sim_settings):
+    def __call__(self, val1: float, val2: float, sim_settings) -> float:
         return val1 + val2
 
 
@@ -101,13 +101,13 @@ class NOTGate(Gate):
 
         pass
 
-    def __call__(self, in_val, sim_settings):
+    def __call__(self, in_val: float, sim_settings: dict) -> float:
         model = self.model
 
         mode = sim_settings["mode"]
 
         # ToDo Remove Conversion to RPU
-        val = in_val # * 2000
+        val = in_val  # * 2000
 
         mean_P, var_P, mean_M, var_M, energy_rate = model.get_distributions_and_energy_rate(val)
 
@@ -129,7 +129,7 @@ class NOTGate(Gate):
             raise Exception(f"Mode {mode} is not supported.")
 
         # ToDo Remove Conversion to RPU
-        out_val = output #/ 20000
+        out_val = output  # / 20000
         return out_val
 
 
@@ -143,7 +143,7 @@ class NORGate(Gate):
         self.not_gate = NOTGate(gate_entry)
         pass
 
-    def __call__(self, val1, val2, sim_settings):
+    def __call__(self, val1: float, val2: float, sim_settings: dict) -> float:
         # val = self.or_gate(val1, val2)
         val = val1 + val2
         output = self.not_gate(val, sim_settings=sim_settings)

@@ -41,7 +41,7 @@ class LutInput(InputOutput):
     def __call__(self, bool_val, sim_settings):
         # ToDo Remove Conversion to RPU
         output = self.values[str(bool_val)]
-        out_val = output / 2000
+        out_val = output# / 2000
         return out_val
 
 
@@ -107,7 +107,7 @@ class NOTGate(Gate):
         mode = sim_settings["mode"]
 
         # ToDo Remove Conversion to RPU
-        val = 2000 * in_val
+        val = in_val # * 2000
 
         mean_P, var_P, mean_M, var_M, energy_rate = model.get_distributions_and_energy_rate(val)
 
@@ -129,7 +129,7 @@ class NOTGate(Gate):
             raise Exception(f"Mode {mode} is not supported.")
 
         # ToDo Remove Conversion to RPU
-        out_val = output / 20000
+        out_val = output #/ 20000
         return out_val
 
 

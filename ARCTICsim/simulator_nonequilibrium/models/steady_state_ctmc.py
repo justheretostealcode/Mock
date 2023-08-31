@@ -41,37 +41,59 @@ class SteadyStateCTMC:
 
     @cache_this
     def distribution(self, external_concentrations):
+        distribution = np.empty(self.N_states)
+        if False and self.N_states == 4:
+            K = self.infinitesimal_generator_function
+            c = external_concentrations
+            state_weights = [K(1, 0, c) * K(2, 1, c) * K(3, 0, c)
+                             + K(1, 0, c) * K(2, 3, c) * K(3, 0, c)
+                             + K(1, 2, c) * K(2, 3, c) * K(3, 0, c)
+                             + K(1, 0, c) * K(2, 1, c) * K(3, 2, c),
+                             K(0, 1, c) * K(2, 1, c) * K(3, 0, c)
+                             + K(0, 1, c) * K(2, 3, c) * K(3, 0, c)
+                             + K(0, 1, c) * K(2, 1, c) * K(3, 2, c)
+                             + K(0, 3, c) * K(2, 1, c) * K(3, 2, c),
+                             K(0, 1, c) * K(1, 2, c) * K(3, 0, c)
+                             + K(0, 3, c) * K(1, 0, c) * K(3, 2, c)
+                             + K(0, 1, c) * K(1, 2, c) * K(3, 2, c)
+                             + K(0, 3, c) * K(1, 2, c) * K(3, 2, c),
+                             K(0, 3, c) * K(1, 0, c) * K(2, 1, c)
+                             + K(0, 3, c) * K(1, 0, c) * K(2, 3, c)
+                             + K(0, 1, c) * K(1, 2, c) * K(2, 3, c)
+                             + K(0, 3, c) * K(1, 2, c) * K(2, 3, c)]
 
-        # The Steady State distribution is derived by
-        #   1. Getting the propensity matrix
-        #   2. Derive the vector for the left null space (apply scp.linalg.null_space() to the transposed matrix)
-        #   3. Normalize the derived vector to satisfy that all probabilities add up to one
+            distribution = state_weights / np.sum(state_weights)
+        else:
+            # The Steady State distribution is derived by
+            #   1. Getting the propensity matrix
+            #   2. Derive the vector for the left null space (apply scp.linalg.null_space() to the transposed matrix)
+            #   3. Normalize the derived vector to satisfy that all probabilities add up to one
 
-        propensity_matrix = self.propensity_matrix(external_concentrations=external_concentrations)
+            propensity_matrix = self.propensity_matrix(external_concentrations=external_concentrations)
 
-        propensity_matrix_transposed = np.transpose(propensity_matrix)
+            propensity_matrix_transposed = np.transpose(propensity_matrix)
 
-        eigvals, eigvecs = np.linalg.eig(propensity_matrix_transposed)
-        # Thresholding is required due to successfully identify
-        eps_float = 2.220446049250313e-16
-        # zero_threshold = eps_float * np.product(propensity_matrix_transposed.shape) * np.max(
-        #     propensity_matrix_transposed)
-        # eig_index = np.where(np.abs(eigvals) < zero_threshold)[0][0]
-        eig_index = np.argmin(np.abs(eigvals))
-        state_weights = eigvecs[:, eig_index]
+            eigvals, eigvecs = np.linalg.eig(propensity_matrix_transposed)
+            # Thresholding is required due to successfully identify
+            eps_float = 2.220446049250313e-16
+            # zero_threshold = eps_float * np.product(propensity_matrix_transposed.shape) * np.max(
+            #     propensity_matrix_transposed)
+            # eig_index = np.where(np.abs(eigvals) < zero_threshold)[0][0]
+            eig_index = np.argmin(np.abs(eigvals))
+            state_weights = eigvecs[:, eig_index]
 
-        # the Null Space method does not work as it happens to produce negative probabilities
-        # the function null_space
-        # considers all singular values $s$ to be zero in case they are smaller than rcond * max(s)
-        # null_space_basis = scp.linalg.null_space(propensity_matrix_transposed, rcond=None)
-        # if null_space_basis.shape[1] == 0:
-        #     raise Exception("Unable to derive steady state distribution as null space of matrix is empty.")
-        #
-        # state_weights = null_space_basis[:, 0]
+            # the Null Space method does not work as it happens to produce negative probabilities
+            # the function null_space
+            # considers all singular values $s$ to be zero in case they are smaller than rcond * max(s)
+            # null_space_basis = scp.linalg.null_space(propensity_matrix_transposed, rcond=None)
+            # if null_space_basis.shape[1] == 0:
+            #     raise Exception("Unable to derive steady state distribution as null space of matrix is empty.")
+            #
+            # state_weights = null_space_basis[:, 0]
 
-        # Currently required as the eigenvalue method is of approximative nature only
-        state_weights = np.abs(state_weights)
-        distribution = state_weights / np.sum(state_weights)
+            # Currently required as the eigenvalue method is of approximative nature only
+            state_weights = np.abs(state_weights)
+            distribution = state_weights / np.sum(state_weights)
 
         return distribution
 

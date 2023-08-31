@@ -8,7 +8,7 @@ import numpy as np
 
 from models.steady_state_ctmc import SteadyStateCTMC
 
-from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this
+from models.custom_cache import cache_this
 
 
 class PromoterModel(SteadyStateCTMC):

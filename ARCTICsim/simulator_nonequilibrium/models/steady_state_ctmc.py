@@ -43,6 +43,7 @@ class SteadyStateCTMC:
     def distribution(self, external_concentrations):
         distribution = np.empty(self.N_states)
         if False and self.N_states == 4:
+            # Infinitesimal_generator_function is too slow.
             K = self.infinitesimal_generator_function
             c = external_concentrations
             state_weights = [K(1, 0, c) * K(2, 1, c) * K(3, 0, c)

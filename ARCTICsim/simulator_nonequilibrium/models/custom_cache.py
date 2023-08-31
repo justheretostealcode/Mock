@@ -12,7 +12,7 @@ def cache_this(func):
         return result
 
     if CACHE_VALUES:
-        wrapper = functools.cache(func)
+        wrapper = functools.lru_cache(func)
         CACHED_FUNCS.append(wrapper)
     else:
         wrapper = identity

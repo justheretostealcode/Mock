@@ -56,8 +56,6 @@ class SteadyStateCTMC:
                              k01 * k21 * k30 + k01 * k23 * k30 + k01 * k21 * k32 + k03 * k21 * k32,
                              k01 * k12 * k30 + k03 * k10 * k32 + k01 * k12 * k32 + k03 * k12 * k32,
                              k03 * k10 * k21 + k03 * k10 * k23 + k01 * k12 * k23 + k03 * k12 * k23]
-
-            distribution = state_weights / np.sum(state_weights)
         else:
             # The Steady State distribution is derived by
             #   1. Getting the propensity matrix
@@ -88,7 +86,7 @@ class SteadyStateCTMC:
 
             # Currently required as the eigenvalue method is of approximative nature only
             state_weights = np.abs(state_weights)
-            distribution = state_weights / np.sum(state_weights)
+        distribution = state_weights / np.sum(state_weights)
 
         return distribution
 

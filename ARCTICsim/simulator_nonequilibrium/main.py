@@ -42,9 +42,9 @@ def sim_run(lineargs, json_str=None):
         evaluator.set_structure(structure)
 
 
-    cur_profiler = profiler.start_profiler()
+    #cur_profiler = profiler.start_profiler()
     result = evaluator.score_assignment(assignment=assignment, sim_settings=sim_settings)
-    profiler.stop_profiler(cur_profiler, suffix = "_circuit_evaluator")
+    #profiler.stop_profiler(cur_profiler, suffix = "_circuit_evaluator")
 
 
     if "structure" in sim_settings:
@@ -56,6 +56,9 @@ def sim_run(lineargs, json_str=None):
 # start -a {"a":1}
 # start -a={"a":"input_3","b":"input_1","c":"input_2","NOT_0":"P1_PsrA","NOT_2":"P1_IcaR","NOT_4":"P1_PhlF","NOR2_1":"P1_QacR","NOR2_3":"P1_HKCI","O":"output_1"}
 # start -a={"a":"input_3","b":"input_1","c":"input_2","NOT_0":"P1_PhlF","NOT_2":"P1_IcaR","NOT_4":"P1_PsrA","NOR2_1":"P1_QacR","NOR2_3":"P1_HKCI","O":"output_1"}
+
+
+
 def sim_exit(lineargs):
     # Finish the simulator
     exit(0)

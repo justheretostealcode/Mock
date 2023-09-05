@@ -101,4 +101,8 @@ class EnergyAwareMomentModel(MomentModel):
 
         cur_energy_rate = epsilon_p + e_tx + e_tl
 
+        self.epsilon_p = epsilon_p
+        self.e_tx = e_tx
+        self.e_tl = e_tl
+
         return protein_mean, protein_variance, mRNA_mean, mRNA_variance, cur_energy_rate

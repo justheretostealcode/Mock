@@ -12,6 +12,7 @@ class Device:
     def __init__(self, id):
         self.identifier = id
         self.energy_rate = 0
+        self.energy_rates = np.zeros(3)
 
     def __str__(self):
         return f"{self.__class__.__name__} ({self.identifier})"
@@ -113,6 +114,7 @@ class NOTGate(Gate):
 
         # The energy is computed via the expected value
         self.energy_rate = energy_rate
+        self.energy_rates = np.array([model.epsilon_p, model.e_tx, model.e_tl])
 
         if mode == "samp":
             # The function value is sampled from the distribution

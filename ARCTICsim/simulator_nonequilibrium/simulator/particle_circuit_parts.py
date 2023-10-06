@@ -4,7 +4,7 @@ Author: Erik Kubaczka
 import json
 from collections import OrderedDict
 
-from models.four_state_promoter_model import FourStatePromoterModel
+from ARCTICsim.simulator_nonequilibrium.models.four_state_promoter_model import FourStatePromoterModel
 import numpy as np
 
 
@@ -13,6 +13,9 @@ class Device:
         self.identifier = id
         self.energy_rate = 0
         self.energy_rates = np.zeros(3)
+
+        self.promoter = None
+        self.transcription_factor = None
 
     def __str__(self):
         return f"{self.__class__.__name__} ({self.identifier})"
@@ -52,7 +55,7 @@ class Output(InputOutput):
         self.type = "OUTPUT"
 
 
-class OutputOR(InputOutput):
+class OutputOR(Output):
     def __init__(self, gate_entry):
         id = gate_entry["identifier"]
         super().__init__(id)
@@ -64,7 +67,7 @@ class OutputOR(InputOutput):
         return val1 + val2
 
 
-class OutputBuffer(InputOutput):
+class OutputBuffer(Output):
     def __init__(self, gate_entry):
         id = gate_entry["identifier"]
         super().__init__(id)

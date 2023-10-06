@@ -5,7 +5,7 @@ E-Mail: erik.kubaczka@tu-darmstadt.de
 
 import numpy as np
 
-from models.moment_model import MomentModel
+from ARCTICsim.simulator_nonequilibrium.models.moment_model import MomentModel
 
 
 class EnergyAwareMomentModel(MomentModel):

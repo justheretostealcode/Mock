@@ -33,8 +33,9 @@ if __name__ == '__main__':
     # Move files to intended locations
 
     # Delete .so and .c files being equally named as .py files
+    common_dir = "ARCTICsim/simulator_nonequilibrium/"
 
-    directories = ["simulator/", "models/"]
+    directories = [common_dir + dir for dir in ["simulator/", "models/"]]
 
     for dir in directories:
         delete_cython_files_in_dir(dir)

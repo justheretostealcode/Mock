@@ -6,9 +6,8 @@ E-Mail: erik.kubaczka@tu-darmstadt.de
 
 import numpy as np
 
-from models.promoter_model import PromoterModel
-
-from models.custom_cache import cache_this
+from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this
+from ARCTICsim.simulator_nonequilibrium.models.promoter_model import PromoterModel
 
 
 class MomentModel:

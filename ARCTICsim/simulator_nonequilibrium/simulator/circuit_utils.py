@@ -3,10 +3,10 @@ import json
 import numpy as np
 from gvgen import GvGen
 
-from simulator.gatelib import GateLib
-from simulator.libsim_coop import circuit_structure
-from simulator.particle_circuit_parts import Device, Input, Output
-from simulator.utils import JsonFile
+from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLib
+from ARCTICsim.simulator_nonequilibrium.simulator.libsim_coop import circuit_structure
+from ARCTICsim.simulator_nonequilibrium.simulator.particle_circuit_parts import Device, Input, Output
+from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
 
 
 #####################################################################################################
@@ -32,6 +32,11 @@ class CircuitStructure(circuit_structure):
 
         self.truthtable = TruthTable(json.data["truthtable"])
         pass
+
+    def get_outgoing_edges(self, node_id):
+        return [edge for edge in self.edges if edge[0] == node_id]
+    def get_ingoing_edges(self, node_id):
+        return [edge for edge in self.edges if edge[1] == node_id]
 
     def to_dot(self):
         g = GvGen()

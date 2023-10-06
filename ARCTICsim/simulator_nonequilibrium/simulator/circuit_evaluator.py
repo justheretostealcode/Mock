@@ -2,9 +2,9 @@
 Author: Erik Kubaczka
 """
 import numpy as np
-from simulator.circuit import Circuit
-from simulator.scores import FunctionalScore, EnergyScore
-from simulator.circuit_utils import CircuitAssignment, CircuitStructure
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit import Circuit
+from ARCTICsim.simulator_nonequilibrium.simulator.scores import FunctionalScore, EnergyScore
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, CircuitStructure
 
 
 # ToDos

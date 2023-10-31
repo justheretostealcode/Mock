@@ -859,40 +859,85 @@ class nor_circuit_solver_banach:
         return (vs, err, run)
 
     def _debug_step(self, vs, run, err):
+        # print(
+        #     "---------\n"
+        #     + head("Outputs")
+        #     + " (run = "
+        #     + hl(str(run))
+        #     + ", err < "
+        #     + hl(str(err))
+        #     + ", logic = "
+        #     + hl(
+        #         str(
+        #             self.circuit.bound_env[
+        #                 self.circuit.node_idx[list(self.circuit.structure.outputs)[0]]
+        #             ]
+        #         )
+        #     )
+        #     + "): "
+        # )
+        # for k, v in self.circuit.node_idx.items():
+        #     if self.circuit.gates[self.circuit.node_idx[k]].type == 0:
+        #         print("{k:<30}".format(k=hl(k)) + ": " + hl(str(vs[v])))
+        #     elif self.circuit.gates[self.circuit.node_idx[k]].type == -2:
+        #         print("{k:<30}".format(k=hl(k) + " (input)") + ": " + hl(str(vs[v])))
+        #     elif self.circuit.gates[self.circuit.node_idx[k]].type == 1:
+        #         print(
+        #             "{k:<30}".format(k=hl(k) + " (implicit or)") + ": " + hl(str(vs[v]))
+        #         )
+        print("----------")
         print(
-            "---------\n"
-            + head("Outputs")
-            + " (run = "
-            + hl(str(run))
-            + ", err < "
-            + hl(str(err))
-            + ", logic = "
-            + hl(
-                str(
-                    self.circuit.bound_env[
-                        self.circuit.node_idx[list(self.circuit.structure.outputs)[0]]
-                    ]
-                )
-            )
-            + "): "
+            "debug_Q_S: ",
+            str(list(self.circuit.structure.inputs)[0]),
+            "=",
+            str(
+                self.circuit.bound_env[
+                    self.circuit.node_idx[list(self.circuit.structure.inputs)[0]]
+                ]
+            ),
+            ",",
+            str(list(self.circuit.structure.inputs)[1]),
+            "=",
+            str(
+                self.circuit.bound_env[
+                    self.circuit.node_idx[list(self.circuit.structure.inputs)[1]]
+                ]
+            ),
+            ",",
+            str(list(self.circuit.structure.inputs)[2]),
+            "=",
+            str(
+                self.circuit.bound_env[
+                    self.circuit.node_idx[list(self.circuit.structure.inputs)[2]]
+                ]
+            ),
+            ",",
+            str(list(self.circuit.structure.outputs)[0]),
+            "=",
+            str(
+                self.circuit.bound_env[
+                    self.circuit.node_idx[list(self.circuit.structure.outputs)[0]]
+                ]
+            ),
         )
-        for k, v in self.circuit.node_idx.items():
-            if self.circuit.gates[self.circuit.node_idx[k]].type == 0:
-                print("{k:<30}".format(k=hl(k)) + ": " + hl(str(vs[v])))
-            elif self.circuit.gates[self.circuit.node_idx[k]].type == -2:
-                print("{k:<30}".format(k=hl(k) + " (input)") + ": " + hl(str(vs[v])))
-            elif self.circuit.gates[self.circuit.node_idx[k]].type == 1:
-                print(
-                    "{k:<30}".format(k=hl(k) + " (implicit or)") + ": " + hl(str(vs[v]))
-                )
-
+        print("\n")
         for k, v in self.circuit.node_idx.items():
             gate = self.circuit.gates[v]
             if gate.type == -2:
+                print("debug_Q_S:", k, ": ", "output:", vs[v][0])
                 continue
             inp = [sum(vs[i][0] for i in gate.inputs)][0]
-            out = vs[v][0]
-            print(k, ": ", "(", inp, ",", out, ")")
+            print(
+                "debug_Q_S:",
+                k,
+                ": ",
+                "input(sum):",
+                inp,
+                ", output:",
+                vs[v][0],
+                ", demand:",
+                vs[v][1],
+            )
 
 
 # ____________________________________________________________________________

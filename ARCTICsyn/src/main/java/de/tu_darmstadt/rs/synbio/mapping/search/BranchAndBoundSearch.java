@@ -14,7 +14,7 @@ import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.SearchTreeVisuali
 import de.tu_darmstadt.rs.synbio.mapping.search.branchandbound.searchstrategies.*;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
-import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
+import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterfaceThermo;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private static final Logger logger = LoggerFactory.getLogger(BranchAndBoundSearch.class);
 
     private final Map<LogicType, List<GateRealization>> realizations;
-    private final SimulatorInterface simulator;
+    private final SimulatorInterfaceThermo simulator;
     private final CompatibilityChecker checker;
     private final Gate outputGate;
     private final GateRealization outputRealization;
@@ -58,7 +58,7 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
 
         checker = new CompatibilityChecker(gateLib, structure);
 
-        simulator = new SimulatorInterface(simConfig, gateLib);
+        simulator = new SimulatorInterfaceThermo(simConfig, gateLib);
         simulator.initSimulation(structure);
 
         logicGates = getLogicGatesInTopologicalOrder(structure);
@@ -402,12 +402,12 @@ public class BranchAndBoundSearch extends AssignmentSearchAlgorithm {
     private double bound(Assignment assignment) {
         iNeededSimulations++;
 
-        SimulatorInterface.PropagationMode mode;
+        SimulatorInterfaceThermo.PropagationMode mode;
 
         if (assignment.size() == logicGates.length)
-             mode = SimulatorInterface.PropagationMode.NORMAL;
+             mode = SimulatorInterfaceThermo.PropagationMode.NORMAL;
         else
-            mode = mapConfig.getBabFast() ? SimulatorInterface.PropagationMode.ITA : SimulatorInterface.PropagationMode.OPTIMAL;
+            mode = mapConfig.getBabFast() ? SimulatorInterfaceThermo.PropagationMode.ITA : SimulatorInterfaceThermo.PropagationMode.OPTIMAL;
 
         return simulator.simulate(assignment, mode);
     }

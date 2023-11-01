@@ -1,11 +1,13 @@
 package de.tu_darmstadt.rs.synbio;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.search.AssignmentSearchAlgorithm;
 import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.common.circuit.CircuitDeserializer;
+import de.tu_darmstadt.rs.synbio.mapping.search.SimulatedAnnealingSearch;
 import de.tu_darmstadt.rs.synbio.simulation.AssignmentCompiler;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
@@ -19,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Iterator;
 
 public class SimulationTestbench {
 
@@ -95,7 +98,7 @@ public class SimulationTestbench {
                 throw new IOException("Override gate library file " + library.getAbsolutePath() + " does not exist.");
         }
 
-        GateLibrary gateLib = new GateLibrary(library, mapConfig.getCompatibilityLibrary(), true, proxWeights);
+        GateLibrary gateLib = new GateLibrary(library, mapConfig.getCompatibilityLibrary(), GateLibrary.Type.ENERGY, proxWeights);
 
         //CompatibilityChecker checker = new CompatibilityChecker(gateLib);
 
@@ -162,6 +165,15 @@ public class SimulationTestbench {
                     structure.setIdentifier(child.getName().replace(".json", ""));
                 }
 
+                /*int numOnes = 0;
+
+                for (JsonNode gtt : node.get("gate_truthtables")) {
+                    numOnes += gtt.asText().chars().filter(ch -> ch == '1').count();
+                }
+
+                logger.info(numOnes + "");
+                continue;*/
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -189,8 +201,7 @@ public class SimulationTestbench {
                     if (result != null) {
 
                         if (result.getStructure() != null && result.getAssignment() != null) {
-                            logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + result.getAssignment().getIdentifierMap());
-
+                            logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + mapper.writeValueAsString(result.getAssignment().getIdentifierMap()));
                         /*AssignmentCounter counter = new AssignmentCounter(structure, gateLib, mapConfig, simConfig);
                         long maxAssignments = counter.assign().getNeededSimulations();
                         logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");*/

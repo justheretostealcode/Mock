@@ -57,16 +57,16 @@ public class GateRealization {
         /* library values */
         private final double ymax;
         private final double ymin;
-        private final double k;
-        private final double n;
+        private double k;
+        private double n;
 
-        private final double iLower;
-        private final double iUpper;
+        private double iLower;
+        private double iUpper;
 
-        private final double jLower;
-        private final double jUpper;
+        private double jLower;
+        private double jUpper;
 
-        private final Particles particles;
+        private Particles particles;
 
         /* derived values */
         private final double xm;
@@ -92,6 +92,15 @@ public class GateRealization {
             this.ym = ((ymax - ymin) / 2 ) + ymin;
             this.xm = Math.pow(((ymax-ymin)/(ym-ymin) - 1), 1/n) * k;
             this.grad = ((ymin - ymax) * n * Math.pow(xm / k, n)) / (xm * Math.pow(1 + Math.pow(xm / k, n), 2));
+        }
+
+        public GateCharacterization(double ymax, double ymin, double ym, double xm, double grad) {
+
+            this.ymax = ymax;
+            this.ymin = ymin;
+            this.ym = ym;
+            this.xm = xm;
+            this.grad = grad;
         }
 
         /* getters for library values */

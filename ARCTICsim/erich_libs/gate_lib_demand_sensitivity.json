@@ -197,13 +197,13 @@
     "members": [
       {
         "name": "pTac",
-        "associated_devices": [
-          "input_1"
-        ],
         "levels": {
           "on": 4,
           "off": 0.01
         },
+        "associated_devices": [
+          "input_1"
+        ],
         "parameters": {
           "Q": 0.05,
           "S": 0.01
@@ -1005,6 +1005,10 @@
         "parameters": {
           "Q_y": 0.8,
           "S": 0.5
+        },
+        "levels": {
+          "on": 0,
+          "off": 0
         }
       },
       {
@@ -1015,6 +1019,10 @@
         "parameters": {
           "Q_y": 0.8,
           "S": 0.5
+        },
+        "levels": {
+          "on": 0,
+          "off": 0
         }
       }
     ]

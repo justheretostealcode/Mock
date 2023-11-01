@@ -1,0 +1,1137 @@
+[
+  {
+    "class": "info",
+    "members": {
+      "host_name": "e.coli",
+      "lib_id": "binary_delta",
+      "creation_date": "2023-07-13 23:29:47.468593"
+    }
+  },
+  {
+    "class": "transcription_factors",
+    "members": [
+      {
+        "name": "AmtR",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "A1_AmtR"
+        ]
+      },
+      {
+        "name": "BM3R1",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "B1_BM3R1",
+          "B2_BM3R1",
+          "B3_BM3R1"
+        ]
+      },
+      {
+        "name": "BetI",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "E1_BetI"
+        ]
+      },
+      {
+        "name": "AmeR",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "F1_AmeR"
+        ]
+      },
+      {
+        "name": "HlyIIR",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "H1_HlyIIR"
+        ]
+      },
+      {
+        "name": "IcaRA",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "I1_IcaRA"
+        ]
+      },
+      {
+        "name": "LitR",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "L1_LitR"
+        ]
+      },
+      {
+        "name": "LmrA",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "N1_LmrA"
+        ]
+      },
+      {
+        "name": "PhlF",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "P1_PhlF",
+          "P2_PhlF",
+          "P3_PhlF"
+        ]
+      },
+      {
+        "name": "QacR",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "Q1_QacR",
+          "Q2_QacR"
+        ]
+      },
+      {
+        "name": "PsrA",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "R1_PsrA"
+        ]
+      },
+      {
+        "name": "SrpR",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "S1_SrpR",
+          "S2_SrpR",
+          "S3_SrpR",
+          "S4_SrpR"
+        ]
+      },
+      {
+        "name": "Tac",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "input_1"
+        ],
+        "parameters": {
+          "Q": 0.05,
+          "S": 0.01
+        }
+      },
+      {
+        "name": "Tet",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "input_2"
+        ],
+        "parameters": {
+          "Q": 0.05,
+          "S": 0.01
+        }
+      },
+      {
+        "name": "BAD",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "input_3"
+        ],
+        "parameters": {
+          "Q": 0.05,
+          "S": 0.01
+        }
+      },
+      {
+        "name": "YFP",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "output_1"
+        ]
+      }
+    ]
+  },
+  {
+    "class": "gates",
+    "members": [
+      {
+        "name": "A1_AmtR",
+        "associated_devices": [
+          "A1_AmtR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DA1_AmtR",
+        "associated_devices": [
+          "DA1_AmtR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "B1_BM3R1",
+        "associated_devices": [
+          "B1_BM3R1"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DB1_BM3R1",
+        "associated_devices": [
+          "DB1_BM3R1"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "B2_BM3R1",
+        "associated_devices": [
+          "B2_BM3R1"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DB2_BM3R1",
+        "associated_devices": [
+          "DB2_BM3R1"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "B3_BM3R1",
+        "associated_devices": [
+          "B3_BM3R1"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DB3_BM3R1",
+        "associated_devices": [
+          "DB3_BM3R1"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "E1_BetI",
+        "associated_devices": [
+          "E1_BetI"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DE1_BetI",
+        "associated_devices": [
+          "DE1_BetI"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "F1_AmeR",
+        "associated_devices": [
+          "F1_AmeR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DF1_AmeR",
+        "associated_devices": [
+          "DF1_AmeR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "H1_HlyIIR",
+        "associated_devices": [
+          "H1_HlyIIR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DH1_HlyIIR",
+        "associated_devices": [
+          "DH1_HlyIIR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "I1_IcaRA",
+        "associated_devices": [
+          "I1_IcaRA"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DI1_IcaRA",
+        "associated_devices": [
+          "DI1_IcaRA"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "L1_LitR",
+        "associated_devices": [
+          "L1_LitR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DL1_LitR",
+        "associated_devices": [
+          "DL1_LitR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "N1_LmrA",
+        "associated_devices": [
+          "N1_LmrA"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DN1_LmrA",
+        "associated_devices": [
+          "DN1_LmrA"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "P1_PhlF",
+        "associated_devices": [
+          "P1_PhlF"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DP1_PhlF",
+        "associated_devices": [
+          "DP1_PhlF"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "P2_PhlF",
+        "associated_devices": [
+          "P2_PhlF"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DP2_PhlF",
+        "associated_devices": [
+          "DP2_PhlF"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "P3_PhlF",
+        "associated_devices": [
+          "P3_PhlF"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DP3_PhlF",
+        "associated_devices": [
+          "DP3_PhlF"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "Q1_QacR",
+        "associated_devices": [
+          "Q1_QacR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DQ1_QacR",
+        "associated_devices": [
+          "DQ1_QacR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "Q2_QacR",
+        "associated_devices": [
+          "Q2_QacR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DQ2_QacR",
+        "associated_devices": [
+          "DQ2_QacR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "R1_PsrA",
+        "associated_devices": [
+          "R1_PsrA"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DR1_PsrA",
+        "associated_devices": [
+          "DR1_PsrA"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "S1_SrpR",
+        "associated_devices": [
+          "S1_SrpR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DS1_SrpR",
+        "associated_devices": [
+          "DS1_SrpR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "S2_SrpR",
+        "associated_devices": [
+          "S2_SrpR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DS2_SrpR",
+        "associated_devices": [
+          "DS2_SrpR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "S3_SrpR",
+        "associated_devices": [
+          "S3_SrpR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DS3_SrpR",
+        "associated_devices": [
+          "DS3_SrpR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "S4_SrpR",
+        "associated_devices": [
+          "S4_SrpR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "DS4_SrpR",
+        "associated_devices": [
+          "DS4_SrpR"
+        ],
+        "parameters": {
+          "y_max": 4,
+          "y_min": 0.01,
+          "K": 0.1,
+          "n": 3,
+          "Q_max": 0.2,
+          "Q_min": 0.05,
+          "S": 0.1
+        }
+      },
+      {
+        "name": "OR_YFP",
+        "associated_devices": [
+          "output_1"
+        ],
+        "parameters": {
+          "Q_y": 0.8,
+          "S": 0.5
+        }
+      },
+      {
+        "name": "DOR_YFP",
+        "associated_devices": [
+          "output_1D"
+        ],
+        "parameters": {
+          "Q_y": 0.8,
+          "S": 0.5
+        }
+      }
+    ]
+  },
+  {
+    "class": "devices",
+    "members": [
+      {
+        "name": "A1_AmtR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DA1_AmtR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "B1_BM3R1",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DB1_BM3R1",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "B2_BM3R1",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DB2_BM3R1",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "B3_BM3R1",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DB3_BM3R1",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "E1_BetI",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DE1_BetI",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "F1_AmeR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DF1_AmeR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "H1_HlyIIR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DH1_HlyIIR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "I1_IcaRA",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DI1_IcaRA",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "L1_LitR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DL1_LitR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "N1_LmrA",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DN1_LmrA",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "P1_PhlF",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DP1_PhlF",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "P2_PhlF",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DP2_PhlF",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "P3_PhlF",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DP3_PhlF",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "Q1_QacR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DQ1_QacR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "Q2_QacR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DQ2_QacR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "R1_PsrA",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DR1_PsrA",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "S1_SrpR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DS1_SrpR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "S2_SrpR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DS2_SrpR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "S3_SrpR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DS3_SrpR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "S4_SrpR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "DS4_SrpR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "input_1",
+        "functions": [
+          "INPUT"
+        ]
+      },
+      {
+        "name": "input_2",
+        "functions": [
+          "INPUT"
+        ]
+      },
+      {
+        "name": "input_3",
+        "functions": [
+          "INPUT"
+        ]
+      },
+      {
+        "name": "output_1",
+        "functions": [
+          "OUTPUT_BUFFER",
+          "OUTPUT_OR2"
+        ]
+      },
+      {
+        "name": "output_1D",
+        "functions": [
+          "OUTPUT_BUFFER",
+          "OUTPUT_OR2"
+        ]
+      }
+    ]
+  }
+]

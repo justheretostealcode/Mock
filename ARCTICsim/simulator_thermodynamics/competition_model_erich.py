@@ -158,6 +158,67 @@ def _add_test_data(library: str) -> None:
 # _add_test_data("./../ARCTICsim/iwbda_libs/iwbda_lib_id_binary_delta.json")
 
 
+def _add_test_data_for_simulation(library: str) -> None:
+    """
+    This function adds hill function data in lib file.
+
+    Parameters:
+    library (json file path): Json file path of library.
+
+    Returns:
+    None: The lib was successfully modified.
+    """
+    with open(library, "r") as file:
+        lib = json.load(file)
+    lib_gates = [
+        [gate for gate in section["members"]]
+        for section in lib
+        if section["class"] == "gates"
+    ][0]
+    lib_inputs = [
+        [gate for gate in section["members"]]
+        for section in lib
+        if section["class"] == "transcription_factors"
+    ][0]
+    lib_inputs = [
+        inp for inp in lib_inputs if inp["associated_devices"][0].startswith("input")
+    ]
+    # delete old parameters and add test parameters
+    for gate in lib_gates:
+        if gate["associated_devices"][0].startswith("output"):
+            del gate["parameters"]["mu"]
+            del gate["parameters"]["gamma"]
+            del gate["parameters"]["delta"]
+            gate["parameters"]["Q_y"] = 0.8
+            gate["parameters"]["S"] = 0.5
+        else:
+            del gate["parameters"]["mu"]
+            del gate["parameters"]["gamma"]
+            del gate["parameters"]["delta"]
+            del gate["parameters"]["beta"]
+            del gate["parameters"]["mu_p"]
+            del gate["parameters"]["gamma_p"]
+            del gate["parameters"]["kappa"]
+            del gate["parameters"]["n"]
+            gate["levels"] = {"on": 4}
+            gate["levels"]["off"] = 0.01
+            gate["hill_parameters"] = {"K": 0.1}
+            gate["hill_parameters"]["n"] = 3
+            gate["parameters"]["Q_max"] = 0.2
+            gate["parameters"]["Q_min"] = 0.05
+            gate["parameters"]["S"] = 0.1
+    for inp in lib_inputs:
+
+        inp["parameters"] = {"Q": 0.05, "S": 0.01}
+    with open(
+        "./../ARCTICsim/erich_libs/gate_lib_demand_sensitivity.json", "w"
+    ) as json_file:
+        json.dump(lib, json_file)
+
+
+_add_test_data_for_simulation("./../ARCTICsim/iwbda_libs/iwbda_lib_id_binary_delta.json")
+
+
 def _preprocess_circuit_json(assigns: dict, lib_gates: list, struct: dict) -> dict:
     """
     This function combines in a preprocess step the json files of the simulation.

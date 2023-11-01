@@ -193,21 +193,67 @@
     ]
   },
   {
-    "class": "gates",
+    "class": "promoters",
     "members": [
+      {
+        "name": "pTac",
+        "associated_devices": [
+          "input_1"
+        ],
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "parameters": {
+          "Q": 0.05,
+          "S": 0.01
+        }
+      },
+      {
+        "name": "pTet",
+        "associated_devices": [
+          "input_2"
+        ],
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "parameters": {
+          "Q": 0.05,
+          "S": 0.01
+        }
+      },
+      {
+        "name": "pBAD",
+        "associated_devices": [
+          "input_3"
+        ],
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "parameters": {
+          "Q": 0.05,
+          "S": 0.01
+        }
+      },
       {
         "name": "A1_AmtR",
         "associated_devices": [
           "A1_AmtR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -216,13 +262,17 @@
           "DA1_AmtR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -231,13 +281,17 @@
           "B1_BM3R1"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -246,13 +300,17 @@
           "DB1_BM3R1"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -261,13 +319,17 @@
           "B2_BM3R1"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -276,13 +338,17 @@
           "DB2_BM3R1"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -291,13 +357,17 @@
           "B3_BM3R1"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -306,13 +376,17 @@
           "DB3_BM3R1"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -321,13 +395,17 @@
           "E1_BetI"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -336,13 +414,17 @@
           "DE1_BetI"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -351,13 +433,17 @@
           "F1_AmeR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -366,13 +452,17 @@
           "DF1_AmeR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -381,13 +471,17 @@
           "H1_HlyIIR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -396,13 +490,17 @@
           "DH1_HlyIIR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -411,13 +509,17 @@
           "I1_IcaRA"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -426,13 +528,17 @@
           "DI1_IcaRA"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -441,13 +547,17 @@
           "L1_LitR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -456,13 +566,17 @@
           "DL1_LitR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -471,13 +585,17 @@
           "N1_LmrA"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -486,13 +604,17 @@
           "DN1_LmrA"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -501,13 +623,17 @@
           "P1_PhlF"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -516,13 +642,17 @@
           "DP1_PhlF"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -531,13 +661,17 @@
           "P2_PhlF"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -546,13 +680,17 @@
           "DP2_PhlF"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -561,13 +699,17 @@
           "P3_PhlF"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -576,13 +718,17 @@
           "DP3_PhlF"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -591,13 +737,17 @@
           "Q1_QacR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -606,13 +756,17 @@
           "DQ1_QacR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -621,13 +775,17 @@
           "Q2_QacR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -636,13 +794,17 @@
           "DQ2_QacR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -651,13 +813,17 @@
           "R1_PsrA"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -666,13 +832,17 @@
           "DR1_PsrA"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -681,13 +851,17 @@
           "S1_SrpR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -696,13 +870,17 @@
           "DS1_SrpR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -711,13 +889,17 @@
           "S2_SrpR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -726,13 +908,17 @@
           "DS2_SrpR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -741,13 +927,17 @@
           "S3_SrpR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -756,13 +946,17 @@
           "DS3_SrpR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -771,13 +965,17 @@
           "S4_SrpR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {
@@ -786,13 +984,17 @@
           "DS4_SrpR"
         ],
         "parameters": {
-          "y_max": 4,
-          "y_min": 0.01,
-          "K": 0.1,
-          "n": 3,
           "Q_max": 0.2,
           "Q_min": 0.05,
           "S": 0.1
+        },
+        "levels": {
+          "on": 4,
+          "off": 0.01
+        },
+        "hill_parameters": {
+          "K": 0.1,
+          "n": 3
         }
       },
       {

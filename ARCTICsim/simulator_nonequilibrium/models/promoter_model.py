@@ -6,9 +6,8 @@ E-Mail: erik.kubaczka@tu-darmstadt.de
 
 import numpy as np
 
-from models.steady_state_ctmc import SteadyStateCTMC
-
-from models.custom_cache import cache_this
+from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this
+from ARCTICsim.simulator_nonequilibrium.models.steady_state_ctmc import SteadyStateCTMC
 
 
 class PromoterModel(SteadyStateCTMC):

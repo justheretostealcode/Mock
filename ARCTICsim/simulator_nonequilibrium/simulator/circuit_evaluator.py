@@ -2,9 +2,9 @@
 Author: Erik Kubaczka
 """
 import numpy as np
-from simulator.circuit import Circuit
-from simulator.scores import FunctionalScore, EnergyScore
-from simulator.circuit_utils import CircuitAssignment, CircuitStructure
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit import Circuit
+from ARCTICsim.simulator_nonequilibrium.simulator.scores import FunctionalScore, EnergyScore
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, CircuitStructure
 
 
 # ToDos
@@ -76,6 +76,7 @@ class CircuitEvaluator:
         circuit_output_vals_dict = {out_id: [[] for _ in range(2)] for out_id in structure.outputs}
         circuit_output_vals = []
         circuit_energy_rates = []
+        detailed_circuit_energy_rates = []
 
         input_ids = list(structure.inputs)
         input_ids.sort()
@@ -85,14 +86,18 @@ class CircuitEvaluator:
             input_vals_dict = dict(zip(input_ids, input_vals))
             gate_output_vals = {id: np.empty(shape=(n_samples)) for id in node_order}
             energy_rates = np.empty(shape=(n_samples))
+            detailed_energy_rates = np.empty(shape=(n_samples, 3))
             for iN in range(n_samples):
 
                 cur_gate_output_vals = circuit(input_vals_dict=input_vals_dict, sim_settings=sim_settings)
                 cur_energy_rate = circuit.energy_rate
+                cur_detailed_energy_rates = circuit.energy_rates
 
                 for id in cur_gate_output_vals:
                     gate_output_vals[id][iN] = cur_gate_output_vals[id]
+
                 energy_rates[iN] = cur_energy_rate
+                detailed_energy_rates[iN] = cur_detailed_energy_rates
 
             cur_out_vals = []
             for out_id in structure.outputs:
@@ -101,12 +106,14 @@ class CircuitEvaluator:
 
             circuit_output_vals.append(cur_out_vals)
             circuit_energy_rates.append(energy_rates)
+            detailed_circuit_energy_rates.append(detailed_energy_rates)
 
             # print(gate_output_vals)
             pass
 
         circuit_output_vals = np.array(circuit_output_vals)
         circuit_energy_rates = np.array(circuit_energy_rates)
+        detailed_circuit_energy_rates = np.array(detailed_circuit_energy_rates)
 
         functional_scores = {}
         for out_id in circuit_output_vals_dict:
@@ -122,8 +129,12 @@ class CircuitEvaluator:
 
         energy_score = self.energy_score(circuit_energy_rates)
 
+        detailed_energy_score = {key: self.energy_score(detailed_circuit_energy_rates[:,:, iX]) for iX, key in
+                                 enumerate(["epsilon_p", "e_tx", "e_tl"])}
+
         scores = {"functional_score": functional_scores,
-                  "energy_score": energy_score}
+                  "energy_score": energy_score,
+                  "detailed_energy_score": detailed_energy_score}
         # ToDo
         # Apply functional score
         # Apply energy score

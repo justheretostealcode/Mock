@@ -55,6 +55,7 @@ class Circuit:
         gate_output_vals = {id: np.nan for id in propagation_graph}
 
         energy_rate = 0
+        energy_rates = np.zeros(3)
 
         # Insert Input Values
         for input_id in input_vals_dict:
@@ -77,6 +78,7 @@ class Circuit:
 
             #if node_info.type == "LOGIC":
             energy_rate += device.energy_rate
+            energy_rates += np.array(device.energy_rates)
 
             #print("")
             #print(gate_id)
@@ -85,6 +87,7 @@ class Circuit:
             #pass
 
         self.energy_rate = energy_rate
+        self.energy_rates = energy_rates
 
         return gate_output_vals
 

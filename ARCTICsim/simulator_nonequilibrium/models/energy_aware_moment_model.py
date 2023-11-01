@@ -5,7 +5,7 @@ E-Mail: erik.kubaczka@tu-darmstadt.de
 
 import numpy as np
 
-from models.moment_model import MomentModel
+from ARCTICsim.simulator_nonequilibrium.models.moment_model import MomentModel
 
 
 class EnergyAwareMomentModel(MomentModel):
@@ -100,5 +100,9 @@ class EnergyAwareMomentModel(MomentModel):
         e_tl = e_protein * protein_degradation_rate * protein_mean
 
         cur_energy_rate = epsilon_p + e_tx + e_tl
+
+        self.epsilon_p = epsilon_p
+        self.e_tx = e_tx
+        self.e_tl = e_tl
 
         return protein_mean, protein_variance, mRNA_mean, mRNA_variance, cur_energy_rate

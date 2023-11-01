@@ -7,7 +7,7 @@ import itertools
 
 import numpy as np
 
-from models.custom_cache import cache_this, clear_cache
+from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this, clear_cache
 
 
 class SteadyStateCTMC:

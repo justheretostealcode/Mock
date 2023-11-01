@@ -191,6 +191,8 @@ def _add_test_data_for_simulation(library: str) -> None:
             del gate["parameters"]["delta"]
             gate["parameters"]["Q_y"] = 0.8
             gate["parameters"]["S"] = 0.5
+            gate["levels"] = {"on": 0}
+            gate["levels"]["off"] = 0
         else:
             del gate["parameters"]["mu"]
             del gate["parameters"]["gamma"]
@@ -216,7 +218,7 @@ def _add_test_data_for_simulation(library: str) -> None:
         json.dump(lib, json_file)
 
 
-_add_test_data_for_simulation("./../ARCTICsim/iwbda_libs/iwbda_lib_id_binary_delta.json")
+# _add_test_data_for_simulation("./../ARCTICsim/iwbda_libs/iwbda_lib_id_binary_delta.json")
 
 
 def _preprocess_circuit_json(assigns: dict, lib_gates: list, struct: dict) -> dict:

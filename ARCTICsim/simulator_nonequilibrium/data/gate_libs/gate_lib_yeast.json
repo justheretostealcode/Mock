@@ -1,0 +1,679 @@
+[
+    {
+        "primitiveIdentifier": [
+            "INPUT"
+        ],
+        "identifier": "input_1",
+        "group": "aTc",
+        "biorep": {
+            "0": 2.634786199696268,
+            "1": 3293.4827496203347
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "INPUT"
+        ],
+        "identifier": "input_2",
+        "group": "Xylose",
+        "biorep": {
+            "0": 3.952179299544402,
+            "1": 2371.307579726641
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "INPUT"
+        ],
+        "identifier": "input_3",
+        "group": "IPTG",
+        "biorep": {
+            "0": 14.491324098329473,
+            "1": 1712.6110298025742
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "OUTPUT_BUFFER",
+            "OUTPUT_OR2"
+        ],
+        "identifier": "output_1",
+        "group": "YFP"
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P1_PhlF",
+        "group": "PhlF",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 192.6094830903275,
+                "y_m": 2960.541028079486,
+                "d_y_m": -11.958655311383614
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 0.3777607098358242,
+                        "k21": 15.623650730160904,
+                        "k23": 1.0,
+                        "k32": 1304.3769617784726,
+                        "k34": 1.119111565690357,
+                        "k43": 0.07064432341825064,
+                        "k41": 8.32685991903661,
+                        "k14": 6.091135656565778
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.06349206349206349,
+                        0.06349206349206349
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 630.0
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.02857142857142857,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 210.0
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P1_BM3RI",
+        "group": "BM3RI",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 144.29257705864552,
+                "y_m": 4462.4537502933845,
+                "d_y_m": -21.06574636497815
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 0.9805995799818464,
+                        "k21": 18.09358133559936,
+                        "k23": 0.9938464653885577,
+                        "k32": 2958.1074364523424,
+                        "k34": 1.0561737526488908,
+                        "k43": 0.08227466330605741,
+                        "k41": 7.080993290055233,
+                        "k14": 9.051849806818394
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.066006600660066,
+                        0.066006600660066
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 606.0
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.0297029702970297,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 202.0
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P1_QacR",
+        "group": "QacR",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 245.18964553656963,
+                "y_m": 2250.2630414736273,
+                "d_y_m": -6.548514351321003
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 6.8186542658797435,
+                        "k21": 834.7118154061067,
+                        "k23": 1.0,
+                        "k32": 1524.6953517639818,
+                        "k34": 1e-05,
+                        "k43": 0.06516049321760164,
+                        "k41": 9.441405551976986,
+                        "k14": 3.4907318094047732
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.06734006734006734,
+                        0.06734006734006734
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 594.0
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.030303030303030304,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 198.0
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P1_CI",
+        "group": "CI",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 67.55396159656236,
+                "y_m": 1974.1790484364858,
+                "d_y_m": -14.927230326024388
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 0.057707398777614514,
+                        "k21": 5.492402132637375,
+                        "k23": 1.0,
+                        "k32": 349.1354638518545,
+                        "k34": 1.092461338148504,
+                        "k43": 0.93624068520176,
+                        "k41": 8.846025707328238,
+                        "k14": 5.371973069344004
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.05398110661268556,
+                        0.05398110661268556
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 741.0
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.024291497975708502,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 247.0
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P2_CI",
+        "group": "CI",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 113.02869668520422,
+                "y_m": 3341.35074651319,
+                "d_y_m": -16.269060648755175
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 0.7706458563440725,
+                        "k21": 7.304980876897634,
+                        "k23": 1.0,
+                        "k32": 243.39940356765592,
+                        "k34": 1.0979526483782358,
+                        "k43": 0.03227997514771494,
+                        "k41": 7.164809915983811,
+                        "k14": 10.78951234145836
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.05398110661268556,
+                        0.05398110661268556
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 741.0
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.024291497975708502,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 247.0
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P1_LexA",
+        "group": "LexA",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 86.02807272632312,
+                "y_m": 1434.814288559691,
+                "d_y_m": -8.811974360575567
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 0.03522009655451749,
+                        "k21": 8.448184361276043,
+                        "k23": 1.0,
+                        "k32": 1405.9174690120728,
+                        "k34": 1.0967984539427942,
+                        "k43": 0.750493960559618,
+                        "k41": 9.870359070551796,
+                        "k14": 2.3863057166006003
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.06289308176100629,
+                        0.06289308176100629
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 636.0
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.02830188679245283,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 212.0
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P2_LexA",
+        "group": "LexA",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 192.6094830903275,
+                "y_m": 2168.9714728807025,
+                "d_y_m": -7.777295594742983
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 0.2557031195630595,
+                        "k21": 11.276814781810048,
+                        "k23": 1.0,
+                        "k32": 661.8065500763515,
+                        "k34": 1.1599187684142296,
+                        "k43": 0.039465765773790566,
+                        "k41": 9.757493467507187,
+                        "k14": 4.246688429927863
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.06289308176100629,
+                        0.06289308176100629
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 636.0
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.02830188679245283,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 212.0
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P1_CI434",
+        "group": "CI434",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 263.6637566663304,
+                "y_m": 3579.5708992240407,
+                "d_y_m": -10.73700042740445
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 1.9513670506093361,
+                        "k21": 131.08791077141618,
+                        "k23": 1.0,
+                        "k32": 347.86500193981095,
+                        "k34": 2.612043409446667,
+                        "k43": 0.04507895860373559,
+                        "k41": 5.679435183104928,
+                        "k14": 7.803140573568792
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.05880191106210952,
+                        0.05880191106210952
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 680.25
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.026460859977949284,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 226.75
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P2_CI434",
+        "group": "CI434",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 235.24204723592925,
+                "y_m": 2163.4712784545018,
+                "d_y_m": -6.524614524227529
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 1.0409046786442349,
+                        "k21": 92.66700577641986,
+                        "k23": 1.0,
+                        "k32": 465.83361134663477,
+                        "k34": 2.6067137878721227,
+                        "k43": 0.06247237316057641,
+                        "k41": 9.301547522983359,
+                        "k14": 4.796187736625073
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.05880191106210952,
+                        0.05880191106210952
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 680.25
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.026460859977949284,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 226.75
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P1_HKCI",
+        "group": "HKCI",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 192.6094830903275,
+                "y_m": 2280.8190260736656,
+                "d_y_m": -7.9405366274175755
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 0.2294067527904858,
+                        "k21": 9.827897920517247,
+                        "k23": 1.0,
+                        "k32": 254.8768012439371,
+                        "k34": 1.2093103707422501,
+                        "k43": 0.043297738922884306,
+                        "k41": 8.130525378720575,
+                        "k14": 5.839593350765202
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.05442176870748299,
+                        0.05442176870748299
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 735.0
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.024489795918367346,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 245.0
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P1_PsrA",
+        "group": "PsrA",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 260.8215857232903,
+                "y_m": 2457.41939232099,
+                "d_y_m": -6.996020374059778
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 12.336750341847539,
+                        "k21": 1159.060882257465,
+                        "k23": 1.0,
+                        "k32": 602.9848611424503,
+                        "k34": 1e-05,
+                        "k43": 0.06106656084376425,
+                        "k41": 9.750241493504424,
+                        "k14": 6.898188160048686
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.05710206995003569,
+                        0.05710206995003569
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 700.5
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.02569593147751606,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 233.5
+                }
+            }
+        }
+    },
+    {
+        "primitiveIdentifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "identifier": "P1_IcaR",
+        "group": "IcaR",
+        "technology_mapping": {
+            "inflection_point": {
+                "x_m": 158.5034317738461,
+                "y_m": 2794.9411790484774,
+                "d_y_m": -10.767914998467893
+            }
+        },
+        "biorep": {
+            "model": {
+                "GENE": {
+                    "N_PROMOTER_STATES": 4,
+                    "N_PARAMETERS": 8,
+                    "C_FUNC": "lambda l: 1 + (0.025 * l)**2",
+                    "RATES": {
+                        "k12": 0.07920567130223369,
+                        "k21": 9.187699925589062,
+                        "k23": 1.0,
+                        "k32": 424.68311443947835,
+                        "k34": 1.1676694241322583,
+                        "k43": 0.17698014315488733,
+                        "k41": 9.174103775966232,
+                        "k14": 4.298257052728803
+                    }
+                },
+                "mRNA": {
+                    "TRANSCRIPTION_RATES": [
+                        0.0,
+                        0.0,
+                        0.06802721088435375,
+                        0.06802721088435375
+                    ],
+                    "mRNA_DEGRADATION_RATE": 0.000583,
+                    "e": 16,
+                    "e_const": 0,
+                    "l": 588.0
+                },
+                "PROTEIN": {
+                    "TRANSLATION_RATE": 0.030612244897959183,
+                    "PROTEIN_DEGRADATION_RATE": 0.000283,
+                    "e": 42,
+                    "e_const": 52,
+                    "l": 196.0
+                }
+            }
+        }
+    }
+]

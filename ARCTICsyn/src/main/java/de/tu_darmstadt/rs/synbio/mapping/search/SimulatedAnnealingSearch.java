@@ -9,10 +9,9 @@ import de.tu_darmstadt.rs.synbio.mapping.Assignment;
 import de.tu_darmstadt.rs.synbio.mapping.MappingConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.ExhaustiveAssigner;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.RandomAssigner;
-import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityChecker;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
-import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
+import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterfaceEnergy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
@@ -32,13 +31,40 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         super(structure, lib, mapConfig, simConfig);
     }
 
-    private static final boolean printTrajectory = true;
-    private static final boolean useRadius = true;
+    private static final boolean printTrajectory = false;
+    private static final boolean useRadius = false;
 
     private double maxDistance = 0.0;
     private double minDistance = Double.MAX_VALUE;
 
-    private CompatibilityChecker checker;
+    private enum Objective {
+        SCORE_ONLY,
+        SCORE,
+        ENERGY,
+        MULTI
+    }
+
+    private double lowerScore = 0.0;
+    private double upperEnergy = Double.POSITIVE_INFINITY;
+    private Objective objective = Objective.SCORE;
+
+    private double energyScaler;
+
+    public void pareto() {
+
+        SimulatorInterfaceEnergy simulator = new SimulatorInterfaceEnergy(simConfig, gateLib);
+        simulator.initSimulation(structure);
+        getInitialTemperature(simulator);
+        simulator.shutdown();
+
+        int iterations = 100;
+
+        for (int i = 0; i < iterations; i++) {
+            lowerScore = minScoreSample + (((maxScoreSample - minScoreSample)/iterations) * i);
+            upperEnergy = maxEnergySample - (((maxEnergySample - minEnergySample)/iterations) * i);
+            assign();
+        }
+    }
 
     public MappingResult assign() {
 
@@ -70,7 +96,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
         // initialize simulator
 
-        SimulatorInterface simulator = new SimulatorInterface(simConfig, gateLib);
+        SimulatorInterfaceEnergy simulator = new SimulatorInterfaceEnergy(simConfig, gateLib);
         simulator.initSimulation(structure);
 
         // get initial assignment
@@ -78,21 +104,19 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         ExhaustiveAssigner exhaustiveAssigner = new ExhaustiveAssigner(gateLib, structure);
         RandomAssigner randomAssigner = new RandomAssigner(gateLib, structure);
 
-        // compatibility checker
-        checker = new CompatibilityChecker(gateLib, structure);
-
         Assignment current;
         long problemSize;
         double currentScore;
-        double currentGrowth;
+        double currentEnergy;
 
         do {
             current = randomAssigner.getNextAssignment();
             problemSize = exhaustiveAssigner.getNumTotalPermutations();
-            currentScore = simulator.simulate(current, SimulatorInterface.PropagationMode.NORMAL);
-            currentGrowth = 1.0;//simulator.getLastGrowth();
-            currentScore = currentScore * (currentGrowth < 0.75 ? Math.pow(currentGrowth * 1.33, 1) : 1.0);
-        } while (!checker.checkSimple(current) || !current.fulfilsConstraints(structure) || currentGrowth < 0.75);
+            currentScore = simulator.simulate(current);
+            currentEnergy = simulator.getEnergy();
+        } while (!current.isValid() ||
+                (objective == Objective.SCORE && currentEnergy > upperEnergy) ||
+                (objective == Objective.ENERGY && currentScore < lowerScore));
 
         // initialize search
 
@@ -103,48 +127,30 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
         Assignment neighbor;
 
-        Assignment best = current;
-        double bestScore = currentScore;
-
-        List<Double> scoreHistory = new LinkedList<>();
-        final int historySize = 2000;
-
         // annealing parameters
 
         double temperature = getInitialTemperature(simulator);
         double coolingFactor;
 
-        int movesPerTemp = 1 * (int) Math.pow(problemSize, 0.5);
+        int movesPerTemp = (int) Math.pow(problemSize, 0.5);
 
-        double histBestSDev = Math.abs(bestScore);
-
-        while (histBestSDev > bestScore * 0.001 || acceptanceRate > 0.2) {
+        while(acceptanceRate >= 0.3) {
 
             neighbor = getNeighbor(current, radius);
 
             if (neighbor == null)
                 break;
 
-            double neighborScore = simulator.simulate(neighbor, SimulatorInterface.PropagationMode.NORMAL);
-            double neighborGrowth = 1.0;//simulator.getLastGrowth();
-            neighborScore =  neighborScore * (neighborGrowth < 0.75 ? Math.pow(neighborGrowth * 1.33, 1) : 1.0);
+            double neighborScore = simulator.simulate(neighbor);
+            double neighborEnergy = simulator.getEnergy();
             simCount ++;
 
-            if (accept(currentScore, neighborScore, temperature)) {
+            if (accept(currentScore, neighborScore, currentEnergy, neighborEnergy, temperature)) {
                 current = neighbor;
                 currentScore = neighborScore;
-                currentGrowth = neighborGrowth;
+                currentEnergy = neighborEnergy;
                 acceptCount ++;
-            }
-
-            scoreHistory.add(0, currentScore);
-            if (scoreHistory.size() > historySize) {
-                scoreHistory.remove(scoreHistory.size() - 1);
-            }
-
-            if (mapConfig.getOptimizationType().compare(bestScore, currentScore) && checker.checkSimple(current) && currentGrowth >= 0.75) {
-                best = current;
-                bestScore = currentScore;
+                //logger.info("accepted score: " + neighborScore + ", energy: " + neighborEnergy + ", rate: " + acceptanceRate + ", temp: " + temperature);
             }
 
             if (simCount % movesPerTemp == 0) {
@@ -167,14 +173,10 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
                 else
                     radius *= 0.95;
 
-                //radius *= (1 + ((acceptanceRate - 0.4)));
-
                 if (radius > 1.0)
                     radius = 1.0;
                 else if (radius < 0.0)
                     radius = 0.0;
-
-                histBestSDev = getBestSD(scoreHistory);
             }
 
             if (printTrajectory) {
@@ -193,39 +195,58 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
         }
 
-        MappingResult result = new MappingResult(structure, best, simulator.simulate(best, SimulatorInterface.PropagationMode.NORMAL));
-        result.setNeededSimulations(simCount);
+        MappingResult result = new MappingResult(structure, current, simulator.simulate(current));
+        logger.info(upperEnergy + ", " + result.getScore() + ", " + simulator.getEnergy());
+        //logger.info(result.getScore() + ", " + simulator.getEnergy());
+         result.setNeededSimulations(simCount);
         simulator.shutdown();
         return result;
     }
 
-    private double getBestSD(List<Double> history) {
+    private double minScoreSample;
+    private double maxScoreSample;
+    private double minEnergySample;
+    private double maxEnergySample;
 
-        StandardDeviation sDev = new StandardDeviation();
-
-        List<Double> histBest = new ArrayList<>(history);
-        histBest.sort(Double::compareTo);
-        histBest = histBest.subList((int) (histBest.size() * 0.9), histBest.size() - 1);
-
-        double[] histBestArray = new double[histBest.size()];
-        for (int i = 0; i < histBest.size(); i++)
-            histBestArray[i] = histBest.get(i);
-
-        return sDev.evaluate(histBestArray);
-    }
-
-    private double getInitialTemperature(SimulatorInterface simulator) {
+    private double getInitialTemperature(SimulatorInterfaceEnergy simulator) {
 
         int numSamples = 1000;
 
-        double[] scores = new double[numSamples];
+        double[] scoreSample = new double[numSamples];
+        double[] energySample = new double[numSamples];
+
         RandomAssigner assigner = new RandomAssigner(gateLib, structure);
 
         for (int i = 0; i < numSamples; i++) {
-            scores[i] = simulator.simulate(assigner.getNextAssignment(), SimulatorInterface.PropagationMode.NORMAL);
+
+            Assignment ass = assigner.getNextAssignment();
+
+            scoreSample[i] = simulator.simulate(ass);
+            energySample[i] = simulator.getEnergy();
         }
 
-        double sDev = new StandardDeviation().evaluate(scores);
+        minScoreSample = Arrays.stream(scoreSample).min().getAsDouble();
+        maxScoreSample = Arrays.stream(scoreSample).max().getAsDouble();
+        minEnergySample = Arrays.stream(energySample).min().getAsDouble();
+        maxEnergySample = Arrays.stream(energySample).max().getAsDouble();
+
+        double sDevScore = new StandardDeviation().evaluate(scoreSample);
+        double sDevEnergy = new StandardDeviation().evaluate(energySample);
+
+        double sDev;
+
+        switch (objective) {
+            case ENERGY:
+                sDev = sDevEnergy;
+                break;
+            case MULTI:
+                sDev = sDevEnergy;//Math.max(sDevEnergy, sDevScore);
+                break;
+            default:
+                sDev = sDevScore;
+        }
+
+        energyScaler = Arrays.stream(scoreSample).average().orElse(Double.NaN) / Arrays.stream(energySample).average().orElse(Double.NaN);
 
         return sDev * 20;
     }
@@ -316,20 +337,53 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
                 neighbor.put(selectedCircuitGate, selectedRealizations.get(rand.nextInt(selectedRealizations.size())));
             }
 
-        } while (!neighbor.isValid() || !neighbor.fulfilsConstraints(structure) || (neighbor.equals(current)));
+        } while (!neighbor.isValid() || (neighbor.equals(current)));
 
         return neighbor;
     }
 
-    private boolean accept(double current, double neighbor, double temperature) {
+    private boolean accept(double currentScore, double neighborScore, double currentEnergy, double neighborEnergy, double temperature) {
 
-        if (mapConfig.getOptimizationType().compare(current, neighbor))
-            return true;
+        switch (objective) {
+            case SCORE_ONLY:
 
-        if (mapConfig.getOptimizationType().equals(MappingConfiguration.OptimizationType.MAXIMIZE)) {
-            return Math.random() < Math.exp(-1*((current - neighbor) / temperature));
-        } else {
-            return Math.random() < Math.exp(-1*((neighbor - current) / temperature));
+                if (neighborScore > currentScore)
+                    return true;
+                else
+                    return Math.random() < Math.exp(-1*((currentScore - neighborScore) / temperature));
+
+            case SCORE:
+
+                if (neighborEnergy > upperEnergy)
+                    return false;
+                else if (neighborScore > currentScore)
+                    return true;
+                else
+                    return Math.random() < Math.exp(-1*((currentScore - neighborScore) / temperature));
+
+            case ENERGY:
+
+                if (neighborScore < lowerScore)
+                    return false;
+                else if (neighborEnergy < currentEnergy)
+                    return true;
+                else
+                    return Math.random() < Math.exp(-1*((neighborEnergy - currentEnergy) / temperature));
+
+            case MULTI:
+
+                double omegaScore = 1.0;
+                double omegaEnergy = 1.0 * energyScaler;
+
+                double ps = Math.exp((omegaScore * (neighborScore - currentScore)) / temperature);
+                double pe = Math.exp((omegaEnergy * (currentEnergy - neighborEnergy)) / temperature);
+
+                double pMax = Math.min(ps, pe);
+                double p = Math.min(1.0, pMax);
+
+                return Math.random() < p;
         }
+
+        return true;
     }
 }

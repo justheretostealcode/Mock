@@ -8,7 +8,7 @@ import de.tu_darmstadt.rs.synbio.common.circuit.Circuit;
 import de.tu_darmstadt.rs.synbio.mapping.assigner.ExhaustiveAssigner;
 import de.tu_darmstadt.rs.synbio.common.library.GateLibrary;
 import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
-import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
+import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterfaceThermo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +18,7 @@ public class ExhaustiveSearchWorker implements Callable<MappingResult> {
 
     private static final Logger logger = LoggerFactory.getLogger(ExhaustiveSearchWorker.class);
 
-    private final SimulatorInterface simulator;
+    private final SimulatorInterfaceThermo simulator;
     private final ExhaustiveAssigner assigner;
     private final Circuit structure;
     private final MappingConfiguration mapConfig;
@@ -30,7 +30,7 @@ public class ExhaustiveSearchWorker implements Callable<MappingResult> {
     public ExhaustiveSearchWorker(ExhaustiveAssigner assigner, Circuit structure, MappingConfiguration mapConfig,
                                   SimulationConfiguration simConfig, GateLibrary gateLibrary, boolean fixedInputs) {
         this.mapConfig = mapConfig;
-        this.simulator = new SimulatorInterface(simConfig, gateLibrary);
+        this.simulator = new SimulatorInterfaceThermo(simConfig, gateLibrary);
         this.assigner = assigner;
         this.structure = structure;
 
@@ -53,7 +53,7 @@ public class ExhaustiveSearchWorker implements Callable<MappingResult> {
         long numSims = 0;
 
         while (assignment != null && !Thread.interrupted()) {
-            MappingResult result = new MappingResult(structure, assignment, simulator.simulate(assignment, SimulatorInterface.PropagationMode.NORMAL));
+            MappingResult result = new MappingResult(structure, assignment, simulator.simulate(assignment, SimulatorInterfaceThermo.PropagationMode.NORMAL));
 
             numSims ++;
 

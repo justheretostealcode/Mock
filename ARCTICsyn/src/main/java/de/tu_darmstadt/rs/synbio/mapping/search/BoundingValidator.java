@@ -12,23 +12,21 @@ import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityChecker;
 import de.tu_darmstadt.rs.synbio.simulation.AssignmentCompiler;
 import de.tu_darmstadt.rs.synbio.simulation.SimulationConfiguration;
 import de.tu_darmstadt.rs.synbio.mapping.MappingResult;
-import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterface;
+import de.tu_darmstadt.rs.synbio.simulation.SimulatorInterfaceThermo;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 public class BoundingValidator extends AssignmentSearchAlgorithm {
 
     private static final Logger logger = LoggerFactory.getLogger(BoundingValidator.class);
 
     private final ExhaustiveAssigner assigner;
-    private final SimulatorInterface simulator;
+    private final SimulatorInterfaceThermo simulator;
     private final AssignmentCompiler compiler;
     private final CompatibilityChecker checker;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -39,7 +37,7 @@ public class BoundingValidator extends AssignmentSearchAlgorithm {
     public BoundingValidator(Circuit structure, GateLibrary lib, MappingConfiguration mapConfig, SimulationConfiguration simConfig) {
         super(structure, lib, mapConfig, simConfig);
         assigner = new ExhaustiveAssigner(lib, structure);
-        simulator = new SimulatorInterface(simConfig, lib);
+        simulator = new SimulatorInterfaceThermo(simConfig, lib);
 
         gates = new ArrayList<>();
         Iterator<Gate> iterator = new TopologicalOrderIterator<>(structure);
@@ -72,14 +70,14 @@ public class BoundingValidator extends AssignmentSearchAlgorithm {
         while (assignment != null) {
 
             Assignment completeAssignment = new Assignment(assignment);
-            Double exactScore = simulator.simulate(completeAssignment, SimulatorInterface.PropagationMode.NORMAL);
+            Double exactScore = simulator.simulate(completeAssignment, SimulatorInterfaceThermo.PropagationMode.NORMAL);
 
             for (int i = 0; i < gates.size() - 1; i++) {
 
                 Gate gate = gates.get(i);
 
                 assignment.remove(gate);
-                Double estimation = simulator.simulate(assignment, SimulatorInterface.PropagationMode.OPTIMAL);
+                Double estimation = simulator.simulate(assignment, SimulatorInterfaceThermo.PropagationMode.OPTIMAL);
 
                 if (exactScore == null || estimation == null)
                     continue;

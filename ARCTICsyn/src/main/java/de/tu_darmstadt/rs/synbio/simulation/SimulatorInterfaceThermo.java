@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 
-public class SimulatorInterface {
+public class SimulatorInterfaceThermo {
 
-    private static final Logger logger = LoggerFactory.getLogger(SimulatorInterface.class);
+    private static final Logger logger = LoggerFactory.getLogger(SimulatorInterfaceThermo.class);
 
     private static final String scorePrefix = "score: ";
 
@@ -42,7 +42,7 @@ public class SimulatorInterface {
         OPTIMAL
     }
 
-    public SimulatorInterface(SimulationConfiguration config, GateLibrary gateLibrary) {
+    public SimulatorInterfaceThermo(SimulationConfiguration config, GateLibrary gateLibrary) {
         pythonBinary = config.getPythonBinary();
         simulatorPath = config.getSimPath();
         simScript = config.getSimScript();
@@ -101,40 +101,8 @@ public class SimulatorInterface {
     public Double simulate(Assignment assignment, PropagationMode mode) {
 
         SimulationResult result;
-        //int repetitions = 0;
 
         result = trySimulation(assignment, mode);
-
-        /* this is convergence hack code */
-
-        /*if (result.code == SimulationResult.ReturnCode.NO_CONVERGENCE) {
-
-            do {
-
-                simProcess.destroy();
-                try {
-                    simProcess = pb.start();
-                    reader = new BufferedReader(new InputStreamReader(simProcess.getInputStream()));
-                    writer = new BufferedWriter(new OutputStreamWriter(simProcess.getOutputStream()));
-                    errorReader = new BufferedReader(new InputStreamReader(simProcess.getErrorStream()));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-
-                result = trySimulation(assignment, mode);
-                repetitions ++;
-
-                if (repetitions > 10) {
-                    logger.error("Aborted simulation due to non-convergence. Mode: " + mode.name());
-                    return 0.0;
-                }
-
-            } while (result.code == SimulationResult.ReturnCode.NO_CONVERGENCE);
-        }
-
-        if (repetitions > 0)
-            logger.warn("converged after " + repetitions + "repetitions.");*/
 
         switch (result.code) {
             case ERROR:
@@ -144,8 +112,6 @@ public class SimulatorInterface {
             default:
                 return result.score;
         }
-
-        //return result.code == SimulationResult.ReturnCode.OK ? result.score : null;
     }
 
     private static class SimulationResult {

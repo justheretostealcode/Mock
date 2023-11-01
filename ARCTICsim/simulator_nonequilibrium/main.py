@@ -40,8 +40,7 @@ def sim_run(lineargs, json_str=None):
     if "structure" in sim_settings:
         structure = load_structure(sim_settings)
         evaluator.set_structure(structure)
-
-
+    
     #cur_profiler = profiler.start_profiler()
     result = evaluator.score_assignment(assignment=assignment, sim_settings=sim_settings)
     #profiler.stop_profiler(cur_profiler, suffix = "_circuit_evaluator")

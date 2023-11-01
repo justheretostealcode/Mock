@@ -49,7 +49,7 @@ public class LibraryBuilder {
         String synthesisConfigFile = "syn.config";
         SynthesisConfiguration synConfig = new SynthesisConfiguration(synthesisConfigFile);
 
-        GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), mapConfig.getCompatibilityLibrary(), true);
+        GateLibrary gateLib = new GateLibrary(mapConfig.getLibrary(), mapConfig.getCompatibilityLibrary(), GateLibrary.Type.ENERGY);
 
         EnumeratorFast enumerator = new EnumeratorFast(gateLib, 3, synConfig);
         enumerator.enumerate();

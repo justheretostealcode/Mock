@@ -3,6 +3,7 @@ package de.tu_darmstadt.rs.synbio.common.library;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tu_darmstadt.rs.synbio.common.LogicType;
+import de.tu_darmstadt.rs.synbio.common.circuit.Gate;
 import de.tu_darmstadt.rs.synbio.mapping.compatibility.CompatibilityMatrix;
 import org.logicng.util.Pair;
 import org.slf4j.Logger;
@@ -23,22 +24,34 @@ public class GateLibrary {
     private Double[] proxNormalization = new Double[]{1.0, 1.0, 1.0};
     private Double[] proxWeights = new Double[]{1.0, 1.0, 1.0};
 
-    public GateLibrary(File libraryFile, File compatibilityFile, boolean isThermo) {
+    public enum Type {
+        CONV,
+        THERMO,
+        ENERGY
+    }
+
+    public GateLibrary(File libraryFile, File compatibilityFile, Type type) {
 
         this.sourceFile = libraryFile;
 
-        if (isThermo) {
-            if (compatibilityFile != null)
-                loadCompatibility(compatibilityFile);
-            loadThermoLibrary(libraryFile);
-        } else {
-            loadConvLibrary(libraryFile);
+        switch (type) {
+            case CONV:
+                loadConvLibrary(libraryFile);
+                break;
+            case THERMO:
+                loadThermoLibrary(libraryFile);
+                if (compatibilityFile != null)
+                    loadCompatibility(compatibilityFile);
+                break;
+            case ENERGY:
+                loadEnergyLibrary(libraryFile);
+                break;
         }
     }
 
-    public GateLibrary(File libraryFile, File compatibilityFile, boolean isThermo, Double[] proxWeights) {
+    public GateLibrary(File libraryFile, File compatibilityFile, Type type, Double[] proxWeights) {
 
-        this(libraryFile, compatibilityFile,isThermo);
+        this(libraryFile, compatibilityFile,type);
 
         this.proxWeights = proxWeights;
         proxNormalization = calcProxNormalization();
@@ -227,6 +240,61 @@ public class GateLibrary {
                     }
                     addGateRealization(newGate);
                 }
+            }
+        }
+    }
+
+    private void loadEnergyLibrary(File libraryFile) {
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        JsonNode content;
+
+        try {
+            content = mapper.readTree(libraryFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        for (int i = 0; i < content.size(); i++) {
+
+            JsonNode entry = content.get(i);
+            JsonNode biorep = entry.get("biorep");
+
+            JsonNode functions = entry.get("primitiveIdentifier");
+
+            for (int j = 0; j < functions.size(); j ++) {
+
+                GateRealization newGate;
+
+                LogicType logicType = LogicType.valueOf(functions.get(j).textValue());
+
+                if (logicType == LogicType.OUTPUT_BUFFER || logicType == LogicType.OUTPUT_OR2) {
+                    newGate = new GateRealization(entry.get("identifier").textValue(),
+                            logicType,
+                            entry.get("group").textValue());
+                } else if (logicType == LogicType.INPUT) {
+                    newGate = new GateRealization(entry.get("identifier").textValue(),
+                            logicType,
+                            entry.get("group").textValue(),
+                            new GateRealization.GateCharacterization(
+                                    biorep.get("1").asDouble(),
+                                    biorep.get("0").asDouble(),
+                                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, null));
+                } else {
+                    newGate = new GateRealization(entry.get("identifier").textValue(),
+                            logicType,
+                            entry.get("group").textValue(),
+                            new GateRealization.GateCharacterization(
+                                    0.0,
+                                    0.0,
+                                    0.0,
+                                    0.0,
+                                    0.0));
+                }
+
+                addGateRealization(newGate);
             }
         }
     }

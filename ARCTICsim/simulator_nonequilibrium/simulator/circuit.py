@@ -44,9 +44,6 @@ class Circuit:
         self.energy_rate = np.nan
         pass
 
-
-
-
     def __call__(self, input_vals_dict, sim_settings):
         assignment = self.assignment
         propagation_graph = self.propagation_graph
@@ -65,7 +62,7 @@ class Circuit:
         for gate_id in propagation_graph:
             node_info = self.structure.node_infos[gate_id]
             device = assignment(node_info)
-            str(device)
+            # str(device)
             in_vals = gate_input_vals[gate_id]
             assert not (any(np.isnan(in_vals)) or any([val < 0 for val in in_vals]))
 
@@ -76,15 +73,15 @@ class Circuit:
             for subsidary in propagation_graph[gate_id]:
                 gate_input_vals[subsidary].append(out_val)
 
-            #if node_info.type == "LOGIC":
+            # if node_info.type == "LOGIC":
             energy_rate += device.energy_rate
             energy_rates += np.array(device.energy_rates)
 
-            #print("")
-            #print(gate_id)
-            #print(gate_input_vals)
-            #print(gate_output_vals)
-            #pass
+            # print("")
+            # print(gate_id)
+            # print(gate_input_vals)
+            # print(gate_output_vals)
+            # pass
 
         self.energy_rate = energy_rate
         self.energy_rates = energy_rates
@@ -120,6 +117,5 @@ if __name__ == '__main__':
     # for iX in range(N):
     #     output_vals = circuit(input_vals_dict=input_vals)
     #     out_vals[iX] = output_vals["O"]
-
 
     pass

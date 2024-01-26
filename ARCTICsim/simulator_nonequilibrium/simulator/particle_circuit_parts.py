@@ -4,7 +4,7 @@ Author: Erik Kubaczka
 import json
 from collections import OrderedDict
 
-from ARCTICsim.simulator_nonequilibrium.models.four_state_promoter_model import FourStatePromoterModel
+from models.four_state_promoter_model import FourStatePromoterModel
 import numpy as np
 
 

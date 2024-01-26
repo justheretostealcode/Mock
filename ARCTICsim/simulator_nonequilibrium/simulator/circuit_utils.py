@@ -3,10 +3,10 @@ import json
 import numpy as np
 from gvgen import GvGen
 
-from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLib
-from ARCTICsim.simulator_nonequilibrium.simulator.libsim_coop import circuit_structure
-from ARCTICsim.simulator_nonequilibrium.simulator.particle_circuit_parts import Device, Input, Output
-from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
+from simulator.gatelib import GateLib
+from simulator.libsim_coop import circuit_structure
+from simulator.particle_circuit_parts import Device, Input, Output
+from simulator.utils import JsonFile
 
 
 #####################################################################################################

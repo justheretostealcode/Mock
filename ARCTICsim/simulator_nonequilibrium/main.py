@@ -10,10 +10,10 @@ import shlex
 from argparse import ArgumentParser
 
 import profiler
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit_evaluator import CircuitEvaluator
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, CircuitStructure, load_structure
-from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLib
-from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile, load_settings, communication_wrapper, type_dict
+from simulator.circuit_evaluator import CircuitEvaluator
+from simulator.circuit_utils import CircuitAssignment, CircuitStructure, load_structure
+from simulator.gatelib import GateLib
+from simulator.utils import JsonFile, load_settings, communication_wrapper, type_dict
 
 here = op.dirname(op.abspath(inspect.getfile(inspect.currentframe())))
 version = '0.1'

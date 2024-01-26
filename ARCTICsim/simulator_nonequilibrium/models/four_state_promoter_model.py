@@ -5,7 +5,7 @@ E-Mail: erik.kubaczka@tu-darmstadt.de
 import scipy as scp
 import numpy as np
 
-from ARCTICsim.simulator_nonequilibrium.models.energy_aware_moment_model import EnergyAwareMomentModel
+from models.energy_aware_moment_model import EnergyAwareMomentModel
 
 
 class FourStatePromoterModel(EnergyAwareMomentModel):

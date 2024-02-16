@@ -1,0 +1,107 @@
+{
+  "truthtable": "11111000",
+  "gate_truthtables": {
+    "NOT_1": "00110011",
+    "b": "11001100",
+    "OUTPUT_OR2_9": "11111000",
+    "a": "11110000",
+    "NOR2_7": "01010101",
+    "NOR2_8": "10001000",
+    "NOR2_6": "00000000",
+    "c": "10101010"
+  },
+  "graph": {
+    "creator": "JGraphT JSON Exporter",
+    "version": "1",
+    "nodes": [
+      {
+        "id": "NOT_1",
+        "type": "NOT"
+      },
+      {
+        "id": "b",
+        "type": "INPUT"
+      },
+      {
+        "id": "NOR2_6",
+        "type": "NOR2"
+      },
+      {
+        "id": "NOR2_7",
+        "type": "NOR2"
+      },
+      {
+        "id": "c",
+        "type": "INPUT"
+      },
+      {
+        "id": "NOR2_8",
+        "type": "NOR2"
+      },
+      {
+        "id": "OUTPUT_OR2_9",
+        "type": "OUTPUT_OR2"
+      },
+      {
+        "id": "a",
+        "type": "INPUT"
+      }
+    ],
+    "edges": [
+      {
+        "id": "1",
+        "source": "b",
+        "target": "NOT_1",
+        "variable": "x"
+      },
+      {
+        "id": "2",
+        "source": "b",
+        "target": "NOR2_6",
+        "variable": "y"
+      },
+      {
+        "id": "3",
+        "source": "NOR2_6",
+        "target": "NOR2_7",
+        "variable": "x"
+      },
+      {
+        "id": "4",
+        "source": "c",
+        "target": "NOR2_7",
+        "variable": "y"
+      },
+      {
+        "id": "5",
+        "source": "NOR2_7",
+        "target": "NOR2_8",
+        "variable": "y"
+      },
+      {
+        "id": "6",
+        "source": "NOR2_8",
+        "target": "OUTPUT_OR2_9",
+        "variable": "x"
+      },
+      {
+        "id": "7",
+        "source": "a",
+        "target": "OUTPUT_OR2_9",
+        "variable": "y"
+      },
+      {
+        "id": "8",
+        "source": "NOT_1",
+        "target": "NOR2_6",
+        "variable": "x"
+      },
+      {
+        "id": "9",
+        "source": "NOT_1",
+        "target": "NOR2_8",
+        "variable": "x"
+      }
+    ]
+  }
+}

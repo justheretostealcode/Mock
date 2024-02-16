@@ -3,10 +3,9 @@ import json
 import numpy as np
 from gvgen import GvGen
 
-from simulator.gatelib import GateLib
-from simulator.libsim_coop import circuit_structure
-from simulator.particle_circuit_parts import Device, Input, Output
-from simulator.utils import JsonFile
+from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLib, Device
+from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
+from ARCTICsim.simulator_thermodynamics.libsim import circuit_structure
 
 
 #####################################################################################################
@@ -35,6 +34,7 @@ class CircuitStructure(circuit_structure):
 
     def get_outgoing_edges(self, node_id):
         return [edge for edge in self.edges if edge[0] == node_id]
+
     def get_ingoing_edges(self, node_id):
         return [edge for edge in self.edges if edge[1] == node_id]
 
@@ -51,7 +51,8 @@ class CircuitStructure(circuit_structure):
             dest_item = items[edge[1]]
             g.newLink(src_item, dest_item)
 
-        return g.dot()
+        dot_rep = g.dot()
+        return dot_rep
 
 
 #####################################################################################################
@@ -70,28 +71,21 @@ class CircuitAssignment:
 
         id = node_info.id
         # Legacy field
-        #primitiveIdentifier = node_info.primitiveIdentifier
+        # primitiveIdentifier = node_info.primitiveIdentifier
         node_type = node_info.type
 
         device_id = self.mapping[id]
 
-        # if node_type == "INPUT":
-        #     gate = Input(id)
-        #     if device_id in self.gate_lib.gates_by_type_and_name["INPUT"]:
-        #         gate = self.gate_lib.gates_by_type_and_name["INPUT"][device_id]
-        # elif node_type == "OUTPUT":
-        #     gate = Output(id)
-        # elif node_type == "NOT" or node_type == "NOR2":
-        #     gate = self.gate_lib.gates_by_type_and_name[node_type][device_id]
-        # else:
-        #     raise Exception(
-        #         f"The node type {node_type} is not supported. It needs to be either of {self.gate_lib.gates_by_type_and_name.keys()}.")
+        raise Exception("Not Compatible Yet: Adapt to new GateLib")
+        # ToDo Adapt to new GateLib
         gates_by_type_and_name = self.gate_lib.gates_by_type_and_name
         if node_type not in gates_by_type_and_name:
-            raise Exception(f"The node type {node_type} is not supported. It needs to be either of {self.gate_lib.gates_by_type_and_name.keys()}.")
+            raise Exception(
+                f"The node type {node_type} is not supported. It needs to be either of {self.gate_lib.gates_by_type_and_name.keys()}.")
 
         if device_id not in gates_by_type_and_name[node_type]:
-            raise Exception(f"The device {device_id} is not known. The known devices for node type {node_type} are {self.gate_lib.gates_by_type_and_name[node_type].keys()}.")
+            raise Exception(
+                f"The device {device_id} is not known. The known devices for node type {node_type} are {self.gate_lib.gates_by_type_and_name[node_type].keys()}.")
 
         gate = self.gate_lib.gates_by_type_and_name[node_type][device_id]
         return gate

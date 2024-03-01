@@ -2,9 +2,9 @@
 Author: Erik Kubaczka
 """
 import numpy as np
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit import Circuit
-from ARCTICsim.simulator_nonequilibrium.simulator.scores import FunctionalScore, EnergyScore
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, CircuitStructure
+from simulator.circuit import Circuit
+from simulator.scores import FunctionalScore, EnergyScore
+from simulator.circuit_utils import CircuitAssignment, CircuitStructure
 
 
 # ToDos
@@ -18,12 +18,12 @@ from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAs
 #   - Implement simulation (based on samples from distributions)        ✓
 #   - Propagate values through circuit                                  ✓
 #
-# 3. Perform scoring
-#   - Functional Scoring based on Wasserstein
-#   - Energy Scoring (either Average or Maximum)
+# 3. Perform scoring            ✓
+#   - Functional Scoring based on Wasserstein           ✓
+#   - Energy Scoring (either Average or Maximum)        ✓
 #
-# 4. Return scores
-#   - Pass scores in JSON Format to optimizer
+# 4. Return scores              ✓
+#   - Pass scores in JSON Format to optimizer           ✓
 
 class CircuitEvaluator:
 
@@ -62,11 +62,7 @@ class CircuitEvaluator:
 
         circuit.set_assignment(assignment)
 
-        # ToDo
-        # Iterate over truthtable entries
-        # Evaluate Circuit
-        # Extract relevant Values from circuit vals
-        # Extract Energy Level
+
         mode = sim_settings["mode"]
         n_samples = sim_settings["n_samples"] if mode == "samp" else 1
 

@@ -4,7 +4,7 @@ Author: Erik Kubaczka
 import json
 from collections import OrderedDict
 
-from ARCTICsim.simulator_nonequilibrium.models.four_state_promoter_model import FourStatePromoterModel
+from models.four_state_promoter_model import FourStatePromoterModel
 import numpy as np
 
 
@@ -144,12 +144,11 @@ class NORGate(Gate):
         super().__init__(gate_entry=gate_entry)
         self.type = "NOR2"
 
-        # self.or_gate = OutputOR(gate_entry)
         self.not_gate = NOTGate(gate_entry)
         pass
 
     def __call__(self, val1: float, val2: float, sim_settings: dict) -> float:
-        # val = self.or_gate(val1, val2)
+        # Comment: Possibility to implement individual combination of inputs
         val = val1 + val2
         output = self.not_gate(val, sim_settings=sim_settings)
 

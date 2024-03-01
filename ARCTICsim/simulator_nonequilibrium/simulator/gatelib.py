@@ -2,8 +2,8 @@ import cProfile
 
 from matplotlib import pyplot as plt
 
-from ARCTICsim.simulator_nonequilibrium.simulator.particle_circuit_parts import OutputOR, NORGate, NOTGate, LutInput, OutputBuffer
-from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
+from simulator.particle_circuit_parts import OutputOR, NORGate, NOTGate, LutInput, OutputBuffer
+from simulator.utils import JsonFile
 
 
 # Class to represent the gatelib

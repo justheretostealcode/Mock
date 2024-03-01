@@ -6,7 +6,7 @@ import json
 import sys
 from configparser import ConfigParser
 
-from ARCTICsim.simulator_nonequilibrium.simulator.libsim_coop import json_file
+from simulator.libsim_coop import json_file
 
 
 #####################################################################################################
@@ -30,7 +30,7 @@ class JsonFile(json_file):
         self.data = json.loads(self.content)
 
     def dump(self, data):
-        if self.path is None or self.path is "":
+        if self.path is None or self.path == "":
             raise Exception("No path specified to dump to json file.")
         self.content = json.dumps(data)
         self.data = data

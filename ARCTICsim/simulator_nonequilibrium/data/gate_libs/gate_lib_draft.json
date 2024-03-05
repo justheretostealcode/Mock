@@ -1,0 +1,1467 @@
+[
+  {
+    "identifier": "input_1",
+    "name": "input_1",
+    "group": "Xyl",
+    "collection": "devices",
+    "primitive_identifier": [
+      "INPUT"
+    ],
+    "promoter_id": "promoter_pxyl",
+    "utr_id": null,
+    "cds_id": "tf_input_xylR",
+    "terminator_id": null
+  },
+  {
+    "identifier": "input_2",
+    "name": "input_1",
+    "collection": "devices",
+    "group": "aTc",
+    "primitive_identifier": [
+      "INPUT"
+    ],
+    "promoter_id": "promoter_ptet",
+    "utr_id": null,
+    "cds_id": "tf_input_tetR",
+    "terminator_id": null
+  },
+  {
+    "identifier": "input_3",
+    "name": "input_1",
+    "collection": "devices",
+    "group": "IPTG",
+    "primitive_identifier": [
+      "INPUT"
+    ],
+    "promoter_id": "promoter_plac",
+    "utr_id": null,
+    "cds_id": "tf_input_lacl",
+    "terminator_id": null
+  },
+  {
+    "identifier": "output_YFP",
+    "name": "output_YFP",
+    "group": "YFP",
+    "collection": "devices",
+    "primitive_identifier": [
+      "OUTPUT_OR2",
+      "OUTPUT_BUFFER"
+    ],
+    "promoter_id": null,
+    "utr_id": null,
+    "cds_id": "protein_YFP",
+    "terminator_id": null
+  },
+  {
+    "identifier": "device_P1_PhlF",
+    "name": "P1_PhlF",
+    "group": "PhlF",
+    "collection": "devices",
+    "primitive_identifier": [
+      "NOT",
+      "NOR2"
+    ],
+    "promoter_id": "promoter_pPhlF1",
+    "utr_id": "Kozak1",
+    "cds_id": "protein_PhlF",
+    "terminator_id": null
+  },
+  {
+    "identifier": "device_P1_BM3RI",
+    "name": "P1_BM3RI",
+    "group": "BM3RI",
+    "collection": "devices",
+    "primitive_identifier": [
+      "NOT",
+      "NOR2"
+    ],
+    "promoter_id": "promoter_pBM3RI",
+    "utr_id": "Kozak1",
+    "cds_id": "protein_BM3RI",
+    "terminator_id": null
+  },
+  {
+    "identifier": "device_P1_QacR",
+    "name": "P1_QacR",
+    "group": "QacR",
+    "collection": "devices",
+    "primitive_identifier": [
+      "NOT",
+      "NOR2"
+    ],
+    "promoter_id": "promoter_pQacR",
+    "utr_id": "Kozak1",
+    "cds_id": "protein_QacR",
+    "terminator_id": null
+  },
+  {
+    "identifier": "device_P1_CI",
+    "name": "P1_CI",
+    "group": "CI",
+    "collection": "devices",
+    "primitive_identifier": [
+      "NOT",
+      "NOR2"
+    ],
+    "promoter_id": "promoter_pCI",
+    "utr_id": "Kozak1",
+    "cds_id": "protein_CI",
+    "terminator_id": null
+  },
+  {
+    "identifier": "device_P1_LexA",
+    "name": "P1_LexA",
+    "group": "LexA",
+    "collection": "devices",
+    "primitive_identifier": [
+      "NOT",
+      "NOR2"
+    ],
+    "promoter_id": "promoter_pLexA",
+    "utr_id": "Kozak1",
+    "cds_id": "protein_LexA",
+    "terminator_id": null
+  },
+  {
+    "identifier": "promoter_pxyl",
+    "name": "pxyl",
+    "collection": "promoters",
+    "cognate_transcription_factors": [
+      "xylR"
+    ],
+    "technology_mapping": {
+      "inflection_point": {
+        "x_m": 401.50904740377604,
+        "y_m": 7299.533329199669,
+        "d_y_m": -16.363749316592973
+      }
+    },
+    "model_info": {
+      "N_PROMOTER_STATES": 6,
+      "N_PARAMETERS": 14,
+      "INPUT_SCALING_FACTOR": 0.0001,
+      "PROMOTER_ACTIVITY": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "INFINITESIMAL_GENERATOR_FUNCTION": {
+        "expressions": [],
+        "matrices": {
+          "1": [
+            [
+              -5,
+              0,
+              0,
+              5,
+              0,
+              0
+            ],
+            [
+              1,
+              -5,
+              0,
+              0,
+              4,
+              0
+            ],
+            [
+              0,
+              3,
+              -9,
+              0,
+              0,
+              6
+            ],
+            [
+              2,
+              0,
+              0,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              4,
+              -12,
+              0
+            ],
+            [
+              0,
+              0,
+              18,
+              0,
+              17,
+              -35
+            ]
+          ],
+          "c": [
+            [
+              -2,
+              2,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              -3,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              -7,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              -9,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "sequence_ids": []
+  },
+  {
+    "identifier": "promoter_ptet",
+    "name": "ptet",
+    "collection": "promoters",
+    "cognate_transcription_factors": [
+      "tetR"
+    ],
+    "technology_mapping": {
+      "inflection_point": {
+        "x_m": 401.50904740377604,
+        "y_m": 7299.533329199669,
+        "d_y_m": -16.363749316592973
+      }
+    },
+    "model_info": {
+      "N_PROMOTER_STATES": 6,
+      "N_PARAMETERS": 14,
+      "INPUT_SCALING_FACTOR": 0.0001,
+      "PROMOTER_ACTIVITY": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "INFINITESIMAL_GENERATOR_FUNCTION": {
+        "matrices": {
+          "1": [
+            [
+              -5,
+              0,
+              0,
+              5,
+              0,
+              0
+            ],
+            [
+              1,
+              -5,
+              0,
+              0,
+              4,
+              0
+            ],
+            [
+              0,
+              3,
+              -9,
+              0,
+              0,
+              6
+            ],
+            [
+              2,
+              0,
+              0,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              4,
+              -12,
+              0
+            ],
+            [
+              0,
+              0,
+              18,
+              0,
+              17,
+              -35
+            ]
+          ],
+          "c": [
+            [
+              -2,
+              2,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              -3,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              -7,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              -9,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "sequence_ids": []
+  },
+  {
+    "identifier": "promoter_plac",
+    "name": "ptet",
+    "collection": "promoters",
+    "cognate_transcription_factors": [
+      "lacl"
+    ],
+    "technology_mapping": {
+      "inflection_point": {
+        "x_m": 401.50904740377604,
+        "y_m": 7299.533329199669,
+        "d_y_m": -16.363749316592973
+      }
+    },
+    "model_info": {
+      "N_PROMOTER_STATES": 6,
+      "N_PARAMETERS": 14,
+      "INPUT_SCALING_FACTOR": 0.0001,
+      "PROMOTER_ACTIVITY": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "INFINITESIMAL_GENERATOR_FUNCTION": {
+        "matrices": {
+          "1": [
+            [
+              -5,
+              0,
+              0,
+              5,
+              0,
+              0
+            ],
+            [
+              1,
+              -5,
+              0,
+              0,
+              4,
+              0
+            ],
+            [
+              0,
+              3,
+              -9,
+              0,
+              0,
+              6
+            ],
+            [
+              2,
+              0,
+              0,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              4,
+              -12,
+              0
+            ],
+            [
+              0,
+              0,
+              18,
+              0,
+              17,
+              -35
+            ]
+          ],
+          "c": [
+            [
+              -2,
+              2,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              -3,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              -7,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              -9,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "sequence_ids": []
+  },
+  {
+    "identifier": "promoter_pPhlF1",
+    "name": "pPhlF1",
+    "collection": "promoters",
+    "cognate_transcription_factors": [
+      "PhlF",
+      "PhlFa",
+      "PhlFb"
+    ],
+    "technology_mapping": {
+      "inflection_point": {
+        "x_m": 401.50904740377604,
+        "y_m": 7299.533329199669,
+        "d_y_m": -16.363749316592973
+      }
+    },
+    "model_info": {
+      "N_PROMOTER_STATES": 6,
+      "N_PARAMETERS": 14,
+      "INPUT_SCALING_FACTOR": 0.0001,
+      "PROMOTER_ACTIVITY": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "INFINITESIMAL_GENERATOR_FUNCTION": {
+        "matrices": {
+          "1": [
+            [
+              -5,
+              0,
+              0,
+              5,
+              0,
+              0
+            ],
+            [
+              1,
+              -5,
+              0,
+              0,
+              4,
+              0
+            ],
+            [
+              0,
+              3,
+              -9,
+              0,
+              0,
+              6
+            ],
+            [
+              2,
+              0,
+              0,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              4,
+              -12,
+              0
+            ],
+            [
+              0,
+              0,
+              18,
+              0,
+              17,
+              -35
+            ]
+          ],
+          "c": [
+            [
+              -2,
+              2,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              -3,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              -7,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              -9,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "sequence_ids": []
+  },
+  {
+    "identifier": "promoter_pBM3RI",
+    "name": "pBM3RI",
+    "collection": "promoters",
+    "cognate_transcription_factors": [
+      "BM3RI",
+      "BM3RIa",
+      "BM3RIb"
+    ],
+    "technology_mapping": {
+      "inflection_point": {
+        "x_m": 401.50904740377604,
+        "y_m": 7299.533329199669,
+        "d_y_m": -16.363749316592973
+      }
+    },
+    "model_info": {
+      "N_PROMOTER_STATES": 6,
+      "N_PARAMETERS": 14,
+      "INPUT_SCALING_FACTOR": 0.0001,
+      "PROMOTER_ACTIVITY": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "INFINITESIMAL_GENERATOR_FUNCTION": {
+        "matrices": {
+          "1": [
+            [
+              -5,
+              0,
+              0,
+              5,
+              0,
+              0
+            ],
+            [
+              1,
+              -5,
+              0,
+              0,
+              4,
+              0
+            ],
+            [
+              0,
+              3,
+              -9,
+              0,
+              0,
+              6
+            ],
+            [
+              2,
+              0,
+              0,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              4,
+              -12,
+              0
+            ],
+            [
+              0,
+              0,
+              18,
+              0,
+              17,
+              -35
+            ]
+          ],
+          "c": [
+            [
+              -2,
+              2,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              -3,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              -7,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              -9,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "sequence_ids": []
+  },
+  {
+    "identifier": "promoter_pQacR",
+    "name": "pQacR",
+    "collection": "promoters",
+    "cognate_transcription_factors": [
+      "QacR",
+      "QacRa",
+      "QacRb"
+    ],
+    "technology_mapping": {
+      "inflection_point": {
+        "x_m": 401.50904740377604,
+        "y_m": 7299.533329199669,
+        "d_y_m": -16.363749316592973
+      }
+    },
+    "model_info": {
+      "N_PROMOTER_STATES": 6,
+      "N_PARAMETERS": 14,
+      "INPUT_SCALING_FACTOR": 0.0001,
+      "PROMOTER_ACTIVITY": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "INFINITESIMAL_GENERATOR_FUNCTION": {
+        "matrices": {
+          "1": [
+            [
+              -5,
+              0,
+              0,
+              5,
+              0,
+              0
+            ],
+            [
+              1,
+              -5,
+              0,
+              0,
+              4,
+              0
+            ],
+            [
+              0,
+              3,
+              -9,
+              0,
+              0,
+              6
+            ],
+            [
+              2,
+              0,
+              0,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              4,
+              -12,
+              0
+            ],
+            [
+              0,
+              0,
+              18,
+              0,
+              17,
+              -35
+            ]
+          ],
+          "c": [
+            [
+              -2,
+              2,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              -3,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              -7,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              -9,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "sequence_ids": []
+  },
+  {
+    "identifier": "promoter_pCI",
+    "name": "pCI",
+    "collection": "promoters",
+    "cognate_transcription_factors": [
+      "CI",
+      "CIa",
+      "CIb"
+    ],
+    "technology_mapping": {
+      "inflection_point": {
+        "x_m": 401.50904740377604,
+        "y_m": 7299.533329199669,
+        "d_y_m": -16.363749316592973
+      }
+    },
+    "model_info": {
+      "N_PROMOTER_STATES": 6,
+      "N_PARAMETERS": 14,
+      "INPUT_SCALING_FACTOR": 0.0001,
+      "PROMOTER_ACTIVITY": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "INFINITESIMAL_GENERATOR_FUNCTION": {
+        "matrices": {
+          "1": [
+            [
+              -5,
+              0,
+              0,
+              5,
+              0,
+              0
+            ],
+            [
+              1,
+              -5,
+              0,
+              0,
+              4,
+              0
+            ],
+            [
+              0,
+              3,
+              -9,
+              0,
+              0,
+              6
+            ],
+            [
+              2,
+              0,
+              0,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              4,
+              -12,
+              0
+            ],
+            [
+              0,
+              0,
+              18,
+              0,
+              17,
+              -35
+            ]
+          ],
+          "c": [
+            [
+              -2,
+              2,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              -3,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              -7,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              -9,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "sequence_ids": []
+  },
+  {
+    "identifier": "promoter_pLexA",
+    "name": "pLexA",
+    "collection": "promoters",
+    "cognate_transcription_factors": [
+      "LexA",
+      "LexAa",
+      "LexAb"
+    ],
+    "technology_mapping": {
+      "inflection_point": {
+        "x_m": 401.50904740377604,
+        "y_m": 7299.533329199669,
+        "d_y_m": -16.363749316592973
+      }
+    },
+    "model_info": {
+      "N_PROMOTER_STATES": 6,
+      "N_PARAMETERS": 14,
+      "INPUT_SCALING_FACTOR": 0.0001,
+      "PROMOTER_ACTIVITY": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "INFINITESIMAL_GENERATOR_FUNCTION": {
+        "matrices": {
+          "1": [
+            [
+              -5,
+              0,
+              0,
+              5,
+              0,
+              0
+            ],
+            [
+              1,
+              -5,
+              0,
+              0,
+              4,
+              0
+            ],
+            [
+              0,
+              3,
+              -9,
+              0,
+              0,
+              6
+            ],
+            [
+              2,
+              0,
+              0,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              4,
+              -12,
+              0
+            ],
+            [
+              0,
+              0,
+              18,
+              0,
+              17,
+              -35
+            ]
+          ],
+          "c": [
+            [
+              -2,
+              2,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              -3,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              -7,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              -9,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "sequence_ids": []
+  },
+  {
+    "identifier": "promoter_pConstitutive",
+    "name": "pConstitutive",
+    "collection": "promoters",
+    "cognate_transcription_factors": [
+      "xylR"
+    ],
+    "technology_mapping": {
+      "inflection_point": {
+        "x_m": 401.50904740377604,
+        "y_m": 7299.533329199669,
+        "d_y_m": -16.363749316592973
+      }
+    },
+    "model_info": {
+      "N_PROMOTER_STATES": 6,
+      "N_PARAMETERS": 14,
+      "INPUT_SCALING_FACTOR": 0.0001,
+      "PROMOTER_ACTIVITY": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "INFINITESIMAL_GENERATOR_FUNCTION": {
+        "expressions": [],
+        "matrices": {
+          "1": [
+            [
+              -1,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              -1,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              -1,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              -0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              -1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              0,
+              -1
+            ]
+          ]
+        }
+      }
+    },
+    "sequence_ids": []
+  },
+  {
+    "identifier": "tf_input_xylR",
+    "name": "xylR",
+    "collection": "tf_inputs",
+    "sequence_ids": [],
+    "model_info": {
+      "LUT": {
+        "0": 100,
+        "1": 1
+      }
+    }
+  },
+  {
+    "identifier": "tf_input_tetR",
+    "name": "tetR",
+    "collection": "tf_inputs",
+    "sequence_ids": [],
+    "model_info": {
+      "LUT": {
+        "0": 100,
+        "1": 1
+      }
+    }
+  },
+  {
+    "identifier": "tf_input_lacl",
+    "name": "lacl",
+    "collection": "tf_inputs",
+    "sequence_ids": [],
+    "model_info": {
+      "LUT": {
+        "0": 100,
+        "1": 1
+      }
+    }
+  },
+  {
+    "identifier": "protein_YFP",
+    "name": "YFP",
+    "collection": "proteins",
+    "sequence_ids": [],
+    "model_info": {
+      "rna": {
+        "transcription_rate": 0.066006600660066,
+        "degradation_rate": 0.000583,
+        "e": 16,
+        "e_const": 0,
+        "length": 606.0
+      },
+      "protein": {
+        "translation_rate": 0.0297029702970297,
+        "degradation_rate": 0.000283,
+        "e": 42,
+        "e_const": 52,
+        "length": 202.0
+      }
+    }
+  },
+  {
+    "identifier": "protein_PhlF",
+    "name": "PhlF",
+    "collection": "proteins",
+    "sequence_ids": [
+      "sequence_PhlF_a",
+      "sequence_PhlF_b"
+    ],
+    "model_info": {
+      "rna": {
+        "transcription_rate": 0.066006600660066,
+        "degradation_rate": 0.000583,
+        "e": 16,
+        "e_const": 0,
+        "length": 606.0
+      },
+      "protein": {
+        "translation_rate": 0.0297029702970297,
+        "degradation_rate": 0.000283,
+        "e": 42,
+        "e_const": 52,
+        "length": 202.0
+      }
+    }
+  },
+  {
+    "identifier": "protein_BM3RI",
+    "name": "BM3RI",
+    "collection": "proteins",
+    "sequence_ids": [
+      "sequence_BM3RI_a",
+      "sequence_BM3RI_b"
+    ],
+    "model_info": {
+      "rna": {
+        "transcription_rate": 0.066006600660066,
+        "degradation_rate": 0.000583,
+        "e": 16,
+        "e_const": 0,
+        "length": 606.0
+      },
+      "protein": {
+        "translation_rate": 0.0297029702970297,
+        "degradation_rate": 0.000283,
+        "e": 42,
+        "e_const": 52,
+        "length": 202.0
+      }
+    }
+  },
+  {
+    "identifier": "protein_QacR",
+    "name": "QacR",
+    "collection": "proteins",
+    "sequence_ids": [
+      "sequence_QacR_a",
+      "sequence_QacR_b"
+    ],
+    "model_info": {
+      "rna": {
+        "transcription_rate": 0.066006600660066,
+        "degradation_rate": 0.000583,
+        "e": 16,
+        "e_const": 0,
+        "length": 606.0
+      },
+      "protein": {
+        "translation_rate": 0.0297029702970297,
+        "degradation_rate": 0.000283,
+        "e": 42,
+        "e_const": 52,
+        "length": 202.0
+      }
+    }
+  },
+  {
+    "identifier": "protein_CI",
+    "name": "CI",
+    "collection": "proteins",
+    "sequence_ids": [
+      "sequence_CI_a",
+      "sequence_CI_b"
+    ],
+    "model_info": {
+      "rna": {
+        "transcription_rate": 0.066006600660066,
+        "degradation_rate": 0.000583,
+        "e": 16,
+        "e_const": 0,
+        "length": 606.0
+      },
+      "protein": {
+        "translation_rate": 0.0297029702970297,
+        "degradation_rate": 0.000283,
+        "e": 42,
+        "e_const": 52,
+        "length": 202.0
+      }
+    }
+  },
+   {
+    "identifier": "protein_LexA",
+    "name": "LexA",
+    "collection": "proteins",
+    "sequence_ids": [
+      "sequence_LexA_a",
+      "sequence_LexA_b"
+    ],
+    "model_info": {
+      "rna": {
+        "transcription_rate": 0.066006600660066,
+        "degradation_rate": 0.000583,
+        "e": 16,
+        "e_const": 0,
+        "length": 606.0
+      },
+      "protein": {
+        "translation_rate": 0.0297029702970297,
+        "degradation_rate": 0.000283,
+        "e": 42,
+        "e_const": 52,
+        "length": 202.0
+      }
+    }
+  }
+]

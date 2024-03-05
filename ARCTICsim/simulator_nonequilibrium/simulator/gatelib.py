@@ -2,7 +2,7 @@ import cProfile
 
 import numpy as np
 from matplotlib import pyplot as plt
-
+from deprecated import deprecated
 from ARCTICsim.simulator_nonequilibrium.models.moment_model_new import RNAMomentModel, ProteinMomentModel, \
     CombinedMomentModel
 from ARCTICsim.simulator_nonequilibrium.models.promoter_model_new import PromoterModel
@@ -12,8 +12,10 @@ from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
 
 
 # Class to represent the gatelib
+@deprecated("Replaced by GateLibCollectionBased")
 class GateLib:
     def __init__(self, json_file: JsonFile):
+        #        raise Exception("Change to GateLibCollectionBased")
         self.json = json_file
 
         if json_file is None:
@@ -66,11 +68,22 @@ class GateLib:
 
 
 class GateLibCollectionBased:
+
     def __init__(self, json_file: JsonFile):
         self.json = json_file
+        COLLECTIONS = {"promoters": Promoter,
+                       "coding_sequences": CodingSequence,
+                       "proteins": Protein,
+                       "tf_inputs": TranscriptionfactorInputs,
+                       "sequences": Sequence,
+                       "utrs": UTR,
+                       "terminators": Terminator,
+                       "devices": Device}
 
         if json_file is None:
             raise Exception("No Gate Library information provided!")
+
+        self.on_completion_callback = []
 
         """
         Gate Lib Format
@@ -86,6 +99,24 @@ class GateLibCollectionBased:
         Comment:
         As the inputs represent promoter activity, the LUT Inputs fall into the same category as the promoters.
         """
+        self.objects = []
+        self.objects_by_id = {}
+        self.objects_by_collection = {key: [] for key in COLLECTIONS}
+        self.objects_by_class = {COLLECTIONS[key]: [] for key in COLLECTIONS}
+        for entry in self.json.data:
+            print(entry)
+            collection_type = entry["collection"]
+            class_var = COLLECTIONS[collection_type]
+            object = class_var(entry, gate_lib=self)
+            self.objects.append(object)
+
+            if object.id in self.objects_by_id:
+                raise Exception(f"The id {object.id} is already included in:\n{self.objects_by_id}")
+            self.objects_by_id[object.id] = object
+            self.objects_by_collection[collection_type].append(object)
+            self.objects_by_class[class_var].append(object)
+
+            # ToDo Populate Entries
 
         # self.gates = []
         # for gate_entry in json_file.data:
@@ -105,9 +136,29 @@ class GateLibCollectionBased:
         #     self.gates_by_type_and_name[gate_type][ident] = gate
         pass
 
+        self.completion()
+
+    def completion(self):
+        for callback in self.on_completion_callback:
+            callback(self)
+
+    def add_on_completion_callback(self, callback):
+        self.on_completion_callback.append(callback)
+
+    def remove_on_completion_callback(self, callback):
+        self.on_completion_callback.remove(callback)
+
+    def __call__(self, id, object_class=None, *args, **kwargs):
+        object = None
+        if id in self.objects_by_id:
+            object = self.objects_by_id[id]
+        return object
+
 
 class GateLibEntry:
-    def __init__(self, collection_identifier: str = None, gate_lib_entry_dict: dict = None):
+    def __init__(self, collection_identifier: str = None,
+                 gate_lib_entry_dict: dict = None,
+                 gate_lib: GateLibCollectionBased = None):
         if collection_identifier is None:
             raise Exception("Collection Identifier is not set!")
 
@@ -117,8 +168,11 @@ class GateLibEntry:
         self.collection_identifier = collection_identifier
         self.gate_lib_entry_dict = gate_lib_entry_dict
         self.id = gate_lib_entry_dict["identifier"]
+        self.name = gate_lib_entry_dict["name"]
         self.collection = gate_lib_entry_dict["collection"]
-        self.group = gate_lib_entry_dict["group"] if "group" in gate_lib_entry_dict else None
+        # self.group = gate_lib_entry_dict["group"] if "group" in gate_lib_entry_dict else None
+
+        self.gate_lib = gate_lib
 
         if self.collection != self.collection_identifier:
             raise Exception(
@@ -129,10 +183,14 @@ class GateLibEntry:
 
 
 class GateLibModelEntry(GateLibEntry):
-    def __init__(self, collection_identifier: str = None, gate_lib_entry_dict: dict = None):
-        super().__init__(collection_identifier=collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+    def __init__(self, collection_identifier: str = None,
+                 gate_lib_entry_dict: dict = None,
+                 gate_lib: GateLibCollectionBased = None):
+        super().__init__(collection_identifier=collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
 
-        self.model_info = gate_lib_entry_dict["model"]
+        self.model_info = gate_lib_entry_dict["model_info"]
         self.model = self._populate_model()
 
     def _populate_model(self):
@@ -154,12 +212,17 @@ class GateLibModelEntry(GateLibEntry):
 
 
 class Promoter(GateLibModelEntry):
-    def __init__(self, gate_lib_entry_dict: dict):
+
+    def __init__(self, gate_lib_entry_dict: dict,
+                 gate_lib: GateLibCollectionBased = None):
         self.collection_identifier = "promoters"
-        super().__init__(collection_identifier=self.collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+        super().__init__(collection_identifier=self.collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
 
         self.cognate_transcription_factors = gate_lib_entry_dict["cognate_transcription_factors"]
-        self.sequence_ids = gate_lib_entry_dict["sequence_ids"] # A single construct can be asssociated to multiple sequences (for example codon alternatives)
+        self.sequence_ids = gate_lib_entry_dict["sequence_ids"]
+        # A single construct can be asssociated to multiple sequences (for example codon alternatives)
 
     def _populate_model(self):
         model_info = self.model_info
@@ -167,10 +230,11 @@ class Promoter(GateLibModelEntry):
         num_trainable_parameters = model_info["N_PARAMETERS"]
         promoter_activity = model_info["PROMOTER_ACTIVITY"]
         infinitesimal_generator_function = model_info["INFINITESIMAL_GENERATOR_FUNCTION"]
-
+        input_scaling_factor = model_info["INPUT_SCALING_FACTOR"]
         model = PromoterModel(num_states,
                               num_trainable_parameters,
-                              infinitesimal_generator_function,
+                              input_scaling_factor=input_scaling_factor,
+                              infinitesimal_generator_function=infinitesimal_generator_function,
                               per_state_promoter_activity=promoter_activity)
 
         return model
@@ -183,22 +247,39 @@ class Promoter(GateLibModelEntry):
     #     return output
 
 
-class LutPromoter(GateLibModelEntry):
-    def __init__(self, gate_lib_entry_dict: dict):
-        self.collection_identifier = "lut_promoters"
-        super().__init__(collection_identifier=self.collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+#
+# class SmallMolecule(GateLibModelEntry):
+#
+#     def __init__(self, gate_lib_entry_dict: dict):
+#         self.collection_identifier = "small_molecules"
+#         super().__init__(collection_identifier=self.collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+#
+#         self.molecule_type = gate_lib_entry_dict["cognate_molecules"]
+#         self.cognate_molecules = gate_lib_entry_dict["cognate_molecules"]
+#
+#     def _populate_model(self):
+#         model_info = self.model_info
+#         raise Exception("Model is currently not populated")
 
-        self.cognate_transcription_factors = gate_lib_entry_dict["cognate_transcription_factors"]
-        # The corresponding sequences are currently not included in the library.
-        self.sequence_idds = []
 
-    def _populate_model(self):
-        model_info = self.model_info
-        LUT = {float(key): model_info["LUT"][key] for key in model_info["LUT"]}
-        # ToDo Check whether this works as intended
-        def model(in_val, sim_settings=None): LUT[in_val]
-
-        return model
+# class LutPromoter(GateLibModelEntry):
+#     def __init__(self, gate_lib_entry_dict: dict):
+#         self.collection_identifier = "lut_promoters"
+#         super().__init__(collection_identifier=self.collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+#
+#         self.cognate_transcription_factors = gate_lib_entry_dict["cognate_transcription_factors"]
+#         # The corresponding sequences are currently not included in the library.
+#         self.sequence_idds = []
+#
+#     def _populate_model(self):
+#         model_info = self.model_info
+#         LUT = {float(key): model_info["LUT"][key] for key in model_info["LUT"]}
+#
+#         # ToDo Check whether this works as intended
+#         # in_vals["c"] is the
+#         def model(in_vals, sim_settings=None): LUT[in_vals["c"]]
+#
+#         return model
 
 
 class CodingSequence(GateLibModelEntry):
@@ -206,40 +287,79 @@ class CodingSequence(GateLibModelEntry):
     Superclass of expresseble sequences.
     """
 
-    def __init__(self, gate_lib_entry_dict: dict):
-        self.collection_identifier = "coding_sequence"
-        super().__init__(collection_identifier=self.collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+    def __init__(self, gate_lib_entry_dict: dict,
+                 collection_identifier: str = None,
+                 gate_lib: GateLibCollectionBased = None):
+        self.collection_identifier = collection_identifier
+        if collection_identifier is None:
+            self.collection_identifier = "coding_sequences"
+        super().__init__(collection_identifier=self.collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
 
-        self.sequence_ids = gate_lib_entry_dict["sequence_ids"] # A single construct can be asssociated to multiple sequences (for example codon alternatives)
-
+        self.sequence_ids = gate_lib_entry_dict["sequence_ids"]
+        # A single construct can be asssociated to multiple sequences (for example codon alternatives)
 
 
 class Protein(CodingSequence):
-    def __init__(self, gate_lib_entry_dict: dict):
-        self.collection_identifier = "protein"
-        super().__init__(collection_identifier=self.collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+    def __init__(self, gate_lib_entry_dict: dict,
+                 collection_identifier: str = None,
+                 gate_lib: GateLibCollectionBased = None):
+        self.collection_identifier = collection_identifier
+        if collection_identifier is None:
+            self.collection_identifier = "proteins"
 
-        self.name = gate_lib_entry_dict["name"]
+        super().__init__(collection_identifier=self.collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
+
     def _populate_model(self):
         model_info = self.model_info
         # Includes molecule dependent transcription, RNA degradation and the respective energy requirements and lengths.
 
-        transcription_rate = model_info["transcription_rate"]
-        rna_degradation_rate = model_info["degradation_rate"]
-        energy_per_nucleotide = model_info["energy_per_nucleotide"]
-        energy_per_rna = model_info["energy_per_rna"]
-        rna_length = model_info["length"]
+        transcription_rate = model_info["rna"]["transcription_rate"]
+        rna_degradation_rate = model_info["rna"]["degradation_rate"]
+        energy_per_nucleotide = model_info["rna"]["e"]
+        energy_per_rna = model_info["rna"]["e_const"]
+        rna_length = model_info["rna"]["length"]
 
-        translation_rate = model_info["translation_rate"]
-        protein_degradation_rate = model_info["degradation_rate"]
-        energy_per_amino_acid = model_info["energy_per_amino_acid"]
-        energy_per_protein = model_info["energy_per_protein"]
-        protein_length = model_info["length"]
+        translation_rate = model_info["protein"]["translation_rate"]
+        protein_degradation_rate = model_info["protein"]["degradation_rate"]
+        energy_per_amino_acid = model_info["protein"]["e"]
+        energy_per_protein = model_info["protein"]["e_const"]
+        protein_length = model_info["protein"]["length"]
 
         model = CombinedMomentModel(transcription_rate, rna_degradation_rate, energy_per_nucleotide, energy_per_rna,
                                     rna_length,
                                     translation_rate, protein_degradation_rate, energy_per_amino_acid,
                                     energy_per_protein, protein_length)
+
+        return model
+
+
+class TranscriptionfactorInputs(Protein):
+    def __init__(self, gate_lib_entry_dict: dict,
+                 gate_lib: GateLibCollectionBased = None):
+        self.collection_identifier = "tf_inputs"
+        super().__init__(collection_identifier=self.collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
+
+        # A single construct can be asssociated to multiple sequences (for example codon alternatives)
+        self.LUT = {float(key): self.model_info["LUT"][key] for key in self.model_info["LUT"]}
+        self.signal_name = "signal_" + self.name
+
+    def _populate_model(self):
+        def model(cell_state, sim_settings=None):
+            output_val = None
+            name = self.name
+            signal_name = self.signal_name
+            if signal_name in cell_state:
+                val = cell_state[signal_name]
+                output_val = self.LUT[val]
+                cell_state[name] = output_val
+                cell_state[name + "_rpu"] = output_val
+            return output_val
 
         return model
 
@@ -294,18 +414,35 @@ class Protein(CodingSequence):
 
 
 class Sequence(GateLibEntry):
-    def __init__(self, gate_lib_entry_dict: dict):
+    def __init__(self, gate_lib_entry_dict: dict,
+                 gate_lib: GateLibCollectionBased = None):
         self.collection_identifier = "sequences"
-        super().__init__(collection_identifier=self.collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+        super().__init__(collection_identifier=self.collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
 
         self.type = gate_lib_entry_dict["type"]
         self.sequence = gate_lib_entry_dict["dna_sequence"]
 
 
 class UTR(GateLibEntry):
-    def __init__(self, gate_lib_entry_dict: dict):
+    def __init__(self, gate_lib_entry_dict: dict,
+                 gate_lib: GateLibCollectionBased = None):
         self.collection_identifier = "utrs"
-        super().__init__(collection_identifier=self.collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+        super().__init__(collection_identifier=self.collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
+        self.sequence_id = gate_lib_entry_dict["sequence_id"]
+
+
+class Terminator(GateLibEntry):
+    def __init__(self, gate_lib_entry_dict: dict,
+                 gate_lib: GateLibCollectionBased = None):
+        self.collection_identifier = "terminators"
+        super().__init__(collection_identifier=self.collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
+        self.sequence_id = gate_lib_entry_dict["sequence_id"]
 
 
 class Device(GateLibEntry):
@@ -315,50 +452,97 @@ class Device(GateLibEntry):
     Needs to be populated last.
     """
 
-    def __init__(self, gate_lib_entry_dict: dict, parts: dict):
+    def __init__(self, gate_lib_entry_dict: dict,
+                 gate_lib: GateLibCollectionBased = None):
         self.collection_identifier = "devices"
-        super().__init__(collection_identifier=self.collection_identifier, gate_lib_entry_dict=gate_lib_entry_dict)
+        super().__init__(collection_identifier=self.collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
 
+        self.group = gate_lib_entry_dict["group"]
+        self.primitive_identifier = gate_lib_entry_dict["primitive_identifier"]
         self.promoter_id = gate_lib_entry_dict["promoter_id"]
         self.utr_id = gate_lib_entry_dict["utr_id"]
         self.cds_id = gate_lib_entry_dict["cds_id"]
         self.terminator_id = gate_lib_entry_dict["terminator_id"]
+        self.input_id = None
         self.ids = [self.promoter_id, self.utr_id, self.cds_id, self.terminator_id]
-        if parts is not None:
-            parts_to_use = dict(parts)
-            parts_to_use = {key: parts_to_use[key] if key in parts_to_use else None for key in self.ids}
+        self.promoter = None
+        self.utr = None
+        self.cds = None
+        self.terminator = None
 
-            self.promoter = parts_to_use[self.promoter_id]
-            self.utr = parts_to_use[self.utr_id]
-            self.cds = parts_to_use[self.cds_id]
-            self.terminator_id = parts_to_use[self.terminator_id]
+        if gate_lib is not None:
+            def callback(gate_lib, *args, **kwargs):
+                self.promoter = gate_lib(self.promoter_id, Promoter)
+                self.utr = gate_lib(self.utr_id, UTR)
+                self.cds = gate_lib(self.cds_id, CodingSequence)
+                self.terminator = gate_lib(self.terminator_id, Terminator)
+
+            gate_lib.add_on_completion_callback(callback)
+        # if parts is not None:
+        #     parts_to_use = dict(parts)
+        #     parts_to_use = {key: parts_to_use[key] if key in parts_to_use else None for key in self.ids}
+        #
+        #     self.promoter = parts_to_use[self.promoter_id]
+        #     self.utr = parts_to_use[self.utr_id]
+        #     self.cds = parts_to_use[self.cds_id]
+        #     self.terminator_id = parts_to_use[self.terminator_id]
+        # else:
+        #     raise Exception("Implementation not completed")
 
     def __str__(self):
-        return "Device: " + ", ".join(self.ids)
+        return "Device: " + ", ".join([elem if elem is not None else "-" for elem in self.ids])
 
 
 if __name__ == '__main__':
-    gate_lib = GateLib(path="../data/gate_libs/gate_lib_yeast.json")
+    json_file_old = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_yeast.json")
+    gate_lib_old = GateLib(json_file=json_file_old)
+    json_file = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_draft.json")
+    gate_lib = GateLibCollectionBased(json_file=json_file)
 
-    not_1 = gate_lib.gates[1]
+    promoter = gate_lib.objects_by_collection["promoters"][0]
+    promoter_constitutive = gate_lib("promoter_pConstitutive")
+    promoter = promoter_constitutive
+    proteins = gate_lib.objects_by_collection["proteins"][0]
+    result = promoter({"c": 1}, {})
+
+    num_samples = 8 * 10 ** 4
+    input_vals = 1000.0 * np.random.random(num_samples)
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+    for i in range(num_samples):
+        result = promoter({"c": input_vals[i]}, {})
+        protein_result = proteins(result, sim_settings={"mode": "samp"})
+
+    profiler.disable()
+    profiler.dump_stats("profile_results_new.prof")
+    profiler.print_stats()
+
+    # protein_result = proteins(result, sim_settings={"mode": "samp"})
+    pass
+    print("\n\n\nOld Implementation")
+    gate_lib_old
+    not_1 = gate_lib_old.gates_by_type_and_name["NOT"]['P1_PhlF']
 
     profiler = cProfile.Profile()
     profiler.enable()
 
-    for _ in range(10 ** 3):
-        not_1(10 ** 8 * 1.0)
+    for i in range(num_samples):
+        not_1(input_vals[i], sim_settings={"mode": "samp"})
 
     profiler.disable()
-    profiler.dump_stats("profile_results.prof")
-    # profiler.print_stats()
-
-    not_1 = gate_lib.gates[1]
-    not_2 = gate_lib.gates[3]
-
-    plt.figure()
-    for not_i in [not_1, not_2]:
-        samples = [not_i(10000000) for _ in range(1000)]
-        plt.hist(samples, alpha=0.5, bins=100)
-
-    plt.show()
-    pass
+    profiler.dump_stats("profile_results_old.prof")
+    profiler.print_stats()
+    #
+    # not_1 = gate_lib.gates[1]
+    # not_2 = gate_lib.gates[3]
+    #
+    # plt.figure()
+    # for not_i in [not_1, not_2]:
+    #     samples = [not_i(10000000) for _ in range(1000)]
+    #     plt.hist(samples, alpha=0.5, bins=100)
+    #
+    # plt.show()
+    # pass

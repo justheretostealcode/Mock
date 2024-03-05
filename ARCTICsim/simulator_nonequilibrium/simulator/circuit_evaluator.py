@@ -60,7 +60,7 @@ class CircuitEvaluator:
 
         circuit = self.circuit
 
-        circuit.set_assignment(assignment)
+        circuit.assign_genes(assignment)
 
 
         mode = sim_settings["mode"]

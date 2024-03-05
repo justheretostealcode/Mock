@@ -10,13 +10,14 @@ import shlex
 from argparse import ArgumentParser
 
 import profiler
-from simulator.circuit_evaluator import CircuitEvaluator
-from simulator.circuit_utils import CircuitAssignment, CircuitStructure, load_structure
-from simulator.gatelib import GateLib
-from simulator.utils import JsonFile, load_settings, communication_wrapper, type_dict
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit_evaluator_new import CircuitEvaluator
+
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, load_structure
+from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLib, GateLibCollectionBased
+from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile, communication_wrapper, load_settings, type_dict
 
 here = op.dirname(op.abspath(inspect.getfile(inspect.currentframe())))
-version = '0.1'
+version = '0.9'
 settings_config_path = './settings_config.cfg'
 
 
@@ -33,7 +34,11 @@ def sim_run(lineargs, json_str=None):
     #
 
     assignment_string = assignment_string.replace("\'", "")
-    json_assignment = JsonFile(content=assignment_string)
+    json_assignment = None
+    if os.path.exists(assignment_string):
+        json_assignment = JsonFile(path=assignment_string)
+    else:
+        json_assignment = JsonFile(content=assignment_string)
     assignment = CircuitAssignment(json_file=json_assignment, gate_lib=evaluator.gate_lib)
 
     old_structure = evaluator.structure
@@ -108,7 +113,7 @@ if __name__ == "__main__":
     settings, types, comments = load_settings(settings_config_path)
 
     # update settings through the command line
-    argp = ArgumentParser(description='Thermodynamic circuit simulator v.' + version)
+    argp = ArgumentParser(description='Thermodynamic Non-Equilibrium Steady State circuit simulator v.' + version)
     for k, v in settings.items():
         argp.add_argument('-' + k[0], '--' + k, required=False, type=type_dict[types[k]], help=comments[k])
 
@@ -124,7 +129,7 @@ if __name__ == "__main__":
     path_to_library = settings["library"]
     json_lib = JsonFile(path=path_to_library)
 
-    gate_lib = GateLib(json_file=json_lib)
+    gate_lib = GateLibCollectionBased(json_file=json_lib)
 
     structure = None
     if "structure" in settings:

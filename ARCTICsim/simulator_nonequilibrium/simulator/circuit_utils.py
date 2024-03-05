@@ -1,9 +1,10 @@
+import io
 import itertools
 import json
 import numpy as np
 from gvgen import GvGen
 
-from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLib, Device
+from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLib, Device, GateLibCollectionBased
 from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
 from ARCTICsim.simulator_thermodynamics.libsim import circuit_structure
 
@@ -51,7 +52,9 @@ class CircuitStructure(circuit_structure):
             dest_item = items[edge[1]]
             g.newLink(src_item, dest_item)
 
-        dot_rep = g.dot()
+        with io.StringIO() as file:
+            g.dot(file)
+            dot_rep = file.getvalue()
         return dot_rep
 
 
@@ -63,32 +66,22 @@ class CircuitStructure(circuit_structure):
 
 
 class CircuitAssignment:
-    def __init__(self, json_file: JsonFile, gate_lib: GateLib):
+    def __init__(self, json_file: JsonFile, gate_lib: GateLibCollectionBased):
         self.mapping = json_file.data
         self.gate_lib = gate_lib
 
-    def __call__(self, node_info: CircuitStructure.NodeInfo) -> Device:
+    def __call__(self, node_info: CircuitStructure.NodeInfo = None, node_id: str = None) -> Device:
+        if node_id is None:
+            node_id = node_info.id
 
-        id = node_info.id
-        # Legacy field
-        # primitiveIdentifier = node_info.primitiveIdentifier
-        node_type = node_info.type
+        device_id = self.mapping[node_id]
+        device = self.gate_lib(device_id)
 
-        device_id = self.mapping[id]
-
-        raise Exception("Not Compatible Yet: Adapt to new GateLib")
-        # ToDo Adapt to new GateLib
-        gates_by_type_and_name = self.gate_lib.gates_by_type_and_name
-        if node_type not in gates_by_type_and_name:
+        if device is None:
             raise Exception(
-                f"The node type {node_type} is not supported. It needs to be either of {self.gate_lib.gates_by_type_and_name.keys()}.")
+                f"{device_id} does not exist in current GateLib. Included modules are:\n{list(map(lambda elem: elem.id, self.gate_lib.objects))}")
 
-        if device_id not in gates_by_type_and_name[node_type]:
-            raise Exception(
-                f"The device {device_id} is not known. The known devices for node type {node_type} are {self.gate_lib.gates_by_type_and_name[node_type].keys()}.")
-
-        gate = self.gate_lib.gates_by_type_and_name[node_type][device_id]
-        return gate
+        return device
 
 
 class TruthTable:

@@ -33,13 +33,25 @@ class SteadyStateCTMC:
 
         clear_cache()
 
-    @cache_this
-    def __call__(self, in_val_dict: dict, sim_settings: dict, *args, **kwargs) -> dict:
+    # def call(self, in_val_dict: dict, sim_settings: dict, *args, **kwargs) -> dict:
+    #     if in_val_dict != self._cur_in_val_dict:
+    #         self.propensity_matrix = self._evaluate_propensity_matrix(in_val_dict)
+    #         self.distribution = self._evaluate_distribution()
+    #         self.entropy_production_rate = self.entropy_production_rate()
+    #         self._cur_in_val_dict = in_val_dict
+    #
+    #     statistics = {"distribution": self.distribution,
+    #                   "propensity_matrix": self.propensity_matrix,
+    #                   "entropy_production_rate": self.entropy_production_rate}
+    #
+    #     return statistics
 
+    # @cache_this   # Caching is not supported as it cannot handle dictionary inputs
+    def __call__(self, in_val_dict, sim_settings, *args, **kwargs):
         if in_val_dict != self._cur_in_val_dict:
             self.propensity_matrix = self._evaluate_propensity_matrix(in_val_dict)
             self.distribution = self._evaluate_distribution()
-            self.entropy_production_rate = self.entropy_production_rate()
+            self.entropy_production_rate = self._entropy_production_rate()
             self._cur_in_val_dict = in_val_dict
 
         statistics = {"distribution": self.distribution,
@@ -48,26 +60,30 @@ class SteadyStateCTMC:
 
         return statistics
 
-    @cache_this
+    # @cache_this
     def _evaluate_propensity_matrix(self, in_val_dict):
 
         # ToDo Adapt to linear combination of matrices scheme for efficiency reasons.
-        raise Exception("Implement Linear Combination Scheme for Propensity Matrix")
+        # raise Exception("Implement Linear Combination Scheme for Propensity Matrix")
 
-        expressions = self.infinitesimal_generator_function["expressions"]
+        # expressions = self.infinitesimal_generator_function["expressions"]
         matrices = self.infinitesimal_generator_function["matrices"]
 
-        propensity_mat = np.zeros(self.N_states, self.N_states)
-        for expression, matrice in zip(expressions, matrices):
+        propensity_mat = np.zeros((self.N_states, self.N_states))
+        for expression in matrices:
+            matrix = matrices[expression]
             factor_ids = expression.split("*")
             scalar = 1
             for factor_id in factor_ids:
-                scalar *= in_val_dict[factor_id]
-            propensity_mat += matrice * scalar
+                scalar *= in_val_dict[factor_id] if factor_id != "1" else 1
+            propensity_mat += matrix * scalar
 
+        if any(np.sum(propensity_mat, axis=1) > 10**(-10)):
+            raise Exception(
+                f"Propensity Matrix is not a stochastic matrix. Row sum Zero condition is not satisfied!\nin_val_dict: {in_val_dict}\nmatrices: {matrices}\npropensity_mat: {propensity_mat}\nRow Sums: {np.sum(propensity_mat, axis=1)}")
         return propensity_mat
 
-    @cache_this
+    # @cache_this
     def _evaluate_distribution(self):
         # distribution = np.zero(self.N_states)
 
@@ -101,7 +117,7 @@ class SteadyStateCTMC:
 
         return distribution
 
-    @cache_this
+    # @cache_this
     def _entropy_production_rate(self):
         # Four State Code
         # if self._N_states != 4:
@@ -121,18 +137,22 @@ class SteadyStateCTMC:
         # ToDo Check correctness of this matrice!
         flux_mat = (distribution * propensity_mat.transpose()).transpose()
 
+        # Reimplement this in a more efficient way
+
         entropy_production_rate = 0
         # Can be simplified to n * (n-1)/2 calculations. The Factor 0.5 needs to be corrected also afterwards.
         for iR in range(self.N_states):
             for iC in range(self.N_states):
                 if propensity_mat[iR, iC] == 0 or propensity_mat[iC, iR] == 0:
                     continue
+                if iC >= iR:
+                    continue
                 flux_diff = flux_mat[iR, iC] - flux_mat[iC, iR]
                 log_flux_diff = np.log10(flux_mat[iR, iC] / flux_mat[iC, iR])
                 entropy_production_rate += flux_diff * log_flux_diff
                 pass
 
-        entropy_production_rate *= 0.5
+        # entropy_production_rate *= 0.5
         return entropy_production_rate
 
     def relaxation_time(self):

@@ -45,7 +45,7 @@ class SteadyStateCTMC:
     @cache_this
     def distribution(self, external_concentrations):
         #distribution = np.empty(self.N_states)
-        if self.N_states == 4:
+        if False and self.N_states == 4:
             # Infinitesimal_generator_function is too slow.
             K = self.infinitesimal_generator_function
             c = external_concentrations

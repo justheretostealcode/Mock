@@ -2,7 +2,8 @@
 Author: Erik Kubaczka
 """
 import numpy as np
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit import Circuit, GeneticLogicCircuit
+import time
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit import GeneticLogicCircuit
 from ARCTICsim.simulator_nonequilibrium.simulator.scores import FunctionalScore, EnergyScore
 from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, CircuitStructure
 
@@ -42,7 +43,7 @@ class CircuitEvaluator:
             return
 
         self.structure = structure
-        self.circuit = GeneticLogicCircuit(structure)
+        self.circuit = GeneticLogicCircuit(structure, self.settings)
 
         # Generate Truthtable
 
@@ -76,11 +77,11 @@ class CircuitEvaluator:
         input_ids = list(structure.inputs)
         output_ids = list(structure.outputs)
         input_ids.sort()
-        node_order = structure.combinational_order()
-
+        # node_order = structure.combinational_order()
+        start = time.time()
         for input_vals, output_val in truthtable.input_output_truthtable():
             input_vals_dict = dict(zip(input_ids, input_vals))
-            gate_output_vals = {id: np.empty(shape=(n_samples)) for id in node_order}
+            gate_output_vals = {id: np.empty(shape=(n_samples)) for id in structure.nodes}
             energy_rates = np.empty(shape=(n_samples))
             detailed_energy_rates = np.empty(shape=(n_samples, 3))
             for iN in range(n_samples):
@@ -106,6 +107,8 @@ class CircuitEvaluator:
 
             # print(gate_output_vals)
             pass
+        end = time.time()
+        print(f"Duration: {end - start}")
 
         circuit_output_vals = np.array(circuit_output_vals)
         circuit_energy_rates = np.array(circuit_energy_rates)

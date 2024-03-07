@@ -51,6 +51,39 @@ Exemplary promoter entry
 }       
 ```
 
+## SensorPromoters
+
+Sensor promoters inherits from promoters and represents the mapping from inducers to promoter activity.
+It differentiates from the normal promoter by providing a mapping from inducer concentrations to RPU, while the
+property "cognate_transcription_factors" is used to indicate the corresponding inducers.
+This model makes the previously used TranscriptionfactorInputs obsolet.
+
+Exemplary sensor promoter entry
+```
+{
+        "identifier": "sensor_promoter_XyL",
+        "name": "XyL",
+        "collection": "sensor_promoters",
+        "cognate_transcription_factors": [xylose],
+        "technology_mapping": null,
+        "sequence_ids": []
+        "model_info": {
+                    "LUT": {0: 0.003,
+                            0.1: 0.006,
+                            0.25: 0.025,
+                            0.5: 0.143,
+                            1: 0.480,
+                            1.5: 0.859,
+                            2: 1.133,
+                            3: 1.409,
+                            5: 1.662,
+                            10: 1.804,
+                            20: 1.904,
+                            30: 1.949}
+        },        
+}       
+```
+
 ## Coding Sequence
 
 ```
@@ -192,7 +225,7 @@ Exemplary Input
     "primitive_identifier": [
             "INPUT",
         ],
-    "promoter_id": "promoter_xyl",
+    "promoter_id": "sensor_promoter_xyl",
     "utr_id": nan,
     "cds_id": "cds_xylR",
     "terminator_id": nan

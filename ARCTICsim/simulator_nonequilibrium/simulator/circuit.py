@@ -6,8 +6,7 @@ from scipy.interpolate import RegularGridInterpolator, CubicSpline
 from deprecated import deprecated
 
 from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitStructure, CircuitAssignment
-from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import Promoter, UTR, CodingSequence, GateLib, \
-    GateLibCollectionBased
+from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import Promoter, UTR, CodingSequence, GateLibCollectionBased
 from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
 
 
@@ -291,9 +290,9 @@ class GeneticLogicCircuit:
             associated_cds = genes_by_associated_cds[gate_id]
 
             for gene in associated_promoters:
-                gene_assignment[gene.id]["promoter"] = device.promoter
+                gene_assignment[gene.id]["promoter"] = device.promoter_entry
             for gene in associated_cds:
-                gene_assignment[gene.id]["utr"] = device.utr
+                gene_assignment[gene.id]["utr"] = device.utr_entry
                 gene_assignment[gene.id]["cds"] = device.cds
                 gene_assignment[gene.id]["terminator"] = device.terminator
 
@@ -466,7 +465,7 @@ class Gene:
         self.utr = utr
         self.cds = cds
         self.terminator = terminator
-        self.settings = settings
+        # self.settings = settings
 
         # Approximation of relevant quantities via cubic splines
         # There are 3 energy quantities and 5 moment quantities of interest.

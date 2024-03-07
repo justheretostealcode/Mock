@@ -1,6 +1,6 @@
 import functools
 
-CACHE_VALUES = True
+CACHE_VALUES = False
 
 CACHED_FUNCS = []
 

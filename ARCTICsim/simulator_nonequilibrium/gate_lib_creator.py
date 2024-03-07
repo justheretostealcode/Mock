@@ -2,13 +2,96 @@
 Exemplary script to derive a Non-Equilibrium Compatible Library from the Cello for Yeast Library
 """
 import numpy as np
+from matplotlib import pyplot as plt
+from scipy.optimize import minimize
 
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit import Gene
+from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import Promoter, UTR, Protein, TranscriptionfactorInputs, \
+    SensorPromoter
+from ARCTICsim.simulator_nonequilibrium.simulator.histogram_data import GateCytometryData
 from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
 
 
 def filter_by_collection(data_as_list, collection_name):
     filtered_data_as_list = filter(lambda elem: elem["collection"] == collection_name, data_as_list)
     return list(filtered_data_as_list)
+
+
+def get_promoter_entry(name, cognate_transcription_factors=None, sequence_ids=None, scaling_factor=1):
+    if cognate_transcription_factors is None:
+        cognate_transcription_factors = []
+    if sequence_ids is None:
+        sequence_ids = []
+    promoter_entry = {"identifier": "promoter_" + name,
+                      "name": name,
+                      "collection": "promoters",
+                      "cognate_transcription_factors": cognate_transcription_factors,
+                      "sequence_ids": sequence_ids,
+                      "technology_mapping": None,
+                      "model_info": {"N_PROMOTER_STATES": 6,
+                                     "N_PARAMETERS": 16,
+                                     "INPUT_SCALING_FACTOR": scaling_factor,
+                                     "PROMOTER_ACTIVITY": [0, 0, 0, 1, 1, 1],
+                                     "INFINITESIMAL_GENERATOR_FUNCTION": {"matrices": {"1": [[]],
+                                                                                       "c": [[]]
+                                                                                       }}}
+                      }
+
+    return promoter_entry
+
+
+def get_protein_entry(name, sequence_ids=None,
+                      transcription_rate=None, rna_degradation_rate=None, rna_length=None,
+                      translation_rate=None, protein_degradation_rate=None, protein_length=None):
+    if sequence_ids is None:
+        sequence_ids = []
+    protein_entry = {"identifier": "protein_" + name,
+                     "name": name,
+                     "collection": "proteins",
+                     "sequence_ids": sequence_ids,
+                     "model_info": {"rna": {"transcription_rate": transcription_rate,
+                                            "degradation_rate": rna_degradation_rate,
+                                            "e": 16,
+                                            "e_const": 0,
+                                            "length": rna_length
+                                            },
+                                    "protein": {"translation_rate": translation_rate,
+                                                "degradation_rate": protein_degradation_rate,
+                                                "e": 42,
+                                                "e_const": 52,
+                                                "length": protein_length
+                                                }
+                                    }
+                     }
+    return protein_entry
+
+
+def get_device_entry(name, group, regulator=None, primitive_identifer=None, utr_id=None,
+                     cds_id=None, promoter_id=None, terminator_id=None, color=None):
+    if primitive_identifer is None:
+        primitive_identifer = []
+
+    device_entry = {"collection": "devices",
+                    "identifier": "device_" + name,
+                    "name": name,
+                    "group": group,
+                    "regulator": regulator,
+                    "primitive_identifier": primitive_identifer,
+                    "utr_id": utr_id,  # ToDo Add the corresponding ID
+                    "cds_id": cds_id,  # ToDo Add the corresponding ID
+                    "terminator_id": terminator_id,  # terminators are currently not included in the library
+                    "promoter_id": promoter_id,
+                    "color": color
+                    }  # ToDo Add the corresponding ID
+    return device_entry
+
+
+def get_sequence_entry(name, sequence=""):
+    sequence_entry = {"collection": "sequences",
+                      "identifier": "sequence_" + name,
+                      "name": name,
+                      "sequence": sequence}
+    return sequence_entry
 
 
 def add_outputs(custom_lib, reporters):
@@ -19,112 +102,89 @@ def add_outputs(custom_lib, reporters):
     cds_length = 561
     rna_length = 600
     protein_length = cds_length / 3
-
     for reporter in reporters:
-        protein = {
-            "identifier": "protein_" + reporter["name"],
-            "name": reporter["name"],
-            "collection": "proteins",
-            "sequence_ids": [],
-            "model_info": {
-                "rna": {
-                    "transcription_rate": transcription_rate,
-                    "degradation_rate": rna_degradation_rate,
-                    "e": 16,
-                    "e_const": 0,
-                    "length": rna_length
-                },
-                "protein": {
-                    "translation_rate": translation_rate,
-                    "degradation_rate": protein_degradation_rate,
-                    "e": 42,
-                    "e_const": 52,
-                    "length": protein_length
-                }
-            }
-        },
-        device = {"identifier": "device_" + reporter["name"],
-                  "name": reporter["name"],
-                  "group": reporter["name"],
-                  "collection": "devices",
-                  "primitive_identifier": [
-                      "OUTPUT_OR2",
-                      "OUTPUT_BUFFER"
-                  ],
-                  "promoter_id": None,
-                  "utr_id": None,
-                  "cds_id": protein["identifier"],
-                  "terminator_id": None
-                  }
+        utr_entry = {"collection": "utrs",
+                     "identifier": "utr_" + reporter["utr_name"],
+                     "name": reporter["utr_name"],
+                     "sequence_id": None}
 
-        custom_lib.append(protein)
-        custom_lib.append(device)
+        protein_entry = get_protein_entry(name=reporter["name"],
+                                          sequence_ids=[],
+                                          transcription_rate=transcription_rate,
+                                          rna_degradation_rate=rna_degradation_rate,
+                                          rna_length=rna_length,
+                                          translation_rate=translation_rate,
+                                          protein_degradation_rate=protein_degradation_rate,
+                                          protein_length=protein_length)
+
+        device_entry = get_device_entry(name=reporter["name"], group=reporter["name"],
+                                        primitive_identifer=["OUTPUT_OR2", "OUTPUT_BUFFER"],
+                                        utr_id=utr_entry["identifier"],
+                                        cds_id=protein_entry["identifier"])
+
+        custom_lib.append(utr_entry)
+        custom_lib.append(protein_entry)
+        custom_lib.append(device_entry)
 
 
-def add_inputs(custom_lib, tf_inputs):
+def add_inputs(custom_lib, tf_inputs, reporter_information):
     # {"group": "aTc", "promoter": "ptet", "protein": "tetR", "low": 0.002, "high": 2.5},
+    reference_sensor_promoter_entry = None
     for tf_input in tf_inputs:
-        protein = {"identifier": "tf_input_xylR",
-                   "name": "xylR",
-                   "collection": "tf_inputs",
-                   "sequence_ids": [],
-                   "model_info": {
-                       "LUT": {
-                           "0": 1,
-                           "1": 0.01
-                       }}}
+        # protein_entry = {"identifier": "tf_input_" + tf_input["protein"],
+        #                  "name": tf_input["protein"],
+        #                  "collection": "tf_inputs",
+        #                  "sequence_ids": [],
+        #                  "model_info": {
+        #                      "LUT": {
+        #                          "0": 10,
+        #                          "1": 0.001
+        #                      }}}
         # ToDo match Promoter
+        promoter_entry = get_promoter_entry(name=tf_input["promoter"],
+                                            cognate_transcription_factors=[tf_input["protein"], tf_input["group"]],
+                                            sequence_ids=None)
+        promoter_entry["collection"] = "sensor_promoters"
+        promoter_entry["identifier"] = "sensor_" + promoter_entry["identifier"]
+        data = tf_input["data"]
+        promoter_entry["model_info"] = {"low": tf_input["low"],
+                                        "high": tf_input["high"],
+                                        "LUT": data}
+        promoter_entry["technology_mapping"] = {"y_min": data[tf_input["low"]],
+                                                "y_max": data[tf_input["high"]]}
 
-        promoter = {"identifier": "promoter_" + tf_input["promoter"],
-                    "name": tf_input["promoter"],
-                    "collection": "promoters",
-                    "cognate_transcription_factors": [
-                        tf_input["protein"]
-                    ],
-                    "technology_mapping": None,
-                    "model_info": {
-                        "N_PROMOTER_STATES": 6,
-                        "N_PARAMETERS": 14,
-                        "INPUT_SCALING_FACTOR": 1,
-                        "PROMOTER_ACTIVITY": [
-                            0,
-                            0,
-                            0,
-                            1,
-                            1,
-                            1
-                        ],
-                        "INFINITESIMAL_GENERATOR_FUNCTION": {
-                            "expressions": [],
-                            "matrices": {
-                                "1": None,
-                                "c": None,
-                            }
-                        }
-                    },
-                    "sequence_ids": []
-                    }
-        device = {"identifier": "input_" + tf_input["group"],
-                  "name": tf_input["group"],
-                  "group": tf_input["group"],
-                  "collection": "devices",
-                  "primitive_identifier": [
-                      "INPUT"
-                  ],
-                  "promoter_id": promoter["identifier"],
-                  "utr_id": None,
-                  "cds_id": protein["identifier"],
-                  "terminator_id": None
-                  }
+        # response_characteristic = {"X": np.array(list(data.keys())),
+        #                            "Y": np.array([[data[inducer_concentration],
+        #                                            0.25 * data[inducer_concentration]
+        #                                            ] for
+        #                                           inducer_concentration in data]),
+        #                            "labels": ["mean",
+        #                                       "variance"
+        #                                       ]}
+        # input_information = {"tf_input": protein_entry,
+        #                      "promoter": promoter_entry}
+        # promoter_entry = match_promoter(response_characteristic=response_characteristic,
+        #                                 reporter_information=reporter_information,
+        #                                 input_information=input_information,
+        #                                 match_input_sensor=True)
 
+        device_entry = get_device_entry(name=tf_input["group"], group=tf_input["group"], primitive_identifer=["INPUT"],
+                                        promoter_id=promoter_entry["identifier"],
+                                        # cds_id=protein_entry["identifier"]
+                                        )
 
-        custom_lib.append(protein)
-        custom_lib.append(promoter)
-        custom_lib.append(device)
+        if tf_input["group"] == "IPTG":
+            reference_sensor_promoter_entry = promoter_entry
+
+        # custom_lib.append(protein_entry)
+        custom_lib.append(promoter_entry)
+        custom_lib.append(device_entry)
         pass
+    return reference_sensor_promoter_entry
 
 
-def match_promoter(response_characteristic:dict):
+def match_promoter(response_characteristic: dict, reporter_information: dict, gate_information: dict = None,
+                   input_information: dict = None, match_input_sensor=False):
     """
     This method performs the parameter matching for the promoter model to the response characteristics
 
@@ -135,8 +195,244 @@ def match_promoter(response_characteristic:dict):
     # Steps
     # Setup Model to train (Gene includes YFP output and the input is a TF Level (possibly derived from RPU))
     # Match model to training data
+    # if not match_input_sensor:
+    if input_information is not None:
+        # tf_input = TranscriptionfactorInputs(input_information["tf_input"])
+        promoter_sensor = SensorPromoter(input_information["promoter"])
+
+    if gate_information is not None:
+        utr_gate = UTR(gate_information["utr"]) if "utr" in gate_information else None
+        protein_gate = Protein(gate_information["cds"])
+        terminator_gate = None
+        promoter_gate = Promoter(gate_information["promoter"])
+
+    utr_reporter = UTR(reporter_information["cds"]) if "utr" in reporter_information else None
+    protein_reporter = Protein(reporter_information["cds"])
+    terminator_reporter = None
+
+    sensor_gene = Gene(id="Sensor", promoter=promoter_sensor, utr=utr_gate, cds=protein_gate)
+    reporter_gene = Gene(id="Reporter", promoter=promoter_gate, utr=utr_reporter, cds=protein_reporter)
+
+    X = response_characteristic["X"]
+    Y = response_characteristic["Y"]
+    # X[0] = 10**(-2)
+    labels = response_characteristic["labels"]
+    y = 0.05
+    s = np.max(X) * 0.05
+    k_m = k_m = s * y / (1 - y)
+    ligand_to_tf_level = lambda x: 1 / (1 + (x / k_m) ** 1)
+    # Case distinction
+    # Case 1: Parameter estimation of a genetic gate -> both genes are used and matched input sensors and existing reporters are required
+    # Case 2: Parameter estimation of an input sensor -> only the reporter gene is required. The input sensor's promoter is directly attached to it.
+    if match_input_sensor:
+        promoter = promoter_sensor
+        input_val_name = tf_input.signal_name
+        promoter_entry = input_information["promoter"]
+
+        def model(plasmid_input_vals, skip_input=False):
+            sim_settings = {"mode": "samp"}
+            cell_state = {"energy": 0}
+            cell_state.update(plasmid_input_vals)
+            cognate_tfs = promoter.cognate_transcription_factors
+            if skip_input:
+                cell_state[cognate_tfs[0]] = plasmid_input_vals[input_val_name]
+            else:
+                # tf_input(cell_state, sim_settings)
+                cell_state[cognate_tfs[0]] = ligand_to_tf_level(cell_state[tf_input.signal_name])
+                # cell_state[cognate_tfs[0]] = cell_state[tf_input.signal_name]
+
+            input_val_dict = {"c": np.sum([cell_state[molecule]
+                                           for molecule in cell_state
+                                           if molecule in promoter.cognate_transcription_factors])}
+            promoter_output = promoter(input_val_dict, sim_settings)
+            model_outputs = protein_reporter(promoter_output, sim_settings)
+            mean_P = model_outputs["protein_mean"]
+            var_P = model_outputs["protein_var"]
+
+            rpu_to_eu_scaling_factor = protein_reporter.model.scaling_factor
+            eu_to_rpu_scaling_factor = (rpu_to_eu_scaling_factor) ** (-1)
+            output_mean = mean_P * eu_to_rpu_scaling_factor
+            output_var = var_P * eu_to_rpu_scaling_factor ** 2
+
+            return output_mean, output_var
+
+    else:
+        promoter = promoter_gate
+        input_val_name = promoter.cognate_transcription_factors[0]
+        promoter_entry = gate_information["promoter"]
+
+        def model(plasmid_input_vals):
+            sim_settings = {}
+            cell_state = {"energy": 0}
+            cell_state.update(plasmid_input_vals)
+
+            tf_input(cell_state, sim_settings)
+            input_val_dict = {"c": np.sum([cell_state[molecule]
+                                           for molecule in cell_state
+                                           if molecule in promoter.cognate_transcription_factors])}
+            promoter_output = promoter(input_val_dict, sim_settings)
+            model_outputs = protein_reporter(promoter_output, sim_settings)
+            mean_P = model_outputs["protein_mean"]
+            var_P = model_outputs["protein_var"]
+
+            sensor_gene = Gene(id="Sensor", promoter=promoter_sensor, utr=utr_gate, cds=protein_gate)
+            reporter_gene = Gene(id="Reporter", promoter=promoter_gate, utr=utr_reporter, cds=protein_reporter)
+
+            rpu_to_eu_scaling_factor = protein_reporter.scaling_factor
+            eu_to_rpu_scaling_factor = (rpu_to_eu_scaling_factor) ** (-1)
+            output_mean = mean_P * eu_to_rpu_scaling_factor
+            output_var = var_P * eu_to_rpu_scaling_factor ** 2
+            raise Exception("Implement")
+            return output_mean, output_var
+
+    def update_model(params):
+
+        promoter.model.insert_params(params)
+
+    def loss_func(Y, Y_pred, custom_weights=None):
+        weights = np.ones(shape=Y.shape)
+        if custom_weights is not None:
+            weights = custom_weights
+        weights = weights / np.sum(weights)
+
+        loss = 0.0
+        loss += np.sum(weights * np.power(np.log(Y) - np.log(Y_pred), 2))
+
+        return loss.item()
+
+    # The optimization routine adapts the rates in the infinitesimal generator and the promoter activity
+    def error_func(params):
+        update_model(params)
+
+        # X = response_characteristic["X"]
+        # Y = response_characteristic["Y"]
+        # labels = response_characteristic["labels"]
+        Y_pred = [None] * len(X)
+        input_vals_dict = {}
+        for iX, x in enumerate(X):
+            input_vals_dict[input_val_name] = x
+            y_pred = model(plasmid_input_vals=input_vals_dict)
+            y_pred = {label: y_pred[iL] for iL, label in enumerate(["mean", "variance"])}
+            Y_pred[iX] = [y_pred[label] for label in labels]
+
+        Y_pred = np.array(Y_pred)
+        custom_weights = np.ones(shape=Y_pred.shape)  # Equals average weighting.
+        custom_weights[1, 0] = 2
+        custom_weights[-2, 0] = 2
+        custom_weights[:, 1] = 0.1
+        # Can realize less weighting of variance results.
+        loss = loss_func(Y, Y_pred, custom_weights=custom_weights)
+        return loss
+
+    mask_mean = [label == "mean" for label in labels]
+    Y_mean = [y[mask_mean] for y in Y]
+    y_on = np.max(Y_mean)
+    y_off = np.min(Y_mean)
+    best_fun = np.infty
+    best_params = None
+    for iR in range(2):
+        initial_params = [y_on, y_off]
+        initial_params += list(np.exp(np.random.rand(14) * 10 - 5))
+        initial_params = np.array(initial_params)
+        new_params = initial_params
+        # loss = error_func(initial_params)
+        x0 = initial_params
+        result = minimize(error_func, x0=x0,
+                          bounds=[(y_on, y_on), (y_off * 0.5, y_off)] + [(10 ** (-10), 10 ** 10) for _ in range(14)],
+                          method="nelder-mead",
+                          tol=10 ** (-10),
+                          options={"disp": True, "ftol": 10 ** (-7)}
+                          )
+        new_params = result.x
+        fun = result.fun
+        if fun < best_fun:
+            best_fun = fun
+            best_params = new_params
+    promoter.model.insert_params(best_params)
+
+    X_test = np.logspace(-5, np.max(np.log10(X[1:])), 100)
+    X_tf_level = ligand_to_tf_level(X_test)
+
+    Y_pred = [model({input_val_name: x}, skip_input=True) for x in X_tf_level]
+    Y_pred = np.array(Y_pred)
+
+    plt.figure()
+    ax = plt.gca()
+    ax.plot(X, Y[:, 0], "--k", label="Mean")
+    if Y.shape[1] == 2:
+        ax.fill_between(X,
+                        Y[:, 0] - np.sqrt(Y[:, 1]), Y[:, 0] + np.sqrt(Y[:, 1]),
+                        color="yellow", alpha=0.1)
+
+    ax.plot(X_test, Y_pred[:, 0], label="Mean Pred")
+    if Y_pred.shape[1] == 2:
+        ax.fill_between(X_test,
+                        Y_pred[:, 0] - np.sqrt(Y_pred[:, 1]), Y_pred[:, 0] + np.sqrt(Y_pred[:, 1]),
+                        color="blue", alpha=0.1)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    plt.show()
+    model_info = promoter_entry["model_info"]
+    model_info["PROMOTER_ACTIVITY"] = list(promoter.model.promoter_activity)
+    model_info["INFINITESIMAL_GENERATOR_FUNCTION"] = promoter.model.infinitesimal_generator_function
+    return promoter_entry
 
 
+"""
+These values are extracted from the paper and the data provided for the figures in the paper.
+"""
+
+atc_to_rpu = {0: 0.002,
+              5: 0.004,
+              10: 0.008,
+              15: 0.013,
+              20: 0.168,
+              22.5: 0.445,
+              25: 0.570,
+              27.5: 0.668,
+              30: 1.019,
+              35: 1.227,
+              40: 1.616,
+              50: 1.963,
+              100: 2.455,
+              200: 2.548}
+atc_to_rpu = {float(key): atc_to_rpu[key] for key in atc_to_rpu}
+
+iptg_to_rpu = {0: 0.011,
+               0.1: 0.017,
+               0.25: 0.028,
+               0.5: 0.049,
+               1: 0.132,
+               1.5: 0.224,
+               2: 0.320,
+               2.5: 0.421,
+               3: 0.519,
+               5: 0.822,
+               10: 1.127,
+               20: 1.297,
+               30: 1.343,
+               40: 1.365}
+iptg_to_rpu = {float(key): iptg_to_rpu[key] for key in iptg_to_rpu}
+
+xyl_to_rpu = {0: 0.003,
+              0.1: 0.006,
+              0.25: 0.025,
+              0.5: 0.143,
+              1: 0.480,
+              1.5: 0.859,
+              2: 1.133,
+              3: 1.409,
+              5: 1.662,
+              10: 1.804,
+              20: 1.904,
+              30: 1.949}
+
+xyl_to_rpu = {float(key): xyl_to_rpu[key] for key in xyl_to_rpu}
+
+reference_inducer_inputs = np.array([0, 0.1, 0.25, 0.5, 1, 1.15, 2, 2.5, 3, 5, 10, 20])
+"""
+End of Paper data
+"""
 
 if __name__ == '__main__':
     # The cello for yeast library can be downloaded in
@@ -159,7 +455,7 @@ if __name__ == '__main__':
     cello_structures_by_name = {elem["name"]: elem for elem in cello_structures}
     cello_parts_by_name = {elem["name"]: elem for elem in cello_parts}
     cello_cytometry_by_name = {elem["name"]: elem for elem in cello_cytometry}
-    cello_toxicity_by_name = {elem["name"]: elem for elem in cello_cytometry}
+    cello_toxicity_by_name = {elem["name"]: elem for elem in cello_toxicity}
 
     # Useful for conversion to other gatelibrary formats such as the cello E. Coli lib.
     dict_ids = {"SPECIES": "Yeast",
@@ -208,22 +504,33 @@ if __name__ == '__main__':
     custom_lib = []
 
     # Reporter Output
-    reporters = [{"name": "YFP"}]
+    reporters = [{"name": "YFP", "utr_name": "Kozak6"}]
     add_outputs(custom_lib, reporters=reporters)
 
+    # ToDo Extract Report to use for parameter estimation
+    reporter_to_use = "YFP"
+    reporter_protein = [elem for elem in custom_lib if elem["identifier"] == "protein_" + reporter_to_use][0]
+    reporter_information = {"cds": reporter_protein}
 
     # Transcription Factor Inputs
-    tf_inputs = [{"group": "aTc", "promoter": "ptet", "protein": "tetR", "low": 0.002, "high": 2.5},
-                 {"group": "xyl", "promoter": "pxyl", "protein": "xylR", "low": 0.003, "high": 1.8},
-                 {"group": "IPTG", "promoter": "plac", "protein": "lacl", "low": 0.01, "high": 1.3}]
+    tf_inputs = [{"group": "aTc", "promoter": "Ptet", "protein": "tetR", "low": 0.0, "high": 100.0, "data": atc_to_rpu},
+                 {"group": "xyl", "promoter": "Pxyl", "protein": "xylR", "low": 0.0, "high": 10.0, "data": xyl_to_rpu},
+                 {"group": "IPTG", "promoter": "Plac", "protein": "lacl", "low": 0.0, "high": 20.0, "data": iptg_to_rpu}
+                 ]
 
-    add_inputs(custom_lib, tf_inputs=tf_inputs)
+    reference_sensor_promoter_entry = add_inputs(custom_lib, tf_inputs=tf_inputs,
+                                                 reporter_information=reporter_information)
 
+    # ToDo Extract Input to use for parameter estimation
 
     # Actual gates
     for cello_gate in cello_gates:
         gate_name = cello_gate["name"]
         structure = cello_structures_by_name[cello_gate["structure"]]
+        raw_cytometry = cello_cytometry_by_name[gate_name + "_cytometry"]
+        toxicity = cello_toxicity_by_name[gate_name + "_toxicity"]
+        cytometry_data_dict = GateCytometryData.cello_cytometry_data_to_dict(raw_cytometry[dict_ids["table"]])
+        cytometry = GateCytometryData(data_dict=cytometry_data_dict, gate_name=gate_name, cutoff_percentage=0.1)
 
         promoter_name = structure["outputs"][0].split("_")[0]
         promoter_sequence_names = structure["outputs"]
@@ -236,34 +543,20 @@ if __name__ == '__main__':
         cello_promoter_part = [cello_parts_by_name[name] for name in promoter_sequence_names]
         cello_regulator_parts = [cello_parts_by_name[name] for name in protein_sequence_names]
 
-        # protein_sequences = [elem for elem in structure["devices"] if "cassette" in elem["name"]][0]["components"][0]
+        utr_sequence_entry = get_sequence_entry(name=utr_name, sequence=cello_utr_part["dnasequence"])
 
-        # associated_parts = [elem for elem in cello_parts if elem["name"] in ]
+        protein_sequence_entries = [get_sequence_entry(name=name, sequence=cello_parts_by_name[name]["dnasequence"])
+                                    for name in protein_sequence_names]
+        promoter_sequence_entries = [get_sequence_entry(name=name, sequence=cello_parts_by_name[name]["dnasequence"])
+                                     for name in promoter_sequence_names]
 
-        # ToDo derive parameters of promoter
+        utr_entry = {"collection": "utrs",
+                     "identifier": "utr_" + utr_name,
+                     "name": utr_name,
+                     "sequence_id": utr_sequence_entry["identifier"]}
 
-        utr_sequence = {"collection": "sequences",
-                        "identifier": "sequence_" + utr_name,
-                        "name": utr_name,
-                        "sequence": cello_utr_part["dnasequence"]}
-        protein_sequences = [{"collection": "sequences",
-                              "identifier": "sequence_" + name,
-                              "name": name,
-                              "sequence": cello_parts_by_name[name]["dnasequence"]}
-                             for name in protein_sequence_names]
-        promoter_sequences = [{"collection": "sequences",
-                               "identifier": "sequence_" + name,
-                               "name": name,
-                               "sequence": cello_parts_by_name[name]["dnasequence"]}
-                              for name in promoter_sequence_names]
-
-        utr = {"collection": "utrs",
-               "identifier": "utr_" + utr_name,
-               "name": utr_name,
-               "sequence_id": utr_sequence["identifier"]}
-
-        cds_length = np.median([len(seq["sequence"]) for seq in protein_sequences])
-        rna_length = len(utr_sequence["sequence"]) + cds_length
+        cds_length = np.median([len(seq["sequence"]) for seq in protein_sequence_entries])
+        rna_length = len(utr_sequence_entry["sequence"]) + cds_length
         protein_length = cds_length / 3
 
         # ToDo Redefine rates
@@ -271,56 +564,45 @@ if __name__ == '__main__':
         translation_rate = 2
         rna_degradation_rate = 0.23104906018664842
         protein_degradation_rate = 0.0057762265
-        protein = {"identifier": "protein_" + protein_name,
-                   "name": protein_name,
-                   "collection": "proteins",
-                   "sequence_ids": [seq["identifier"] for seq in protein_sequences],
-                   "model_info": {
-                       "rna": {
-                           "transcription_rate": transcription_rate,
-                           "degradation_rate": rna_degradation_rate,  # ToDo Redefine rates
-                           "e": 16,
-                           "e_const": 0,
-                           "length": rna_length,
-                       },
-                       "protein": {
-                           "translation_rate": translation_rate,  # ToDo Redefine rates
-                           "degradation_rate": protein_degradation_rate,  # ToDo Redefine rates
-                           "e": 42,
-                           "e_const": 52,
-                           "length": protein_length,
-                       }
-                   }}
-        cognate_transcription_factors = [protein_name, protein_sequence_names]
-        promoter = {"identifier": "promoter_" + promoter_name,
-                    "name": promoter_name,
-                    "collection": "promoters",
-                    "cognate_transcription_factors": cognate_transcription_factors,
-                    "sequence_ids": [seq["identifier"] for seq in promoter_sequence_names],
-                    "technology_mapping": None,
-                    "model_info": {
-                        "N_PROMOTER_STATES": 6,
-                        "N_PARAMETERS": 14,
-                        "INPUT_SCALING_FACTOR": 0.0001,
-                        "PROMOTER_ACTIVITY": [0, 0, 0, 1, 1, 1],
-                        "INFINITESIMAL_GENERATOR_FUNCTION": {"matrices": {"1": [[]],
-                                                                          "c": [[]]
-                                                                          }}},
-                    }
+        l_m = translation_rate / rna_degradation_rate
+        l_p = translation_rate / protein_degradation_rate
+        eu_to_rpu_scaling_factor = (l_m * l_p) ** (-1)
+        protein_entry = get_protein_entry(name=protein_name,
+                                          sequence_ids=[seq["identifier"] for seq in protein_sequence_entries],
+                                          transcription_rate=transcription_rate,
+                                          rna_degradation_rate=rna_degradation_rate, rna_length=rna_length,
+                                          translation_rate=translation_rate,
+                                          protein_degradation_rate=protein_degradation_rate,
+                                          protein_length=protein_length)
 
-        device = {"collection": "devices",
-                  "identifier": "device_" + gate_name,
-                  "name": gate_name,
-                  "group": cello_gate["group"],
-                  "regulator": cello_gate["regulator"],
-                  "primitive_identifier": ["NOT",
-                                           "NOR2"],
-                  "utr_id": utr["identifier"],  # ToDo Add the corresponding ID
-                  "cds_id": protein["identifier"],  # ToDo Add the corresponding ID
-                  "terminator_id": None,  # terminators are currently not included in the library
-                  "promoter_id": promoter["identifier"],
-                  "color": cello_gate["color"]
-                  }  # ToDo Add the corresponding ID
+        cognate_transcription_factors = [protein_name, protein_sequence_names]
+        promoter_entry = get_promoter_entry(name=promoter_name,
+                                            cognate_transcription_factors=cognate_transcription_factors,
+                                            sequence_ids=[seq_name for seq_name in promoter_sequence_names],
+                                            scaling_factor=eu_to_rpu_scaling_factor)
+        # The input levels are in RPU. However, the gene-centric approach requires the input as either inducer levels or TF levels
+        # This is achieved by using the inducer concentrations from the paper associated to the respective rpu values.
+        # X = cytometry.get_input_levels()
+        X = reference_inducer_inputs
+        Y = [cytometry.get_histogram(x) for x in cytometry.get_input_levels()]
+        Y = [(hist.mean(), hist.variance()) for hist in Y]
+        response_characteristic = {"X": np.array(X),
+                                   "Y": np.array(Y),
+                                   "labels": ["mean", "variance"]}
+        input_information = {"promoter": reference_sensor_promoter_entry}
+        gate_information = {  # "utr":None,
+            "cds": protein_entry,
+            "promoter": promoter_entry}
+        promoter_entry = match_promoter(response_characteristic=response_characteristic,
+                                        reporter_information=reporter_information,
+                                        input_information=input_information,
+                                        gate_information=gate_information,
+                                        match_input_sensor=False)
+
+        device_entry = get_device_entry(name=gate_name, group=cello_gate["group"], regulator=cello_gate["regulator"],
+                                        primitive_identifer=["NOT", "NOR2"], utr_id=utr_entry["identifier"],
+                                        cds_id=protein_entry["identifier"], promoter_id=promoter_entry["identifier"],
+                                        color=cello_gate["color"])
 
         # Next steps:
         # Match Characteristics of promoter to cytometry data

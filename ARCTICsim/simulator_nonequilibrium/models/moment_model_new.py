@@ -173,7 +173,7 @@ class CombinedMomentModel:
 
         l_m = self.rna_model.transcription_rate / self.rna_model.degradation_rate
         l_p = self.protein_model.translation_rate / self.protein_model.degradation_rate
-        self.scaling_factor = l_m * l_p
+        self.scaling_factor = l_m * l_p # Factor for converting RPU to output
         pass
 
     def __call__(self, promoter_output: dict, sim_settings: dict, *args, **kwargs) -> dict:

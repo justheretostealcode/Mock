@@ -25,7 +25,7 @@ class SteadyStateCTMC:
         self.entropy_production_rate = None
         pass
 
-    def update_infinitesimal_generator_function(self, new_function):
+    def update_infinitesimal_generator_function(self, new_function: dict):
         self.infinitesimal_generator_function = new_function
 
         self.infinitesimal_generator_function["matrices"] = {key: np.array(new_function["matrices"][key])
@@ -33,20 +33,46 @@ class SteadyStateCTMC:
 
         clear_cache()
 
-    # def call(self, in_val_dict: dict, sim_settings: dict, *args, **kwargs) -> dict:
-    #     if in_val_dict != self._cur_in_val_dict:
-    #         self.propensity_matrix = self._evaluate_propensity_matrix(in_val_dict)
-    #         self.distribution = self._evaluate_distribution()
-    #         self.entropy_production_rate = self.entropy_production_rate()
-    #         self._cur_in_val_dict = in_val_dict
-    #
-    #     statistics = {"distribution": self.distribution,
-    #                   "propensity_matrix": self.propensity_matrix,
-    #                   "entropy_production_rate": self.entropy_production_rate}
-    #
-    #     return statistics
+    def insert_rates(self, new_rates):
+        if len(new_rates) != 14:
+            raise Exception(
+                "insert_rates currently only supports the six state two binding site promoter model with 14 rate constants.")
+        k_01, k_03, k_10, k_12, k_14, k_21, k_25, k_30, k_34, k_41, k_43, k_45, k_52, k_54 = new_rates
+        matrices = {"c":
+                        [[-(k_01), k_01, 0, 0, 0, 0],
+                         [0, -(k_12), k_12, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, -(k_34), k_34, 0],
+                         [0, 0, 0, 0, -(k_45), k_45],
+                         [0, 0, 0, 0, 0, 0]],
+                    "1":
+                        [[-(k_03), 0, 0, k_03, 0, 0],
+                         [k_10, -(k_10 + k_14), 0, 0, k_14, 0],
+                         [0, k_21, -(k_21 + k_25), 0, 0, k_25],
+                         [k_30, 0, 0, -(k_30), 0, 0],
+                         [0, k_41, 0, k_43, -(k_41 + k_43), 0],
+                         [0, 0, k_52, 0, k_54, -(k_52 + k_54)]]
+                    }
 
-    # @cache_this   # Caching is not supported as it cannot handle dictionary inputs
+        new_function = {"matrices": matrices}
+        self.update_infinitesimal_generator_function(new_function=new_function)
+
+        # def call(self, in_val_dict: dict, sim_settings: dict, *args, **kwargs) -> dict:
+        #     if in_val_dict != self._cur_in_val_dict:
+        #         self.propensity_matrix = self._evaluate_propensity_matrix(in_val_dict)
+        #         self.distribution = self._evaluate_distribution()
+        #         self.entropy_production_rate = self.entropy_production_rate()
+        #         self._cur_in_val_dict = in_val_dict
+        #
+        #     statistics = {"distribution": self.distribution,
+        #                   "propensity_matrix": self.propensity_matrix,
+        #                   "entropy_production_rate": self.entropy_production_rate}
+        #
+        #     return statistics
+
+        # @cache_this   # Caching is not supported as it cannot handle dictionary inputs
+
+
     def __call__(self, in_val_dict, sim_settings, *args, **kwargs):
         if in_val_dict != self._cur_in_val_dict:
             self.propensity_matrix = self._evaluate_propensity_matrix(in_val_dict)
@@ -60,9 +86,9 @@ class SteadyStateCTMC:
 
         return statistics
 
+
     # @cache_this
     def _evaluate_propensity_matrix(self, in_val_dict):
-
         # ToDo Adapt to linear combination of matrices scheme for efficiency reasons.
         # raise Exception("Implement Linear Combination Scheme for Propensity Matrix")
 
@@ -78,10 +104,11 @@ class SteadyStateCTMC:
                 scalar *= in_val_dict[factor_id] if factor_id != "1" else 1
             propensity_mat += matrix * scalar
 
-        if any(np.sum(propensity_mat, axis=1) > 10**(-10)):
+        if any(np.sum(propensity_mat, axis=1) > 10 ** (-8)):
             raise Exception(
                 f"Propensity Matrix is not a stochastic matrix. Row sum Zero condition is not satisfied!\nin_val_dict: {in_val_dict}\nmatrices: {matrices}\npropensity_mat: {propensity_mat}\nRow Sums: {np.sum(propensity_mat, axis=1)}")
         return propensity_mat
+
 
     # @cache_this
     def _evaluate_distribution(self):
@@ -99,6 +126,8 @@ class SteadyStateCTMC:
                              k01 * k12 * k30 + k03 * k10 * k32 + k01 * k12 * k32 + k03 * k12 * k32,
                              k03 * k10 * k21 + k03 * k10 * k23 + k01 * k12 * k23 + k03 * k12 * k23]
         else:
+            # ToDo Add analytical equations
+
             # The Steady State distribution is derived by
             #   1. Getting the propensity matrix
             #   2. Derive the vector for the left null space (apply scp.linalg.null_space() to the transposed matrix)
@@ -116,6 +145,7 @@ class SteadyStateCTMC:
         distribution = state_weights / np.sum(state_weights)
 
         return distribution
+
 
     # @cache_this
     def _entropy_production_rate(self):
@@ -148,12 +178,13 @@ class SteadyStateCTMC:
                 if iC >= iR:
                     continue
                 flux_diff = flux_mat[iR, iC] - flux_mat[iC, iR]
-                log_flux_diff = np.log10(flux_mat[iR, iC] / flux_mat[iC, iR])
+                log_flux_diff = np.log(flux_mat[iR, iC] / flux_mat[iC, iR])
                 entropy_production_rate += flux_diff * log_flux_diff
                 pass
 
         # entropy_production_rate *= 0.5
         return entropy_production_rate
+
 
     def relaxation_time(self):
         propensity_mat = self.propensity_matrix
@@ -164,6 +195,7 @@ class SteadyStateCTMC:
         gamma_prime = eig_vals[-1] - eig_vals[-2]  # spectral gap is equal to largest minus second largest eigenvalue
         relaxation_time = 1 / gamma_prime
         return relaxation_time
+
 
     def mixing_time_bounds(self, eps):
         promoter_distribution = self.distribution

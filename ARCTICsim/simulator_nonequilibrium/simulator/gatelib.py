@@ -12,59 +12,59 @@ from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
 
 
 # Class to represent the gatelib
-@deprecated("Replaced by GateLibCollectionBased")
-class GateLib:
-    def __init__(self, json_file: JsonFile):
-        #        raise Exception("Change to GateLibCollectionBased")
-        self.json = json_file
-
-        if json_file is None:
-            raise Exception("No Gate Library information provided!")
-
-        self.gates = []
-        for gate_entry in json_file.data:
-            gates = GateLib._populate_gate_entry(gate_entry)
-            self.gates += gates
-
-        self.gates_by_type_and_name = {}
-        for gate in self.gates:
-            gate_type = gate.type
-            ident = gate.identifier
-            if gate_type not in self.gates_by_type_and_name:
-                self.gates_by_type_and_name[gate_type] = {}
-
-            if ident in self.gates_by_type_and_name[gate_type]:
-                raise Exception(f"{ident} is already in the lookup dict")
-
-            self.gates_by_type_and_name[gate_type][ident] = gate
-        pass
-
-    @staticmethod
-    def _populate_gate_entry(gate_entry):
-        def _get_gate_implementation(gate_type):
-            if gate_type == "NOT":
-                return NOTGate
-            elif gate_type == "NOR2":
-                return NORGate
-            elif gate_type == "INPUT":
-                return LutInput
-            elif gate_type == "OUTPUT_OR2":
-                return OutputOR
-            elif gate_type == "OUTPUT_BUFFER":
-                return OutputBuffer
-            else:
-                raise Exception(f"Type \"{gate_type}\" not supported")
-            pass
-
-        gates = []
-
-        for gate_type in gate_entry["primitiveIdentifier"]:
-            gate_implementation = _get_gate_implementation(gate_type)
-
-            gate = gate_implementation(gate_entry)
-            gates.append(gate)
-
-        return gates
+# @deprecated("Replaced by GateLibCollectionBased")
+# class GateLib:
+#     def __init__(self, json_file: JsonFile):
+#         #        raise Exception("Change to GateLibCollectionBased")
+#         self.json = json_file
+#
+#         if json_file is None:
+#             raise Exception("No Gate Library information provided!")
+#
+#         self.gates = []
+#         for gate_entry in json_file.data:
+#             gates = GateLib._populate_gate_entry(gate_entry)
+#             self.gates += gates
+#
+#         self.gates_by_type_and_name = {}
+#         for gate in self.gates:
+#             gate_type = gate.type
+#             ident = gate.identifier
+#             if gate_type not in self.gates_by_type_and_name:
+#                 self.gates_by_type_and_name[gate_type] = {}
+#
+#             if ident in self.gates_by_type_and_name[gate_type]:
+#                 raise Exception(f"{ident} is already in the lookup dict")
+#
+#             self.gates_by_type_and_name[gate_type][ident] = gate
+#         pass
+#
+#     @staticmethod
+#     def _populate_gate_entry(gate_entry):
+#         def _get_gate_implementation(gate_type):
+#             if gate_type == "NOT":
+#                 return NOTGate
+#             elif gate_type == "NOR2":
+#                 return NORGate
+#             elif gate_type == "INPUT":
+#                 return LutInput
+#             elif gate_type == "OUTPUT_OR2":
+#                 return OutputOR
+#             elif gate_type == "OUTPUT_BUFFER":
+#                 return OutputBuffer
+#             else:
+#                 raise Exception(f"Type \"{gate_type}\" not supported")
+#             pass
+#
+#         gates = []
+#
+#         for gate_type in gate_entry["primitiveIdentifier"]:
+#             gate_implementation = _get_gate_implementation(gate_type)
+#
+#             gate = gate_implementation(gate_entry)
+#             gates.append(gate)
+#
+#         return gates
 
 
 class GateLibCollectionBased:
@@ -72,6 +72,7 @@ class GateLibCollectionBased:
     def __init__(self, json_file: JsonFile):
         self.json = json_file
         COLLECTIONS = {"promoters": Promoter,
+                       "sensor_promoters": SensorPromoter,
                        "coding_sequences": CodingSequence,
                        "proteins": Protein,
                        "tf_inputs": TranscriptionfactorInputs,
@@ -176,7 +177,7 @@ class GateLibEntry:
 
         if self.collection != self.collection_identifier:
             raise Exception(
-                f"Mismatch in collection (Trying to instantiate {self.collection_identifier} with an entry of collection {self.collection}")
+                f"Mismatch in collection (Trying to instantiate {self.collection_identifier} with an entry of collection {self.collection})")
 
     def __str__(self):
         return f"{type(self)} {self.id}"
@@ -213,9 +214,13 @@ class GateLibModelEntry(GateLibEntry):
 
 class Promoter(GateLibModelEntry):
 
-    def __init__(self, gate_lib_entry_dict: dict,
-                 gate_lib: GateLibCollectionBased = None):
-        self.collection_identifier = "promoters"
+    def __init__(self,
+                 gate_lib_entry_dict: dict,
+                 gate_lib: GateLibCollectionBased = None,
+                 collection_identifier: str = None):
+        self.collection_identifier = collection_identifier
+        if collection_identifier is None:
+            self.collection_identifier = "promoters"
         super().__init__(collection_identifier=self.collection_identifier,
                          gate_lib_entry_dict=gate_lib_entry_dict,
                          gate_lib=gate_lib)
@@ -239,12 +244,50 @@ class Promoter(GateLibModelEntry):
 
         return model
 
-    # def __call__(self, cell_state: dict, sim_settings: dict, *args, **kwargs):
-    #     # Single input promoter
-    #     # c subsumes cognate TFs
-    #
-    #     output = super()(in_vals, sim_settings)
-    #     return output
+
+class SensorPromoter(Promoter):
+    """
+    This class represents the mapping from inducer to promoter activity.
+    To this end, it employs static collapsed promoter models for each input to output relation.
+    """
+
+    def __init__(self, gate_lib_entry_dict: dict,
+                 gate_lib: GateLibCollectionBased = None):
+        self.collection_identifier = "sensor_promoters"
+        super().__init__(collection_identifier=self.collection_identifier,
+                         gate_lib_entry_dict=gate_lib_entry_dict,
+                         gate_lib=gate_lib)
+
+        # This class misuses the field self.cognate_transcription_factors to represent the inducer it is sensitive to
+
+    def _populate_model(self):
+        model_info = self.model_info
+
+        # Model Info provides a table providing the mapping of inducer concentration to RPU
+        LUT = model_info["LUT"]
+
+        model_LUT = {}
+        for input_val in LUT:
+
+            num_states = 1
+            num_trainable_parameters = 0
+            promoter_activity = [LUT[input_val]]
+            infinitesimal_generator_function = {"matrices": {"1": [[0]]}}
+            input_scaling_factor = 1
+            promoter_model = PromoterModel(num_states,
+                                           num_trainable_parameters,
+                                           input_scaling_factor=input_scaling_factor,
+                                           infinitesimal_generator_function=infinitesimal_generator_function,
+                                           per_state_promoter_activity=promoter_activity)
+            model_LUT[float(input_val)] = promoter_model
+
+        def model(in_val_dict: dict, sim_settings: dict, *args, **kwargs):
+            cognate_inducer_concentration = float(in_val_dict["c"])
+            promoter_model = model_LUT[cognate_inducer_concentration]
+            result = promoter_model({"c": 0}, sim_settings=sim_settings, *args, **kwargs)
+            return result
+
+        return model
 
 
 #
@@ -328,7 +371,6 @@ class Protein(CodingSequence):
         energy_per_amino_acid = model_info["protein"]["e"]
         energy_per_protein = model_info["protein"]["e_const"]
         protein_length = model_info["protein"]["length"]
-
         model = CombinedMomentModel(transcription_rate, rna_degradation_rate, energy_per_nucleotide, energy_per_rna,
                                     rna_length,
                                     translation_rate, protein_degradation_rate, energy_per_amino_acid,
@@ -496,8 +538,8 @@ class Device(GateLibEntry):
 
 
 if __name__ == '__main__':
-    json_file_old = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_yeast.json")
-    gate_lib_old = GateLib(json_file=json_file_old)
+    # json_file_old = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_yeast.json")
+    # gate_lib_old = GateLib(json_file=json_file_old)
     json_file = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_draft.json")
     gate_lib = GateLibCollectionBased(json_file=json_file)
 
@@ -506,6 +548,10 @@ if __name__ == '__main__':
     promoter = promoter_constitutive
     proteins = gate_lib.objects_by_collection["proteins"][0]
     result = promoter({"c": 1}, {})
+
+    sim_settings = {"mode": "samp"}
+    result = gate_lib.objects_by_id["sensor_promoter_Ptet"]({"c": 5.0}, sim_settings=sim_settings)
+    prot_result = proteins(result, sim_settings=sim_settings)
 
     num_samples = 8 * 10 ** 4
     input_vals = 1000.0 * np.random.random(num_samples)

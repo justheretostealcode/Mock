@@ -4,7 +4,7 @@ import json
 import numpy as np
 from gvgen import GvGen
 
-from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLib, Device, GateLibCollectionBased
+from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import Device, GateLibCollectionBased
 from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
 from ARCTICsim.simulator_thermodynamics.libsim import circuit_structure
 

@@ -200,10 +200,10 @@ public class GateLibrary {
             if (!deviceToPromoter.containsKey(device))
                 deviceToPromoter.put(device, name);
 
-            /* fill device <-> promoter factors */
-            Iterator<Map.Entry<String, JsonNode>> it = promoter.get("factors").get("tf_only").fields();
+            /* fill device <-> promoter factors */ // TODO make optional
+            /*Iterator<Map.Entry<String, JsonNode>> it = promoter.get("factors").get("tf_only").fields();
             devicePromoterFactors.put(device, new HashMap<>());
-            it.forEachRemaining(e -> devicePromoterFactors.get(device).put(e.getKey(), e.getValue().get(e.getValue().size() - 1).doubleValue()));
+            it.forEachRemaining(e -> devicePromoterFactors.get(device).put(e.getKey(), e.getValue().get(e.getValue().size() - 1).doubleValue()));*/
         }
 
         /* add gate for each tf by getting its device and promoter */
@@ -244,6 +244,20 @@ public class GateLibrary {
         }
     }
 
+    private class InflectionPoint {
+
+        double x_m;
+        double y_m;
+        double d_y_m;
+
+        InflectionPoint(double x_m, double y_m, double d_y_m) {
+            this.x_m = x_m;
+            this.y_m = y_m;
+            this.d_y_m = d_y_m;
+        }
+
+    }
+
     private void loadEnergyLibrary(File libraryFile) {
 
         ObjectMapper mapper = new ObjectMapper();
@@ -257,44 +271,63 @@ public class GateLibrary {
             return;
         }
 
+        Map<String, InflectionPoint> promoters = new HashMap<>();
+
+        for (int i = 0; i < content.size(); i++) {
+
+            if (content.get(i).get("collection").textValue().equals("promoters")) {
+
+                JsonNode inflectionPoint = content.get(i).get("technology_mapping").get("inflection_point");
+
+                promoters.putIfAbsent(content.get(i).get("identifier").textValue(),
+                        new InflectionPoint(inflectionPoint.get("x_m").asDouble(), inflectionPoint.get("y_m").asDouble(), inflectionPoint.get("d_y_m").asDouble()));
+
+            }
+        }
+
         for (int i = 0; i < content.size(); i++) {
 
             JsonNode entry = content.get(i);
-            JsonNode biorep = entry.get("biorep");
 
-            JsonNode functions = entry.get("primitiveIdentifier");
+            if (entry.get("collection").textValue().equals("devices")) {
 
-            for (int j = 0; j < functions.size(); j ++) {
+                JsonNode functions = entry.get("primitive_identifier");
 
-                GateRealization newGate;
+                for (int j = 0; j < functions.size(); j++) {
 
-                LogicType logicType = LogicType.valueOf(functions.get(j).textValue());
+                    GateRealization newGate;
 
-                if (logicType == LogicType.OUTPUT_BUFFER || logicType == LogicType.OUTPUT_OR2) {
-                    newGate = new GateRealization(entry.get("identifier").textValue(),
-                            logicType,
-                            entry.get("group").textValue());
-                } else if (logicType == LogicType.INPUT) {
-                    newGate = new GateRealization(entry.get("identifier").textValue(),
-                            logicType,
-                            entry.get("group").textValue(),
-                            new GateRealization.GateCharacterization(
-                                    biorep.get("1").asDouble(),
-                                    biorep.get("0").asDouble(),
-                                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, null));
-                } else {
-                    newGate = new GateRealization(entry.get("identifier").textValue(),
-                            logicType,
-                            entry.get("group").textValue(),
-                            new GateRealization.GateCharacterization(
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                    0.0));
+                    LogicType logicType = LogicType.valueOf(functions.get(j).textValue());
+
+                    if (logicType == LogicType.OUTPUT_BUFFER || logicType == LogicType.OUTPUT_OR2) {
+                        newGate = new GateRealization(entry.get("identifier").textValue(),
+                                logicType,
+                                entry.get("group").textValue());
+                    } else if (logicType == LogicType.INPUT) {
+                        newGate = new GateRealization(entry.get("identifier").textValue(),
+                                logicType,
+                                entry.get("group").textValue(),
+                                new GateRealization.GateCharacterization(
+                                        1.0,
+                                        0.0,
+                                        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, null));
+                    } else {
+
+                        InflectionPoint inflectionPoint = promoters.get(entry.get("promoter_id").textValue());
+
+                        newGate = new GateRealization(entry.get("identifier").textValue(),
+                                logicType,
+                                entry.get("group").textValue(),
+                                new GateRealization.GateCharacterization(
+                                        0.0,
+                                        0.0,
+                                        inflectionPoint.y_m,
+                                        inflectionPoint.x_m,
+                                        inflectionPoint.d_y_m));
+                    }
+
+                    addGateRealization(newGate);
                 }
-
-                addGateRealization(newGate);
             }
         }
     }

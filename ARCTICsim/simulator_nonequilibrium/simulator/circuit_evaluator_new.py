@@ -2,9 +2,10 @@
 Author: Erik Kubaczka
 """
 import numpy as np
-from simulator.circuit import Circuit
-from simulator.scores import FunctionalScore, EnergyScore
-from simulator.circuit_utils import CircuitAssignment, CircuitStructure
+import time
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit import GeneticLogicCircuit
+from ARCTICsim.simulator_nonequilibrium.simulator.scores import FunctionalScore, EnergyScore
+from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, CircuitStructure
 
 
 # ToDos
@@ -13,14 +14,14 @@ from simulator.circuit_utils import CircuitAssignment, CircuitStructure
 #   - Load Gate Lib             ✓
 #   - Interpret Assignment      ✓
 #
-# 2. Implement Function         ✓
-#   - Construct assigned circuit                                        ✓
-#   - Implement simulation (based on samples from distributions)        ✓
-#   - Propagate values through circuit                                  ✓
+# 2. Implement Function
+#   - Construct assigned circuit
+#   - Implement simulation (based on samples from distributions)
+#   - Propagate values through circuit
 #
-# 3. Perform scoring            ✓
-#   - Functional Scoring based on Wasserstein           ✓
-#   - Energy Scoring (either Average or Maximum)        ✓
+# 3. Perform scoring
+#   - Functional Scoring based on Wasserstein
+#   - Energy Scoring (either Average or Maximum)
 #
 # 4. Return scores              ✓
 #   - Pass scores in JSON Format to optimizer           ✓
@@ -42,7 +43,7 @@ class CircuitEvaluator:
             return
 
         self.structure = structure
-        self.circuit = Circuit(structure)
+        self.circuit = GeneticLogicCircuit(structure, self.settings)
 
         # Generate Truthtable
 
@@ -60,8 +61,7 @@ class CircuitEvaluator:
 
         circuit = self.circuit
 
-        circuit.assign_genes(assignment)
-
+        circuit.set_assignment(assignment)
 
         mode = sim_settings["mode"]
         n_samples = sim_settings["n_samples"] if mode == "samp" else 1
@@ -75,12 +75,13 @@ class CircuitEvaluator:
         detailed_circuit_energy_rates = []
 
         input_ids = list(structure.inputs)
+        output_ids = list(structure.outputs)
         input_ids.sort()
-        node_order = structure.combinational_order()
-
+        # node_order = structure.combinational_order()
+        start = time.time()
         for input_vals, output_val in truthtable.input_output_truthtable():
             input_vals_dict = dict(zip(input_ids, input_vals))
-            gate_output_vals = {id: np.empty(shape=(n_samples)) for id in node_order}
+            gate_output_vals = {id: np.empty(shape=(n_samples)) for id in structure.nodes}
             energy_rates = np.empty(shape=(n_samples))
             detailed_energy_rates = np.empty(shape=(n_samples, 3))
             for iN in range(n_samples):
@@ -96,7 +97,7 @@ class CircuitEvaluator:
                 detailed_energy_rates[iN] = cur_detailed_energy_rates
 
             cur_out_vals = []
-            for out_id in structure.outputs:
+            for out_id in output_ids:
                 circuit_output_vals_dict[out_id][output_val].append(gate_output_vals[out_id])
                 cur_out_vals.append(gate_output_vals[out_id])
 
@@ -106,6 +107,8 @@ class CircuitEvaluator:
 
             # print(gate_output_vals)
             pass
+        end = time.time()
+        print(f"Duration: {end - start}")
 
         circuit_output_vals = np.array(circuit_output_vals)
         circuit_energy_rates = np.array(circuit_energy_rates)
@@ -125,14 +128,11 @@ class CircuitEvaluator:
 
         energy_score = self.energy_score(circuit_energy_rates)
 
-        detailed_energy_score = {key: self.energy_score(detailed_circuit_energy_rates[:,:, iX]) for iX, key in
-                                 enumerate(["epsilon_p", "e_tx", "e_tl"])}
+        detailed_energy_score = {key: self.energy_score(detailed_circuit_energy_rates[:, :, iX]) for iX, key in
+                                 enumerate(["e_p", "e_tx", "e_tl"])}
 
         scores = {"functional_score": functional_scores,
                   "energy_score": energy_score,
                   "detailed_energy_score": detailed_energy_score}
-        # ToDo
-        # Apply functional score
-        # Apply energy score
 
         return scores

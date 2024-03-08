@@ -6,7 +6,7 @@ SIM_DIR = ""
 
 setup(
     name='Circuit Evaluator',
-    ext_modules=cythonize([SIM_DIR + file for file in ["simulator/circuit_evaluator.py",
+    ext_modules=cythonize([SIM_DIR + file for file in ["simulator/circuit_evaluator_new.py",
                                                        "simulator/circuit.py",
                                                        "models/*.py"]], force=True),
 )

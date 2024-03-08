@@ -7,7 +7,7 @@ import itertools
 
 import numpy as np
 
-from models.custom_cache import cache_this, clear_cache
+from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this, clear_cache
 
 
 class SteadyStateCTMC:
@@ -33,6 +33,9 @@ class SteadyStateCTMC:
         # propensity_mat_legacy = np.array([[self.infinitesimal_generator_function(iR, iC, external_concentrations)
         #                             for iC in range(self.N_states)]
         #                            for iR in range(self.N_states)], dtype=float)
+
+
+        # ToDo Adapt to linear combination of matrices scheme for efficiency reasons.
         propensity_mat = np.array([self.infinitesimal_generator_function(index[0], index[1], external_concentrations)
                                    for index in itertools.product(range(self.N_states), range(self.N_states))],
                                   dtype=float)
@@ -42,7 +45,7 @@ class SteadyStateCTMC:
     @cache_this
     def distribution(self, external_concentrations):
         #distribution = np.empty(self.N_states)
-        if self.N_states == 4:
+        if False and self.N_states == 4:
             # Infinitesimal_generator_function is too slow.
             K = self.infinitesimal_generator_function
             c = external_concentrations

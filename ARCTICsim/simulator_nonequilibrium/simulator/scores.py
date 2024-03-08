@@ -50,8 +50,6 @@ class FunctionalScore:
         return score
 
 
-
-
 class EnergyScore:
 
     def __init__(self, settings):

@@ -312,7 +312,7 @@ class nor_circuit:
                 force_env = True
             for m in range(len(self.gates)):
                 if self.gates[m].type == -1 and self.w[m, n] == 0:  # dummy: choose weakest or strongest TF
-                    pa_idx = self.gates[m].promoter(n, self.bound_env[n])
+                    pa_idx = self.gates[m].promoter_entry(n, self.bound_env[n])
                     if DEBUG_LEVEL > 2:
                         print(':: ' + hl(pa_idx))
                     p_a[pa_idx] += wa[m]

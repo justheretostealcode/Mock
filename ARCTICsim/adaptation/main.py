@@ -30,7 +30,7 @@ def get_promoter(promoter):
 def place_on_plasmid(structure, assignment):
     def get_transcription_factor_and_promoter(genetic_gate):
         tf = genetic_gate.transcription_factor
-        promoter = genetic_gate.promoter
+        promoter = genetic_gate.promoter_entry
 
         if tf is None or promoter is None:
             id = genetic_gate.identifier

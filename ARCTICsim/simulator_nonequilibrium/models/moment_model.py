@@ -6,8 +6,8 @@ E-Mail: erik.kubaczka@tu-darmstadt.de
 
 import numpy as np
 
-from models.custom_cache import cache_this
-from models.promoter_model import PromoterModel
+from ARCTICsim.simulator_nonequilibrium.models.custom_cache import cache_this
+from ARCTICsim.simulator_nonequilibrium.models.promoter_model import PromoterModel
 
 
 class MomentModel:
@@ -134,3 +134,6 @@ class MomentModel:
         squared_E_P = (self.E_P(external_concentrations)) ** 2
         variance = E_P_squared - squared_E_P
         return variance
+
+
+

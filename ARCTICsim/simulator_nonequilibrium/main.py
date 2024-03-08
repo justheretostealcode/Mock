@@ -9,7 +9,7 @@ import os.path as op
 import shlex
 from argparse import ArgumentParser
 
-import profiler
+
 from ARCTICsim.simulator_nonequilibrium.simulator.circuit_evaluator_new import CircuitEvaluator
 
 from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, load_structure

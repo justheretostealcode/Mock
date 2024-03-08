@@ -1,13 +1,11 @@
 import cProfile
 
 import numpy as np
-from matplotlib import pyplot as plt
-from deprecated import deprecated
+
 from ARCTICsim.simulator_nonequilibrium.models.moment_model_new import RNAMomentModel, ProteinMomentModel, \
     CombinedMomentModel
 from ARCTICsim.simulator_nonequilibrium.models.promoter_model_new import PromoterModel
-from ARCTICsim.simulator_nonequilibrium.simulator.particle_circuit_parts import NOTGate, NORGate, LutInput, OutputOR, \
-    OutputBuffer
+
 from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
 
 

@@ -13,7 +13,7 @@ import profiler
 from ARCTICsim.simulator_nonequilibrium.simulator.circuit_evaluator_new import CircuitEvaluator
 
 from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, load_structure
-from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLib, GateLibCollectionBased
+from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLibCollectionBased
 from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile, communication_wrapper, load_settings, type_dict
 
 here = op.dirname(op.abspath(inspect.getfile(inspect.currentframe())))

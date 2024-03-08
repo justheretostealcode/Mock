@@ -1,6 +1,8 @@
 """
 Exemplary script to derive a Non-Equilibrium Compatible Library from the Cello for Yeast Library
 """
+import json
+
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import minimize
@@ -142,7 +144,7 @@ def add_inputs(custom_lib, tf_inputs, reporter_information):
         #                      }}}
         # ToDo match Promoter
         promoter_entry = get_promoter_entry(name=tf_input["promoter"],
-                                            cognate_transcription_factors=[tf_input["protein"], tf_input["group"]],
+                                            cognate_transcription_factors=[tf_input["group"], tf_input["protein"]],
                                             sequence_ids=None)
         promoter_entry["collection"] = "sensor_promoters"
         promoter_entry["identifier"] = "sensor_" + promoter_entry["identifier"]
@@ -183,7 +185,9 @@ def add_inputs(custom_lib, tf_inputs, reporter_information):
     return reference_sensor_promoter_entry
 
 
-def match_promoter(response_characteristic: dict, reporter_information: dict, gate_information: dict = None,
+def match_promoter(response_characteristic: dict,
+                   reporter_information: dict,
+                   gate_information: dict = None,
                    input_information: dict = None, match_input_sensor=False):
     """
     This method performs the parameter matching for the promoter model to the response characteristics
@@ -192,26 +196,41 @@ def match_promoter(response_characteristic: dict, reporter_information: dict, ga
     :return:
     """
 
+    utr_reporter = UTR(reporter_information["cds"]) if "utr" in reporter_information else None
+    protein_reporter = Protein(reporter_information["cds"])
+    terminator_reporter = None
+    reporter_name = protein_reporter.name + "_rpu"
     # Steps
     # Setup Model to train (Gene includes YFP output and the input is a TF Level (possibly derived from RPU))
     # Match model to training data
     # if not match_input_sensor:
-    if input_information is not None:
+    gate_name = None
+    if input_information is None:
+        raise Exception("Input Information is essentially required for parameter matching.")
+    else:
         # tf_input = TranscriptionfactorInputs(input_information["tf_input"])
         promoter_sensor = SensorPromoter(input_information["promoter"])
+        input_signal_name = promoter_sensor.cognate_transcription_factors[0]
 
-    if gate_information is not None:
+    genes = []
+    if gate_information is None:
+        sensor_gene = Gene(id="Sensor", promoter=promoter_sensor, utr=utr_reporter, cds=protein_reporter)
+        genes.append(sensor_gene)
+        promoter = promoter_sensor
+    else:
+        gate_name = gate_information["name"]
         utr_gate = UTR(gate_information["utr"]) if "utr" in gate_information else None
         protein_gate = Protein(gate_information["cds"])
         terminator_gate = None
         promoter_gate = Promoter(gate_information["promoter"])
 
-    utr_reporter = UTR(reporter_information["cds"]) if "utr" in reporter_information else None
-    protein_reporter = Protein(reporter_information["cds"])
-    terminator_reporter = None
+        sensor_gene = Gene(id="Sensor", promoter=promoter_sensor, utr=utr_gate, cds=protein_gate)
+        reporter_gene = Gene(id="Reporter", promoter=promoter_gate, utr=utr_reporter, cds=protein_reporter)
 
-    sensor_gene = Gene(id="Sensor", promoter=promoter_sensor, utr=utr_gate, cds=protein_gate)
-    reporter_gene = Gene(id="Reporter", promoter=promoter_gate, utr=utr_reporter, cds=protein_reporter)
+        promoter = promoter_gate
+
+        genes.append(sensor_gene)
+        genes.append(reporter_gene)
 
     X = response_characteristic["X"]
     Y = response_characteristic["Y"]
@@ -221,73 +240,15 @@ def match_promoter(response_characteristic: dict, reporter_information: dict, ga
     s = np.max(X) * 0.05
     k_m = k_m = s * y / (1 - y)
     ligand_to_tf_level = lambda x: 1 / (1 + (x / k_m) ** 1)
+
     # Case distinction
     # Case 1: Parameter estimation of a genetic gate -> both genes are used and matched input sensors and existing reporters are required
     # Case 2: Parameter estimation of an input sensor -> only the reporter gene is required. The input sensor's promoter is directly attached to it.
-    if match_input_sensor:
-        promoter = promoter_sensor
-        input_val_name = tf_input.signal_name
-        promoter_entry = input_information["promoter"]
-
-        def model(plasmid_input_vals, skip_input=False):
-            sim_settings = {"mode": "samp"}
-            cell_state = {"energy": 0}
-            cell_state.update(plasmid_input_vals)
-            cognate_tfs = promoter.cognate_transcription_factors
-            if skip_input:
-                cell_state[cognate_tfs[0]] = plasmid_input_vals[input_val_name]
-            else:
-                # tf_input(cell_state, sim_settings)
-                cell_state[cognate_tfs[0]] = ligand_to_tf_level(cell_state[tf_input.signal_name])
-                # cell_state[cognate_tfs[0]] = cell_state[tf_input.signal_name]
-
-            input_val_dict = {"c": np.sum([cell_state[molecule]
-                                           for molecule in cell_state
-                                           if molecule in promoter.cognate_transcription_factors])}
-            promoter_output = promoter(input_val_dict, sim_settings)
-            model_outputs = protein_reporter(promoter_output, sim_settings)
-            mean_P = model_outputs["protein_mean"]
-            var_P = model_outputs["protein_var"]
-
-            rpu_to_eu_scaling_factor = protein_reporter.model.scaling_factor
-            eu_to_rpu_scaling_factor = (rpu_to_eu_scaling_factor) ** (-1)
-            output_mean = mean_P * eu_to_rpu_scaling_factor
-            output_var = var_P * eu_to_rpu_scaling_factor ** 2
-
-            return output_mean, output_var
-
-    else:
-        promoter = promoter_gate
-        input_val_name = promoter.cognate_transcription_factors[0]
-        promoter_entry = gate_information["promoter"]
-
-        def model(plasmid_input_vals):
-            sim_settings = {}
-            cell_state = {"energy": 0}
-            cell_state.update(plasmid_input_vals)
-
-            tf_input(cell_state, sim_settings)
-            input_val_dict = {"c": np.sum([cell_state[molecule]
-                                           for molecule in cell_state
-                                           if molecule in promoter.cognate_transcription_factors])}
-            promoter_output = promoter(input_val_dict, sim_settings)
-            model_outputs = protein_reporter(promoter_output, sim_settings)
-            mean_P = model_outputs["protein_mean"]
-            var_P = model_outputs["protein_var"]
-
-            sensor_gene = Gene(id="Sensor", promoter=promoter_sensor, utr=utr_gate, cds=protein_gate)
-            reporter_gene = Gene(id="Reporter", promoter=promoter_gate, utr=utr_reporter, cds=protein_reporter)
-
-            rpu_to_eu_scaling_factor = protein_reporter.scaling_factor
-            eu_to_rpu_scaling_factor = (rpu_to_eu_scaling_factor) ** (-1)
-            output_mean = mean_P * eu_to_rpu_scaling_factor
-            output_var = var_P * eu_to_rpu_scaling_factor ** 2
-            raise Exception("Implement")
-            return output_mean, output_var
 
     def update_model(params):
-
-        promoter.model.insert_params(params)
+        new_params = 10 ** params
+        new_params[:2] = params[:2]
+        promoter.model.insert_params(new_params)
 
     def loss_func(Y, Y_pred, custom_weights=None):
         weights = np.ones(shape=Y.shape)
@@ -296,12 +257,15 @@ def match_promoter(response_characteristic: dict, reporter_information: dict, ga
         weights = weights / np.sum(weights)
 
         loss = 0.0
-        loss += np.sum(weights * np.power(np.log(Y) - np.log(Y_pred), 2))
+        # loss += np.sum((weights * np.power(np.log(Y) - np.log(Y_pred), 2))[Y_pred != 0])
+        loss += np.sum((weights[:, 0] * np.power(np.log(Y[:, 0]) - np.log(Y_pred[:, 0]), 2)))
+        # loss += np.sum((weights[:, 1] * np.power(np.sqrt(Y[:, 1]) - np.sqrt(Y_pred[:, 1]), 2)))
 
         return loss.item()
 
-    # The optimization routine adapts the rates in the infinitesimal generator and the promoter activity
-    def error_func(params):
+    def error_func(params, training_data):
+
+        X, Y = training_data
         update_model(params)
 
         # X = response_characteristic["X"]
@@ -310,50 +274,173 @@ def match_promoter(response_characteristic: dict, reporter_information: dict, ga
         Y_pred = [None] * len(X)
         input_vals_dict = {}
         for iX, x in enumerate(X):
-            input_vals_dict[input_val_name] = x
+            input_vals_dict[input_signal_name] = x
             y_pred = model(plasmid_input_vals=input_vals_dict)
             y_pred = {label: y_pred[iL] for iL, label in enumerate(["mean", "variance"])}
             Y_pred[iX] = [y_pred[label] for label in labels]
 
         Y_pred = np.array(Y_pred)
         custom_weights = np.ones(shape=Y_pred.shape)  # Equals average weighting.
-        custom_weights[1, 0] = 2
-        custom_weights[-2, 0] = 2
+        custom_weights[0, 0] = 10
+        custom_weights[1, 0] = 4
+        custom_weights[-2, 0] = 4
+        custom_weights[-1, 0] = 10
         custom_weights[:, 1] = 0.1
+        custom_weights[0, 1] = 0.2
+        custom_weights[-1, 1] = 0.2
+        # custom_weights[:, 1] = custom_weights[:, 0] / 10
         # Can realize less weighting of variance results.
         loss = loss_func(Y, Y_pred, custom_weights=custom_weights)
+        # deviation = deviation_func(params)
+        # loss = deviation
         return loss
 
-    mask_mean = [label == "mean" for label in labels]
-    Y_mean = [y[mask_mean] for y in Y]
-    y_on = np.max(Y_mean)
-    y_off = np.min(Y_mean)
+    #
+    # ref_params = [3.589279542832028, 0.003109276598567825, 479.0328585600103, 5.579281617098493e-11,
+    #               5.544387725272706e-11, 5.7219952157354176e-11, 5.581332098763365e-11, 6.669774560347158e-11,
+    #               1167.502391260739, 4834.371783185657, 2.1532840435156686e-06, 92474.44318734983]
+    #
+    # def deviation_func(params):
+    #     y_on_ref = ref_params[0]
+    #     y_off_ref = ref_params[1]
+    #
+    #     alphas_ref = ref_params[2:2 + 5]
+    #     betas_ref = ref_params[2 + 5:]
+    #     y_on, y_off, k_01, k_03, k_10, k_12, k_14, k_21, k_25, k_30, k_34, k_41, k_43, k_45, k_52, k_54 = params
+    #     alphas = [
+    #         k_03 * k_10 * k_21 * k_41 * k_52 + k_03 * k_10 * k_21 * k_43 * k_52 + k_03 * k_14 * k_21 * k_43 * k_52 + k_03 * k_10 * k_21 * k_41 * k_54 + k_03 * k_10 * k_25 * k_41 * k_54 + k_03 * k_10 * k_21 * k_43 * k_54 + k_03 * k_14 * k_21 * k_43 * k_54 + k_03 * k_10 * k_25 * k_43 * k_54 + k_03 * k_14 * k_25 * k_43 * k_54,
+    #         k_01 * k_14 * k_21 * k_30 * k_52 + k_03 * k_10 * k_21 * k_34 * k_52 + k_03 * k_14 * k_21 * k_34 * k_52 + k_01 * k_14 * k_21 * k_43 * k_52 + k_03 * k_10 * k_21 * k_45 * k_52 + k_01 * k_14 * k_21 * k_30 * k_54 + k_01 * k_14 * k_25 * k_30 * k_54 + k_03 * k_10 * k_21 * k_34 * k_54 + k_03 * k_14 * k_21 * k_34 * k_54 + k_03 * k_10 * k_25 * k_34 * k_54 + k_03 * k_14 * k_25 * k_34 * k_54 + k_01 * k_14 * k_21 * k_43 * k_54 + k_03 * k_12 * k_25 * k_43 * k_54 + k_01 * k_14 * k_25 * k_43 * k_54,
+    #         k_01 * k_12 * k_25 * k_30 * k_41 + k_03 * k_12 * k_25 * k_34 * k_41 + k_01 * k_12 * k_25 * k_30 * k_43 + k_01 * k_14 * k_21 * k_30 * k_45 + k_01 * k_14 * k_25 * k_30 * k_45 + k_03 * k_10 * k_21 * k_34 * k_45 + k_03 * k_14 * k_21 * k_34 * k_45 + k_03 * k_10 * k_25 * k_34 * k_45 + k_03 * k_14 * k_25 * k_34 * k_45 + k_01 * k_14 * k_21 * k_34 * k_52 + k_01 * k_12 * k_25 * k_30 * k_54 + k_01 * k_14 * k_21 * k_34 * k_54 + k_03 * k_12 * k_25 * k_34 * k_54 + k_01 * k_14 * k_25 * k_34 * k_54 + k_01 * k_12 * k_25 * k_43 * k_54,
+    #         k_01 * k_12 * k_25 * k_34 * k_41 + k_01 * k_12 * k_25 * k_30 * k_45 + k_01 * k_14 * k_21 * k_34 * k_45 + k_03 * k_12 * k_25 * k_34 * k_45 + k_01 * k_14 * k_25 * k_34 * k_45 + k_01 * k_12 * k_25 * k_34 * k_54,
+    #         k_01 * k_12 * k_25 * k_34 * k_45]
+    #     alphas = np.array(alphas)
+    #     betas = [
+    #         k_10 * k_21 * k_30 * k_41 * k_52 + k_10 * k_21 * k_30 * k_43 * k_52 + k_14 * k_21 * k_30 * k_43 * k_52 + k_10 * k_21 * k_30 * k_41 * k_54 + k_10 * k_25 * k_30 * k_41 * k_54 + k_10 * k_21 * k_30 * k_43 * k_54 + k_14 * k_21 * k_30 * k_43 * k_54 + k_10 * k_25 * k_30 * k_43 * k_54 + k_14 * k_25 * k_30 * k_43 * k_54,
+    #         k_01 * k_21 * k_30 * k_41 * k_52 + k_03 * k_21 * k_34 * k_41 * k_52 + k_10 * k_21 * k_34 * k_41 * k_52 + k_01 * k_21 * k_30 * k_43 * k_52 + k_10 * k_21 * k_30 * k_45 * k_52 + k_01 * k_21 * k_30 * k_41 * k_54 + k_01 * k_25 * k_30 * k_41 * k_54 + k_03 * k_21 * k_34 * k_41 * k_54 + k_10 * k_21 * k_34 * k_41 * k_54 + k_03 * k_25 * k_34 * k_41 * k_54 + k_10 * k_25 * k_34 * k_41 * k_54 + k_01 * k_21 * k_30 * k_43 * k_54 + k_01 * k_25 * k_30 * k_43 * k_54 + k_12 * k_25 * k_30 * k_43 * k_54,
+    #         k_01 * k_12 * k_30 * k_41 * k_52 + k_03 * k_12 * k_34 * k_41 * k_52 + k_01 * k_21 * k_34 * k_41 * k_52 + k_01 * k_12 * k_30 * k_43 * k_52 + k_01 * k_14 * k_30 * k_45 * k_52 + k_01 * k_21 * k_30 * k_45 * k_52 + k_03 * k_10 * k_34 * k_45 * k_52 + k_03 * k_14 * k_34 * k_45 * k_52 + k_03 * k_21 * k_34 * k_45 * k_52 + k_10 * k_21 * k_34 * k_45 * k_52 + k_01 * k_12 * k_30 * k_41 * k_54 + k_03 * k_12 * k_34 * k_41 * k_54 + k_01 * k_21 * k_34 * k_41 * k_54 + k_01 * k_25 * k_34 * k_41 * k_54 + k_01 * k_12 * k_30 * k_43 * k_54,
+    #         k_01 * k_12 * k_34 * k_41 * k_52 + k_01 * k_12 * k_30 * k_45 * k_52 + k_03 * k_12 * k_34 * k_45 * k_52 + k_01 * k_14 * k_34 * k_45 * k_52 + k_01 * k_21 * k_34 * k_45 * k_52 + k_01 * k_12 * k_34 * k_41 * k_54,
+    #         k_01 * k_12 * k_34 * k_45 * k_52]
+    #     betas = np.array(betas)
+    #     divisor = len(alphas) + len(betas)
+    #     deviation = np.sum(np.power(alphas - alphas_ref, 2))
+    #     deviation += np.sum(np.power(betas - betas_ref, 2))
+    #     deviation /= divisor
+    #     return deviation
+
+    matching_modes = ["det", "samp"]
+    sample_counts = [1, 30]
+    matching_modes = ["det"]
+    sample_counts = [1]
+
     best_fun = np.infty
     best_params = None
-    for iR in range(2):
-        initial_params = [y_on, y_off]
-        initial_params += list(np.exp(np.random.rand(14) * 10 - 5))
-        initial_params = np.array(initial_params)
-        new_params = initial_params
-        # loss = error_func(initial_params)
-        x0 = initial_params
-        result = minimize(error_func, x0=x0,
-                          bounds=[(y_on, y_on), (y_off * 0.5, y_off)] + [(10 ** (-10), 10 ** 10) for _ in range(14)],
-                          method="nelder-mead",
-                          tol=10 ** (-10),
-                          options={"disp": True, "ftol": 10 ** (-7)}
-                          )
-        new_params = result.x
-        fun = result.fun
+    for iR in range(5):
+        initial_params = None
+        for matching_mode, sample_count in zip(matching_modes, sample_counts):
+            def model(plasmid_input_vals):
+                sim_settings = {"mode": matching_mode}
+                output_vals = np.empty(shape=sample_count)
+                for iS in range(sample_count):
+                    cell_state = {"energy": 0}
+                    cell_state.update(plasmid_input_vals)
+
+                    for gene in genes:
+                        output_dict = gene(cell_state, sim_settings=sim_settings)
+                    output_vals[iS] = cell_state[reporter_name]
+                return np.mean(output_vals), np.var(output_vals)  # + 0.1
+
+            # The optimization routine adapts the rates in the infinitesimal generator and the promoter activity
+
+            mask_mean = [label == "mean" for label in labels]
+            Y_mean = [y[mask_mean] for y in Y]
+            y_on = np.max(Y_mean)
+            y_off = np.min(Y_mean)
+            # y_on = ref_params[0]
+            # y_off = ref_params[1]
+
+            # bounds = [(y_on, y_on * 10), (y_off * 0.1, y_off)] + [[10 ** (-5), 10 ** 5] for _ in range(14)]
+            # # Imply inhibitory behaviour via bounds.
+            # bounds[3][0] = 2  # k03 > 10
+            # bounds[9][1] = 0.5  # k30 < 0.1
+            # bounds[8][1] = 0.5  # k25 < 0.1
+            # bounds[14][0] = 2  # k52 > 10
+
+            # bounds = [(y_on, y_on), (y_off * 0.5, y_off)] + [[-5, 5] for _ in range(14)]
+            bounds = [(y_on, y_on), (y_off * 0.5, y_off)] + [[-5, 5] for _ in range(14)]
+            # training_data = [np.array([X[0], X[-1]]), np.array([Y[0], Y[-1]])]
+            training_data = [X, Y]
+
+            if initial_params is None:
+                initial_params = [y_on, y_off]
+                initial_params += list(np.exp(np.random.rand(14) * 2 - 1))
+                initial_params = np.array(initial_params)
+                new_params = initial_params
+                # initial_params[3] = 10
+                # initial_params[9] = 0.1
+                # initial_params[8] = 0.1
+                # initial_params[14] = 10
+
+            if best_params is not None:
+                initial_params = best_params
+            # loss = error_func(initial_params)
+            x0 = initial_params
+            result = minimize(error_func, x0=x0,
+                              args=training_data,
+                              bounds=bounds,
+                              method="powell",
+                              # method="nelder-mead",
+                              # method="TNC",
+                              #   method="SLSQP",
+                              tol=10 ** (-10),
+                              options={"disp": True,
+                                       "ftol": 10 ** (-7),
+                                       "maxfev": len(x0) * 10 if matching_mode == "samp" else len(x0) * 100
+                                       # len(x0) * 2000
+                                       }
+                              )
+            new_params = result.x
+            fun = result.fun
+            print(f"Run {iR}: {result.fun} (y_on={y_on}, y_off={y_off})")
+
+            initial_params = new_params
+
+            update_model(new_params)
+            # promoter.model.insert_params(new_params)
+            matching_mode = "samp"
+            sample_count = 100
+            Y_pred = [model({input_signal_name: x}) for x in X]
+            Y_pred = np.array(Y_pred)
+
+            # plt.figure()
+            # ax = plt.gca()
+            # ax.plot(X, Y[:, 0], "--k", label="Mean")
+            # if Y.shape[1] == 2:
+            #     ax.fill_between(X,
+            #                     Y[:, 0] - np.sqrt(Y[:, 1]), Y[:, 0] + np.sqrt(Y[:, 1]),
+            #                     color="yellow", alpha=0.1)
+            #
+            # ax.plot(X, Y_pred[:, 0], label="Mean Pred")
+            # if Y_pred.shape[1] == 2:
+            #     ax.fill_between(X,
+            #                     Y_pred[:, 0] - np.sqrt(Y_pred[:, 1]), Y_pred[:, 0] + np.sqrt(Y_pred[:, 1]),
+            #                     color="blue", alpha=0.1)
+            # ax.set_xscale("log")
+            # ax.set_yscale("log")
+            # plt.show()
+
         if fun < best_fun:
             best_fun = fun
             best_params = new_params
-    promoter.model.insert_params(best_params)
+    if best_params is not None:
+        # promoter.model.insert_params(best_params)
+        update_model(new_params)
 
+    print(f"Best Run with error: {best_fun}")
     X_test = np.logspace(-5, np.max(np.log10(X[1:])), 100)
-    X_tf_level = ligand_to_tf_level(X_test)
-
-    Y_pred = [model({input_val_name: x}, skip_input=True) for x in X_tf_level]
+    X_test = X
+    # X_tf_level = ligand_to_tf_level(X_test)
+    X_tf_level = X
+    Y_pred = [model({input_signal_name: x}) for x in X_tf_level]
     Y_pred = np.array(Y_pred)
 
     plt.figure()
@@ -371,7 +458,10 @@ def match_promoter(response_characteristic: dict, reporter_information: dict, ga
                         color="blue", alpha=0.1)
     ax.set_xscale("log")
     ax.set_yscale("log")
-    plt.show()
+    dir_path = "ARCTICsim/simulator_nonequilibrium/data/gate_libs/figures/"
+    plt.savefig(dir_path + gate_name + ".png", dpi=300)
+    # plt.show()
+
     model_info = promoter_entry["model_info"]
     model_info["PROMOTER_ACTIVITY"] = list(promoter.model.promoter_activity)
     model_info["INFINITESIMAL_GENERATOR_FUNCTION"] = promoter.model.infinitesimal_generator_function
@@ -429,7 +519,7 @@ xyl_to_rpu = {0: 0.003,
 
 xyl_to_rpu = {float(key): xyl_to_rpu[key] for key in xyl_to_rpu}
 
-reference_inducer_inputs = np.array([0, 0.1, 0.25, 0.5, 1, 1.15, 2, 2.5, 3, 5, 10, 20])
+reference_inducer_inputs = np.array([0, 0.1, 0.25, 0.5, 1, 1.5, 2, 2.5, 3, 5, 10, 20])
 """
 End of Paper data
 """
@@ -560,10 +650,12 @@ if __name__ == '__main__':
         protein_length = cds_length / 3
 
         # ToDo Redefine rates
-        transcription_rate = 6
-        translation_rate = 2
-        rna_degradation_rate = 0.23104906018664842
-        protein_degradation_rate = 0.0057762265
+        # transcription_rate = 5 / 3600
+        # translation_rate = 20 / 3600
+        transcription_rate = 24 / 3600
+        translation_rate = 200 / 3600
+        rna_degradation_rate = 5.8 * 10 ** (-4)
+        protein_degradation_rate = 2.9 * 10 ** (-4)
         l_m = translation_rate / rna_degradation_rate
         l_p = translation_rate / protein_degradation_rate
         eu_to_rpu_scaling_factor = (l_m * l_p) ** (-1)
@@ -592,7 +684,8 @@ if __name__ == '__main__':
         input_information = {"promoter": reference_sensor_promoter_entry}
         gate_information = {  # "utr":None,
             "cds": protein_entry,
-            "promoter": promoter_entry}
+            "promoter": promoter_entry,
+            "name": gate_name}
         promoter_entry = match_promoter(response_characteristic=response_characteristic,
                                         reporter_information=reporter_information,
                                         input_information=input_information,
@@ -604,6 +697,7 @@ if __name__ == '__main__':
                                         cds_id=protein_entry["identifier"], promoter_id=promoter_entry["identifier"],
                                         color=cello_gate["color"])
 
+        custom_lib += [device_entry, utr_entry, protein_entry, device_entry]
         # Next steps:
         # Match Characteristics of promoter to cytometry data
         # Infer Inflection Point
@@ -614,3 +708,7 @@ if __name__ == '__main__':
         pass
         pass
         # Write out everything to a json file
+
+    output_dir = "ARCTICsim/simulator_nonequilibrium/data/gate_libs/"
+    with open(output_dir + "gate_lib_yeast_generated.json", "w") as file:
+        json.dump(custom_lib, file)

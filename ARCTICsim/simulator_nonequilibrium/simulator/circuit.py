@@ -455,7 +455,7 @@ class Gene:
                 "energy_tx",
                 "energy_tl"]
 
-    def __init__(self, id: str, promoter_associated_device: str, cds_associated_device: str,
+    def __init__(self, id: str, promoter_associated_device: str = None, cds_associated_device: str = None,
                  promoter: Promoter = None, utr: UTR = None, cds: CodingSequence = None, terminator=None,
                  settings: dict = None):
         self.id = id

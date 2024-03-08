@@ -96,11 +96,11 @@ def get_sequence_entry(name, sequence=""):
     return sequence_entry
 
 
-def add_outputs(custom_lib, reporters):
-    transcription_rate = 6
-    translation_rate = 2
-    rna_degradation_rate = 0.23104906018664842
-    protein_degradation_rate = 0.0057762265
+def add_outputs(custom_lib, reporters, rates:dict):
+    transcription_rate = rates["transcription_rate"]
+    translation_rate = rates["translation_rate"]
+    rna_degradation_rate = rates["rna_degradation_rate"]
+    protein_degradation_rate = rates["protein_degradation_rate"]
     cds_length = 561
     rna_length = 600
     protein_length = cds_length / 3
@@ -366,7 +366,7 @@ def match_promoter(response_characteristic: dict,
             # bounds[14][0] = 2  # k52 > 10
 
             # bounds = [(y_on, y_on), (y_off * 0.5, y_off)] + [[-5, 5] for _ in range(14)]
-            bounds = [(y_on, y_on), (y_off * 0.5, y_off)] + [[-5, 5] for _ in range(14)]
+            bounds = [(y_on, y_on * 2), (y_off * 0.5, y_off)] + [[-5, 5] for _ in range(14)]
             # training_data = [np.array([X[0], X[-1]]), np.array([Y[0], Y[-1]])]
             training_data = [X, Y]
 
@@ -394,7 +394,7 @@ def match_promoter(response_characteristic: dict,
                               tol=10 ** (-10),
                               options={"disp": True,
                                        "ftol": 10 ** (-7),
-                                       "maxfev": len(x0) * 10 if matching_mode == "samp" else len(x0) * 100
+                                       "maxfev": len(x0) * 10 if matching_mode == "samp" else len(x0) * 1500
                                        # len(x0) * 2000
                                        }
                               )
@@ -464,7 +464,8 @@ def match_promoter(response_characteristic: dict,
 
     model_info = promoter_entry["model_info"]
     model_info["PROMOTER_ACTIVITY"] = list(promoter.model.promoter_activity)
-    model_info["INFINITESIMAL_GENERATOR_FUNCTION"] = promoter.model.infinitesimal_generator_function
+    matrices = promoter.model.infinitesimal_generator_function["matrices"]
+    model_info["INFINITESIMAL_GENERATOR_FUNCTION"] = {"matrices": {key: matrices[key].tolist() for key in matrices}}
     return promoter_entry
 
 
@@ -589,13 +590,26 @@ if __name__ == '__main__':
                     
     
     """
+    # Our rate information
+    transcription_rate = 24 / 3600
+    translation_rate = 200 / 3600
+    rna_degradation_rate = 5.8 * 10 ** (-4)
+    protein_degradation_rate = 2.9 * 10 ** (-4)
+    l_m = translation_rate / rna_degradation_rate
+    l_p = translation_rate / protein_degradation_rate
+    eu_to_rpu_scaling_factor = (l_m * l_p) ** (-1)
+
 
     cello_gates = cello_library_by_collection["gates"]
     custom_lib = []
 
     # Reporter Output
+    rates = {"transcription_rate": transcription_rate,
+             "translation_rate": translation_rate,
+             "rna_degradation_rate": rna_degradation_rate,
+             "protein_degradation_rate": protein_degradation_rate}
     reporters = [{"name": "YFP", "utr_name": "Kozak6"}]
-    add_outputs(custom_lib, reporters=reporters)
+    add_outputs(custom_lib, reporters=reporters, rates=rates)
 
     # ToDo Extract Report to use for parameter estimation
     reporter_to_use = "YFP"
@@ -649,16 +663,7 @@ if __name__ == '__main__':
         rna_length = len(utr_sequence_entry["sequence"]) + cds_length
         protein_length = cds_length / 3
 
-        # ToDo Redefine rates
-        # transcription_rate = 5 / 3600
-        # translation_rate = 20 / 3600
-        transcription_rate = 24 / 3600
-        translation_rate = 200 / 3600
-        rna_degradation_rate = 5.8 * 10 ** (-4)
-        protein_degradation_rate = 2.9 * 10 ** (-4)
-        l_m = translation_rate / rna_degradation_rate
-        l_p = translation_rate / protein_degradation_rate
-        eu_to_rpu_scaling_factor = (l_m * l_p) ** (-1)
+
         protein_entry = get_protein_entry(name=protein_name,
                                           sequence_ids=[seq["identifier"] for seq in protein_sequence_entries],
                                           transcription_rate=transcription_rate,
@@ -697,7 +702,9 @@ if __name__ == '__main__':
                                         cds_id=protein_entry["identifier"], promoter_id=promoter_entry["identifier"],
                                         color=cello_gate["color"])
 
-        custom_lib += [device_entry, utr_entry, protein_entry, device_entry]
+        custom_lib += [device_entry, utr_entry, protein_entry, promoter_entry]
+        # custom_lib += [device_entry, protein_entry, promoter_entry]
+
         # Next steps:
         # Match Characteristics of promoter to cytometry data
         # Infer Inflection Point
@@ -709,6 +716,10 @@ if __name__ == '__main__':
         pass
         # Write out everything to a json file
 
+
+    custom_lib = {elem["identifier"]: elem for elem in custom_lib}
+    custom_lib = list(custom_lib.values())
+
     output_dir = "ARCTICsim/simulator_nonequilibrium/data/gate_libs/"
     with open(output_dir + "gate_lib_yeast_generated.json", "w") as file:
-        json.dump(custom_lib, file)
+        json.dump(custom_lib, file, indent=4)

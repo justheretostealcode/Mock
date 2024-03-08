@@ -254,21 +254,26 @@ class SensorPromoter(Promoter):
     def __init__(self, gate_lib_entry_dict: dict,
                  gate_lib: GateLibCollectionBased = None):
         self.collection_identifier = "sensor_promoters"
+        self.bool_to_inducer_lut = None
         super().__init__(collection_identifier=self.collection_identifier,
                          gate_lib_entry_dict=gate_lib_entry_dict,
                          gate_lib=gate_lib)
 
         # This class misuses the field self.cognate_transcription_factors to represent the inducer it is sensitive to
 
+
     def _populate_model(self):
         model_info = self.model_info
 
+        self.bool_to_inducer_lut = {0: model_info["low"],
+                                    1: model_info["high"]}
+
         # Model Info provides a table providing the mapping of inducer concentration to RPU
+
         LUT = model_info["LUT"]
 
         model_LUT = {}
         for input_val in LUT:
-
             num_states = 1
             num_trainable_parameters = 0
             promoter_activity = [LUT[input_val]]

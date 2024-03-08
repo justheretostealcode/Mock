@@ -129,7 +129,10 @@ class GeneticLogicCircuit:
         # These have to be the cognate TF's of the input promoters
         gene_circuit_inputs = {}
         for input_id in input_vals_dict:
-            gene_circuit_inputs[self.input_mapping[input_id]] = input_vals_dict[input_id]
+            input_mapping = self.input_mapping[input_id]
+            inducer_name = input_mapping["inducer_name"]
+            mapping = input_mapping["mapping"]
+            gene_circuit_inputs[inducer_name] = mapping[input_vals_dict[input_id]]
         # Perform the actual evaluation of the gene_circuit
         cell_state = self.gene_circuit(input_vals_dict=gene_circuit_inputs, sim_settings=sim_settings)
 
@@ -169,6 +172,10 @@ class GeneticLogicCircuit:
                 energy_per_gate[gate_id]["rna"] += gene.gene_state["energy"]["rna"]
                 energy_per_gate[gate_id]["protein"] += gene.gene_state["energy"]["protein"]
 
+            gate_info = self.structure.node_infos[gate_id]
+            if "OUTPUT" in gate_info.type:
+                device = self.assignment(node_info=gate_info)
+                gate_output_vals[gate_id] = cell_state[device.cds.name + "_rpu"]
         # ToDo translate from Gene Expression Model back to Genetic Logic Circuit
         # raise Exception("Output Node is currently Missing!!!")
         energy_consumption = self.gene_circuit.energy_consumption
@@ -270,18 +277,6 @@ class GeneticLogicCircuit:
         gene_assignment = {gene_id: {} for gene_id in self.genes}
         input_mapping = {input_id: None for input_id in structure.inputs}
         for gate_id in structure.nodes:
-            # gate_info = structure.node_infos[gate_id]
-            # device = assignment(gate_info)
-            #
-            # associated_promoters = genes_by_associated_promoter[gate_id]
-            # associated_cds = genes_by_associated_cds[gate_id]
-            #
-            # for gene in associated_promoters:
-            #     gene.promoter = device.promoter
-            # for gene in associated_cds:
-            #     gene.utr = device.utr
-            #     gene.cds = device.cds
-            #     gene.terminator = device.terminator
 
             gate_info = structure.node_infos[gate_id]
             device = assignment(gate_info)
@@ -290,17 +285,23 @@ class GeneticLogicCircuit:
             associated_cds = genes_by_associated_cds[gate_id]
 
             for gene in associated_promoters:
-                gene_assignment[gene.id]["promoter"] = device.promoter_entry
+                gene_assignment[gene.id]["promoter"] = device.promoter
             for gene in associated_cds:
-                gene_assignment[gene.id]["utr"] = device.utr_entry
+                gene_assignment[gene.id]["utr"] = device.utr
                 gene_assignment[gene.id]["cds"] = device.cds
                 gene_assignment[gene.id]["terminator"] = device.terminator
 
+            # if gate_info.type == "INPUT":
+            #     protein_input = device.cds
+            #     # protein_input.input_id = gate_id    # Inform the Input to which value it corresponds.
+            #     input_mapping[gate_id] = protein_input.signal_name
+            #     gene_assignment[protein_input.name] = protein_input
+
             if gate_info.type == "INPUT":
-                protein_input = device.cds
-                # protein_input.input_id = gate_id    # Inform the Input to which value it corresponds.
-                input_mapping[gate_id] = protein_input.signal_name
-                gene_assignment[protein_input.name] = protein_input
+                inducer_name = device.promoter.cognate_transcription_factors[0]
+                input_mapping[gate_id] = {"inducer_name": inducer_name,
+                                          "mapping": device.promoter.bool_to_inducer_lut}
+
 
         self.input_mapping = input_mapping
         return gene_assignment
@@ -407,9 +408,9 @@ class GeneCircuit:
                                           "rna": 0,
                                           "protein": 0,
                                           "overall": 0})
-        for input_model in self.input_models:
-            # Updates cell state by inserting the respective TF amount into cell_state
-            input_model(cell_state, sim_settings)
+        # for input_model in self.input_models:
+        #     # Updates cell state by inserting the respective TF amount into cell_state
+        #     input_model(cell_state, sim_settings)
 
         # gate_input_vals = {}
         # gate_output_vals = {}
@@ -567,7 +568,7 @@ class Gene:
         self.initialized_interpolators = False
 
         # if self.settings is not None and self.settings["interpolate"]:
-        self.interpolators = self.init_interpolation()
+        # self.interpolators = self.init_interpolation()
 
     def _in_vals_dict_to_array(self, in_vals_dict):
         if self.order is None:
@@ -642,7 +643,7 @@ if __name__ == '__main__':
     gate_lib = GateLibCollectionBased(json_file=json_gatelib)
 
     structure = CircuitStructure(json_structure)
-    genetic_logic_circuit = GeneticLogicCircuit(structure=structure, settings={"interpolate": 1})
+    genetic_logic_circuit = GeneticLogicCircuit(structure=structure, settings={"interpolate": 0})
     # gene_circuit = GeneCircuit(structure=structure, assignment=assignment)
 
     # assignment_json = '{"a":"input_3","b":"input_1","c":"input_2","NOT_0":"H1_HlyIIR","NOT_2":"S2_SrpR","NOT_4":"B3_BM3R1","NOR2_1":"L1_LitR","NOR2_3":"P2_PhlF","O":"output_1"}'
@@ -698,7 +699,7 @@ if __name__ == '__main__':
 
     # out_vals = np.empty(N)
     for iX in range(N):
-        output_vals = genetic_logic_circuit(input_vals_dict=input_vals, sim_settings={"mode": "samp", "interpolate": 1})
+        output_vals = genetic_logic_circuit(input_vals_dict=input_vals, sim_settings={"mode": "samp", "interpolate": 0})
         # out_vals[iX] = output_vals["O"]
 
     profiler.disable()

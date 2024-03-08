@@ -7,5 +7,5 @@
   "NOR2_7": "device_P1_QacR",
   "NOR2_8": "device_P1_CI434",
   "NOR2_3": "device_P1_LexA",
-  "OUTPUT_OR2_9": "output_YFP"
+  "OUTPUT_OR2_9": "device_YFP"
 }

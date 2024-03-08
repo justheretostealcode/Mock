@@ -1,0 +1,2276 @@
+[
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak6",
+        "name": "Kozak6",
+        "sequence_id": null
+    },
+    {
+        "identifier": "protein_YFP",
+        "name": "YFP",
+        "collection": "proteins",
+        "sequence_ids": [],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 6,
+                "degradation_rate": 0.23104906018664842,
+                "e": 16,
+                "e_const": 0,
+                "length": 600
+            },
+            "protein": {
+                "translation_rate": 2,
+                "degradation_rate": 0.0057762265,
+                "e": 42,
+                "e_const": 52,
+                "length": 187.0
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_YFP",
+        "name": "YFP",
+        "group": "YFP",
+        "regulator": null,
+        "primitive_identifier": [
+            "OUTPUT_OR2",
+            "OUTPUT_BUFFER"
+        ],
+        "utr_id": "utr_Kozak6",
+        "cds_id": "protein_YFP",
+        "terminator_id": null,
+        "promoter_id": null,
+        "color": null
+    },
+    {
+        "identifier": "sensor_promoter_Ptet",
+        "name": "Ptet",
+        "collection": "sensor_promoters",
+        "cognate_transcription_factors": [
+            "aTc",
+            "tetR"
+        ],
+        "sequence_ids": [],
+        "technology_mapping": {
+            "y_min": 0.002,
+            "y_max": 2.455
+        },
+        "model_info": {
+            "low": 0.0,
+            "high": 100.0,
+            "LUT": {
+                "0.0": 0.002,
+                "5.0": 0.004,
+                "10.0": 0.008,
+                "15.0": 0.013,
+                "20.0": 0.168,
+                "22.5": 0.445,
+                "25.0": 0.57,
+                "27.5": 0.668,
+                "30.0": 1.019,
+                "35.0": 1.227,
+                "40.0": 1.616,
+                "50.0": 1.963,
+                "100.0": 2.455,
+                "200.0": 2.548
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_aTc",
+        "name": "aTc",
+        "group": "aTc",
+        "regulator": null,
+        "primitive_identifier": [
+            "INPUT"
+        ],
+        "utr_id": null,
+        "cds_id": null,
+        "terminator_id": null,
+        "promoter_id": "sensor_promoter_Ptet",
+        "color": null
+    },
+    {
+        "identifier": "sensor_promoter_Pxyl",
+        "name": "Pxyl",
+        "collection": "sensor_promoters",
+        "cognate_transcription_factors": [
+            "xyl",
+            "xylR"
+        ],
+        "sequence_ids": [],
+        "technology_mapping": {
+            "y_min": 0.003,
+            "y_max": 1.804
+        },
+        "model_info": {
+            "low": 0.0,
+            "high": 10.0,
+            "LUT": {
+                "0.0": 0.003,
+                "0.1": 0.006,
+                "0.25": 0.025,
+                "0.5": 0.143,
+                "1.0": 0.48,
+                "1.5": 0.859,
+                "2.0": 1.133,
+                "3.0": 1.409,
+                "5.0": 1.662,
+                "10.0": 1.804,
+                "20.0": 1.904,
+                "30.0": 1.949
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_xyl",
+        "name": "xyl",
+        "group": "xyl",
+        "regulator": null,
+        "primitive_identifier": [
+            "INPUT"
+        ],
+        "utr_id": null,
+        "cds_id": null,
+        "terminator_id": null,
+        "promoter_id": "sensor_promoter_Pxyl",
+        "color": null
+    },
+    {
+        "identifier": "sensor_promoter_Plac",
+        "name": "Plac",
+        "collection": "sensor_promoters",
+        "cognate_transcription_factors": [
+            "IPTG",
+            "lacl"
+        ],
+        "sequence_ids": [],
+        "technology_mapping": {
+            "y_min": 0.011,
+            "y_max": 1.297
+        },
+        "model_info": {
+            "low": 0.0,
+            "high": 20.0,
+            "LUT": {
+                "0.0": 0.011,
+                "0.1": 0.017,
+                "0.25": 0.028,
+                "0.5": 0.049,
+                "1.0": 0.132,
+                "1.5": 0.224,
+                "2.0": 0.32,
+                "2.5": 0.421,
+                "3.0": 0.519,
+                "5.0": 0.822,
+                "10.0": 1.127,
+                "20.0": 1.297,
+                "30.0": 1.343,
+                "40.0": 1.365
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_IPTG",
+        "name": "IPTG",
+        "group": "IPTG",
+        "regulator": null,
+        "primitive_identifier": [
+            "INPUT"
+        ],
+        "utr_id": null,
+        "cds_id": null,
+        "terminator_id": null,
+        "promoter_id": "sensor_promoter_Plac",
+        "color": null
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P1_PhlF",
+        "name": "P1_PhlF",
+        "group": "PhlF",
+        "regulator": "PhlF",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak1",
+        "cds_id": "protein_PhlF",
+        "terminator_id": null,
+        "promoter_id": "promoter_pPhlF1",
+        "color": "F9A427"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak1",
+        "name": "Kozak1",
+        "sequence_id": "sequence_Kozak1"
+    },
+    {
+        "identifier": "protein_PhlF",
+        "name": "PhlF",
+        "collection": "proteins",
+        "sequence_ids": [
+            "sequence_PhlF_a",
+            "sequence_PhlF_b"
+        ],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 0.006666666666666667,
+                "degradation_rate": 0.00058,
+                "e": 16,
+                "e_const": 0,
+                "length": 640.0
+            },
+            "protein": {
+                "translation_rate": 0.05555555555555555,
+                "degradation_rate": 0.00029,
+                "e": 42,
+                "e_const": 52,
+                "length": 210.0
+            }
+        }
+    },
+    {
+        "identifier": "promoter_pPhlF1",
+        "name": "pPhlF1",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "PhlF",
+            [
+                "PhlF_a",
+                "PhlF_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pPhlF1_a",
+            "pPhlF1_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.0031092765985678244,
+                0.0031092765985678244,
+                0.0031092765985678244,
+                3.696321560175719,
+                3.696321560175719,
+                3.696321560175719
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -99999.9998307382,
+                            99999.9998307382,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -99999.99968263446,
+                            99999.99968263446,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -93.25623096051692,
+                            93.25623096051692,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -284.2545048803284,
+                            284.2545048803284
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -181.34280389851958,
+                            0.0,
+                            0.0,
+                            181.34280389851958,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            144.03621695465822,
+                            -144.03622695487792,
+                            0.0,
+                            0.0,
+                            1.0000219711422186e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            10.970291504607633,
+                            -10.970301504607795,
+                            0.0,
+                            0.0,
+                            1.0000000160645051e-05
+                        ],
+                        [
+                            0.024986010862478657,
+                            0.0,
+                            0.0,
+                            -0.024986010862478657,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0000000003716695e-05,
+                            0.0,
+                            331.27733518934787,
+                            -331.2773451893479,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            99999.99874008338,
+                            0.0,
+                            99999.99951841487,
+                            -199999.99825849826
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P1_BM3RI",
+        "name": "P1_BM3RI",
+        "group": "BM3RI",
+        "regulator": "BM3RI",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak4",
+        "cds_id": "protein_BM3RI",
+        "terminator_id": null,
+        "promoter_id": "promoter_pBm3RI1",
+        "color": "9C53A0"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak4",
+        "name": "Kozak4",
+        "sequence_id": "sequence_Kozak4"
+    },
+    {
+        "identifier": "protein_BM3RI",
+        "name": "BM3RI",
+        "collection": "proteins",
+        "sequence_ids": [
+            "sequence_BM3RI_a",
+            "sequence_BM3RI_b"
+        ],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 0.006666666666666667,
+                "degradation_rate": 0.00058,
+                "e": 16,
+                "e_const": 0,
+                "length": 616.0
+            },
+            "protein": {
+                "translation_rate": 0.05555555555555555,
+                "degradation_rate": 0.00029,
+                "e": 42,
+                "e_const": 52,
+                "length": 202.0
+            }
+        }
+    },
+    {
+        "identifier": "promoter_pBm3RI1",
+        "name": "pBm3RI1",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "BM3RI",
+            [
+                "BM3RI_a",
+                "BM3RI_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pBm3RI1_a",
+            "pBm3RI1_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.0014194397472421278,
+                0.0014194397472421278,
+                0.0014194397472421278,
+                5.141346801818862,
+                5.141346801818862,
+                5.141346801818862
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -2605.5154637981564,
+                            2605.5154637981564,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -99999.99554503891,
+                            99999.99554503891,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -1036.3970077330398,
+                            1036.3970077330398,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -27018.261423618373,
+                            27018.261423618373
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -0.21914059193023544,
+                            0.0,
+                            0.0,
+                            0.21914059193023544,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            530.5287535281955,
+                            -530.5287635282592,
+                            0.0,
+                            0.0,
+                            1.0000063795155111e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            43.91221453930593,
+                            -43.91222453930596,
+                            0.0,
+                            0.0,
+                            1.0000000030689255e-05
+                        ],
+                        [
+                            0.012253109433410148,
+                            0.0,
+                            0.0,
+                            -0.012253109433410148,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0024527817359737e-05,
+                            0.0,
+                            99999.99974591006,
+                            -99999.99975593458,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            12151.48901390717,
+                            0.0,
+                            38224.050288282786,
+                            -50375.53930218996
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P1_QacR",
+        "name": "P1_QacR",
+        "group": "QacR",
+        "regulator": "QacR",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak7",
+        "cds_id": "protein_QacR",
+        "terminator_id": null,
+        "promoter_id": "promoter_pQacR1",
+        "color": "8FC741"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak7",
+        "name": "Kozak7",
+        "sequence_id": "sequence_Kozak7"
+    },
+    {
+        "identifier": "protein_QacR",
+        "name": "QacR",
+        "collection": "proteins",
+        "sequence_ids": [
+            "sequence_QacR_a",
+            "sequence_QacR_b"
+        ],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 0.006666666666666667,
+                "degradation_rate": 0.00058,
+                "e": 16,
+                "e_const": 0,
+                "length": 604.0
+            },
+            "protein": {
+                "translation_rate": 0.05555555555555555,
+                "degradation_rate": 0.00029,
+                "e": 42,
+                "e_const": 52,
+                "length": 198.0
+            }
+        }
+    },
+    {
+        "identifier": "promoter_pQacR1",
+        "name": "pQacR1",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "QacR",
+            [
+                "QacR_a",
+                "QacR_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pQacR1_a",
+            "pQacR1_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.0030420417341270136,
+                0.0030420417341270136,
+                0.0030420417341270136,
+                2.556499975612407,
+                2.556499975612407,
+                2.556499975612407
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -99999.99918564231,
+                            99999.99918564231,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -96405.20019941602,
+                            96405.20019941602,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -3260.997483668423,
+                            3260.997483668423,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -3913.9787468878817,
+                            3913.9787468878817
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -128.78545547385883,
+                            0.0,
+                            0.0,
+                            128.78545547385883,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            43.8993769739489,
+                            -43.89938697401231,
+                            0.0,
+                            0.0,
+                            1.0000063414003592e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            56.568598261658664,
+                            -56.56860826165867,
+                            0.0,
+                            0.0,
+                            1.0000000000003477e-05
+                        ],
+                        [
+                            1.0000005732255413e-05,
+                            0.0,
+                            0.0,
+                            -1.0000005732255413e-05,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0000000168401035e-05,
+                            0.0,
+                            99999.88457293453,
+                            -99999.88458293454,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            22028.704445556854,
+                            0.0,
+                            99999.92668294115,
+                            -122028.631128498
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P1_CI",
+        "name": "P1_CI",
+        "group": "CI",
+        "regulator": "CI",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak12",
+        "cds_id": "protein_CI",
+        "terminator_id": null,
+        "promoter_id": "promoter_pCI1",
+        "color": "93CDDD"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak12",
+        "name": "Kozak12",
+        "sequence_id": "sequence_Kozak12"
+    },
+    {
+        "identifier": "protein_CI",
+        "name": "CI",
+        "collection": "proteins",
+        "sequence_ids": [
+            "sequence_CI_a",
+            "sequence_CI_b"
+        ],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 0.006666666666666667,
+                "degradation_rate": 0.00058,
+                "e": 16,
+                "e_const": 0,
+                "length": 751.0
+            },
+            "protein": {
+                "translation_rate": 0.05555555555555555,
+                "degradation_rate": 0.00029,
+                "e": 42,
+                "e_const": 52,
+                "length": 247.0
+            }
+        }
+    },
+    {
+        "identifier": "promoter_pCI1",
+        "name": "pCI1",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "CI",
+            [
+                "CI_a",
+                "CI_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pCI1_a",
+            "pCI1_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.008947140520763543,
+                0.008947140520763543,
+                0.008947140520763543,
+                4.488772434608683,
+                4.488772434608683,
+                4.488772434608683
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -80857.8260360603,
+                            80857.8260360603,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -99892.13980551167,
+                            99892.13980551167,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -6404.838680459801,
+                            6404.838680459801,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -18505.738591969697,
+                            18505.738591969697
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -28.13535233636041,
+                            0.0,
+                            0.0,
+                            28.13535233636041,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            1363.346970482872,
+                            -1363.3469804850602,
+                            0.0,
+                            0.0,
+                            1.0002188149509837e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            6345.612666524819,
+                            -6404.449787780565,
+                            0.0,
+                            0.0,
+                            58.83712125574621
+                        ],
+                        [
+                            16.672382770191287,
+                            0.0,
+                            0.0,
+                            -16.672382770191287,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            303.03831327953867,
+                            0.0,
+                            1.000380008836149e-05,
+                            -303.03832328333874,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            46484.01530843105,
+                            0.0,
+                            1.0412817240483382e-05,
+                            -46484.01531884387
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P2_CI",
+        "name": "P2_CI",
+        "group": "CI",
+        "regulator": "CI",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak12",
+        "cds_id": "protein_CI",
+        "terminator_id": null,
+        "promoter_id": "promoter_pCI2",
+        "color": "93CDDD"
+    },
+    {
+        "identifier": "promoter_pCI2",
+        "name": "pCI2",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "CI",
+            [
+                "CI_a",
+                "CI_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pCI2_a",
+            "pCI2_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.012731879836304383,
+                0.012731879836304383,
+                0.012731879836304383,
+                4.920852056322771,
+                4.920852056322771,
+                4.920852056322771
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -27786.0543861917,
+                            27786.0543861917,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -97436.86941407809,
+                            97436.86941407809,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -96.71618039914681,
+                            96.71618039914681,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -99999.9979340589,
+                            99999.9979340589
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -3.57054409781564,
+                            0.0,
+                            0.0,
+                            3.57054409781564,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            501.9864254276808,
+                            -501.98643543181254,
+                            0.0,
+                            0.0,
+                            1.0004131742915442e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1487.2013746327784,
+                            -1494.2510210681337,
+                            0.0,
+                            0.0,
+                            7.0496464353552035
+                        ],
+                        [
+                            0.9039748291873687,
+                            0.0,
+                            0.0,
+                            -0.9039748291873687,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0941556355073842e-05,
+                            0.0,
+                            1.3412761621665388e-05,
+                            -2.435431797673923e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            30662.140222628706,
+                            0.0,
+                            1.583538888387829e-05,
+                            -30662.140238464097
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P1_LexA",
+        "name": "P1_LexA",
+        "group": "LexA",
+        "regulator": "LexA",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak24",
+        "cds_id": "protein_LexA",
+        "terminator_id": null,
+        "promoter_id": "promoter_pLexA1",
+        "color": "D99694"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak24",
+        "name": "Kozak24",
+        "sequence_id": "sequence_Kozak24"
+    },
+    {
+        "identifier": "protein_LexA",
+        "name": "LexA",
+        "collection": "proteins",
+        "sequence_ids": [
+            "sequence_LexA_a",
+            "sequence_LexA_b"
+        ],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 0.006666666666666667,
+                "degradation_rate": 0.00058,
+                "e": 16,
+                "e_const": 0,
+                "length": 646.0
+            },
+            "protein": {
+                "translation_rate": 0.05555555555555555,
+                "degradation_rate": 0.00029,
+                "e": 42,
+                "e_const": 52,
+                "length": 212.0
+            }
+        }
+    },
+    {
+        "identifier": "promoter_pLexA1",
+        "name": "pLexA1",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "LexA",
+            [
+                "LexA_a",
+                "LexA_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pLexA1_a",
+            "pLexA1_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.002851996095974531,
+                0.002851996095974531,
+                0.002851996095974531,
+                1.7708845084030334,
+                1.7708845084030334,
+                1.7708845084030334
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -68074.45193357066,
+                            68074.45193357066,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -18894.2713384512,
+                            18894.2713384512,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -100.86852244974057,
+                            100.86852244974057,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -13492.415310975584,
+                            13492.415310975584
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -7.900936414822857,
+                            0.0,
+                            0.0,
+                            7.900936414822857,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            50.85678619135676,
+                            -52.625597215366156,
+                            0.0,
+                            0.0,
+                            1.7688110240093975,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            13.176564576743965,
+                            -13.176574576743965,
+                            0.0,
+                            0.0,
+                            1.0000000000001207e-05
+                        ],
+                        [
+                            0.1888860110579871,
+                            0.0,
+                            0.0,
+                            -0.1888860110579871,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0102220892799294e-05,
+                            0.0,
+                            5320.570315167289,
+                            -5320.570325269509,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            41092.33829601652,
+                            0.0,
+                            16528.743507064046,
+                            -57621.08180308057
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P2_LexA",
+        "name": "P2_LexA",
+        "group": "LexA",
+        "regulator": "LexA",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak14",
+        "cds_id": "protein_LexA",
+        "terminator_id": null,
+        "promoter_id": "promoter_pLexA2",
+        "color": "D99694"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak14",
+        "name": "Kozak14",
+        "sequence_id": "sequence_Kozak14"
+    },
+    {
+        "identifier": "promoter_pLexA2",
+        "name": "pLexA2",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "LexA",
+            [
+                "LexA_a",
+                "LexA_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pLexA2_a",
+            "pLexA2_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.006094828118763113,
+                0.006094828118763113,
+                0.006094828118763113,
+                3.165780446568366,
+                3.165780446568366,
+                3.165780446568366
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -98445.1655248495,
+                            98445.1655248495,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -99797.51962944143,
+                            99797.51962944143,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -2932.97606035206,
+                            2932.97606035206,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -298.88777332762004,
+                            298.88777332762004
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -0.20831260383853004,
+                            0.0,
+                            0.0,
+                            0.20831260383853004,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            1272.7892890352914,
+                            -1272.7900567769773,
+                            0.0,
+                            0.0,
+                            0.0007677416859835266,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1384.2404938534632,
+                            -1384.2405038538764,
+                            0.0,
+                            0.0,
+                            1.0000413101917434e-05
+                        ],
+                        [
+                            0.07482434462179514,
+                            0.0,
+                            0.0,
+                            -0.07482434462179514,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0002841012306442e-05,
+                            0.0,
+                            534.3122156734713,
+                            -534.3122256763123,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            2296.8417682998816,
+                            0.0,
+                            99999.99882585023,
+                            -102296.84059415011
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P1_CI434",
+        "name": "P1_CI434",
+        "group": "CI434",
+        "regulator": "CI434",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak15",
+        "cds_id": "protein_CI434",
+        "terminator_id": null,
+        "promoter_id": "promoter_pCI4341",
+        "color": "BBD1C4"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak15",
+        "name": "Kozak15",
+        "sequence_id": "sequence_Kozak15"
+    },
+    {
+        "identifier": "protein_CI434",
+        "name": "CI434",
+        "collection": "proteins",
+        "sequence_ids": [
+            "sequence_CI434_a",
+            "sequence_CI434_b"
+        ],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 0.006666666666666667,
+                "degradation_rate": 0.00058,
+                "e": 16,
+                "e_const": 0,
+                "length": 670.0
+            },
+            "protein": {
+                "translation_rate": 0.05555555555555555,
+                "degradation_rate": 0.00029,
+                "e": 42,
+                "e_const": 52,
+                "length": 220.0
+            }
+        }
+    },
+    {
+        "identifier": "promoter_pCI4341",
+        "name": "pCI4341",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "CI434",
+            [
+                "CI434_a",
+                "CI434_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pCI4341_a",
+            "pCI4341_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.010497219236648947,
+                0.010497219236648947,
+                0.010497219236648947,
+                4.202084711724408,
+                4.202084711724408,
+                4.202084711724408
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -12954.325007399411,
+                            12954.325007399411,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -99889.85397564263,
+                            99889.85397564263,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -1168.6552784177106,
+                            1168.6552784177106,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -25426.99414855581,
+                            25426.99414855581
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -2.079583230851024,
+                            0.0,
+                            0.0,
+                            2.079583230851024,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            590.6738232926634,
+                            -590.6738332926672,
+                            0.0,
+                            0.0,
+                            1.0000003739013267e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            82.67444479954094,
+                            -82.67445479954098,
+                            0.0,
+                            0.0,
+                            1.000000004257983e-05
+                        ],
+                        [
+                            2.8042659777511488e-05,
+                            0.0,
+                            0.0,
+                            -2.8042659777511488e-05,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.001550677416777e-05,
+                            0.0,
+                            99999.9997716702,
+                            -99999.9997816857,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            5137.7073257800175,
+                            0.0,
+                            33625.88260418363,
+                            -38763.589929963644
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P2_CI434",
+        "name": "P2_CI434",
+        "group": "CI434",
+        "regulator": "CI434",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak15",
+        "cds_id": "protein_CI434",
+        "terminator_id": null,
+        "promoter_id": "promoter_pCI4342",
+        "color": "BBD1C4"
+    },
+    {
+        "identifier": "promoter_pCI4342",
+        "name": "pCI4342",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "CI434",
+            [
+                "CI434_a",
+                "CI434_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pCI4342_a",
+            "pCI4342_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.007680209543369059,
+                0.007680209543369059,
+                0.007680209543369059,
+                2.4815070687677117,
+                2.4815070687677117,
+                2.4815070687677117
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -22360.32445404872,
+                            22360.32445404872,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -99999.99864757198,
+                            99999.99864757198,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -854.9722069313971,
+                            854.9722069313971,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -19288.362323512545,
+                            19288.362323512545
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -0.37409743522844185,
+                            0.0,
+                            0.0,
+                            0.37409743522844185,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            1059.589530834988,
+                            -1059.5895408350118,
+                            0.0,
+                            0.0,
+                            1.0000023903634808e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            288.2514560882011,
+                            -288.25146608820137,
+                            0.0,
+                            0.0,
+                            1.0000000280846283e-05
+                        ],
+                        [
+                            0.009235680423549173,
+                            0.0,
+                            0.0,
+                            -0.009235680423549173,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0030410282454892e-05,
+                            0.0,
+                            99999.9950728752,
+                            -99999.99508290562,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            1994.9410760624642,
+                            0.0,
+                            12682.178329956574,
+                            -14677.11940601904
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P1_HKCI",
+        "name": "P1_HKCI",
+        "group": "HKCI",
+        "regulator": "HKCI",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak34",
+        "cds_id": "protein_HKCI",
+        "terminator_id": null,
+        "promoter_id": "promoter_pHKCI1",
+        "color": "4473C5"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak34",
+        "name": "Kozak34",
+        "sequence_id": "sequence_Kozak34"
+    },
+    {
+        "identifier": "protein_HKCI",
+        "name": "HKCI",
+        "collection": "proteins",
+        "sequence_ids": [
+            "sequence_HKCI_a",
+            "sequence_HKCI_b"
+        ],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 0.006666666666666667,
+                "degradation_rate": 0.00058,
+                "e": 16,
+                "e_const": 0,
+                "length": 745.0
+            },
+            "protein": {
+                "translation_rate": 0.05555555555555555,
+                "degradation_rate": 0.00029,
+                "e": 42,
+                "e_const": 52,
+                "length": 245.0
+            }
+        }
+    },
+    {
+        "identifier": "promoter_pHKCI1",
+        "name": "pHKCI1",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "HKCI",
+            [
+                "HKCI_a",
+                "HKCI_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pHKCI1_a",
+            "pHKCI1_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.012112648415562985,
+                0.012112648415562985,
+                0.012112648415562985,
+                3.8653547063204106,
+                3.8653547063204106,
+                3.8653547063204106
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -5.4529998384003656e-05,
+                            5.4529998384003656e-05,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -2.3927441397051727,
+                            2.3927441397051727,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -5.1349478174786224e-05,
+                            5.1349478174786224e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -98060.92601214233,
+                            98060.92601214233
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -94.15298045085939,
+                            0.0,
+                            0.0,
+                            94.15298045085939,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            4.264836464703185e-05,
+                            -0.011438024123933823,
+                            0.0,
+                            0.0,
+                            0.01139537575928679,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0000151211022855e-05,
+                            -0.003266497351227932,
+                            0.0,
+                            0.0,
+                            0.003256497200016909
+                        ],
+                        [
+                            69.72989267341111,
+                            0.0,
+                            0.0,
+                            -69.72989267341111,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            185.6408452314418,
+                            0.0,
+                            1.000069065920976e-05,
+                            -185.64085523213245,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            48.23897423286842,
+                            0.0,
+                            692.027478570722,
+                            -740.2664528035904
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P1_PsrA",
+        "name": "P1_PsrA",
+        "group": "PsrA",
+        "regulator": "PsrA",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak10",
+        "cds_id": "protein_PsrA",
+        "terminator_id": null,
+        "promoter_id": "promoter_pPsrA1",
+        "color": "C14B9C"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak10",
+        "name": "Kozak10",
+        "sequence_id": "sequence_Kozak10"
+    },
+    {
+        "identifier": "protein_PsrA",
+        "name": "PsrA",
+        "collection": "proteins",
+        "sequence_ids": [
+            "sequence_PsrA_a",
+            "sequence_PsrA_b"
+        ],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 0.006666666666666667,
+                "degradation_rate": 0.00058,
+                "e": 16,
+                "e_const": 0,
+                "length": 710.5
+            },
+            "protein": {
+                "translation_rate": 0.05555555555555555,
+                "degradation_rate": 0.00029,
+                "e": 42,
+                "e_const": 52,
+                "length": 233.5
+            }
+        }
+    },
+    {
+        "identifier": "promoter_pPsrA1",
+        "name": "pPsrA1",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "PsrA",
+            [
+                "PsrA_a",
+                "PsrA_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pPsrA1_a",
+            "pPsrA1_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.005541605308714902,
+                0.005541605308714902,
+                0.005541605308714902,
+                2.848963347856384,
+                2.848963347856384,
+                2.848963347856384
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -99999.99801708818,
+                            99999.99801708818,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -99999.99932481773,
+                            99999.99932481773,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -12.467724285075665,
+                            12.467724285075665,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -5589.895735881787,
+                            5589.895735881787
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -50.43633636719505,
+                            0.0,
+                            0.0,
+                            50.43633636719505,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            3.075883147005935,
+                            -3.0758931470085757,
+                            0.0,
+                            0.0,
+                            1.000000264054885e-05,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            103.71342063095118,
+                            -103.71343063095118,
+                            0.0,
+                            0.0,
+                            1.0000000009114323e-05
+                        ],
+                        [
+                            1.000000012464265e-05,
+                            0.0,
+                            0.0,
+                            -1.000000012464265e-05,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.00386218132711e-05,
+                            0.0,
+                            87010.62961518575,
+                            -87010.62962522438,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            99982.1958820753,
+                            0.0,
+                            1.142327639770384e-05,
+                            -99982.19589349859
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "collection": "devices",
+        "identifier": "device_P1_IcaR",
+        "name": "P1_IcaR",
+        "group": "IcaR",
+        "regulator": "IcaR",
+        "primitive_identifier": [
+            "NOT",
+            "NOR2"
+        ],
+        "utr_id": "utr_Kozak8",
+        "cds_id": "protein_IcaR",
+        "terminator_id": null,
+        "promoter_id": "promoter_pIcaR1",
+        "color": "E83998"
+    },
+    {
+        "collection": "utrs",
+        "identifier": "utr_Kozak8",
+        "name": "Kozak8",
+        "sequence_id": "sequence_Kozak8"
+    },
+    {
+        "identifier": "protein_IcaR",
+        "name": "IcaR",
+        "collection": "proteins",
+        "sequence_ids": [
+            "sequence_IcaR_a",
+            "sequence_IcaR_b"
+        ],
+        "model_info": {
+            "rna": {
+                "transcription_rate": 0.006666666666666667,
+                "degradation_rate": 0.00058,
+                "e": 16,
+                "e_const": 0,
+                "length": 598.0
+            },
+            "protein": {
+                "translation_rate": 0.05555555555555555,
+                "degradation_rate": 0.00029,
+                "e": 42,
+                "e_const": 52,
+                "length": 196.0
+            }
+        }
+    },
+    {
+        "identifier": "promoter_pIcaR1",
+        "name": "pIcaR1",
+        "collection": "promoters",
+        "cognate_transcription_factors": [
+            "IcaR",
+            [
+                "IcaR_a",
+                "IcaR_b"
+            ]
+        ],
+        "sequence_ids": [
+            "pIcaR1_a",
+            "pIcaR1_b"
+        ],
+        "technology_mapping": null,
+        "model_info": {
+            "N_PROMOTER_STATES": 6,
+            "N_PARAMETERS": 16,
+            "INPUT_SCALING_FACTOR": 5.449680000000001e-05,
+            "PROMOTER_ACTIVITY": [
+                0.011432164615467304,
+                0.011432164615467304,
+                0.011432164615467304,
+                3.094790390636538,
+                3.094790390636538,
+                3.094790390636538
+            ],
+            "INFINITESIMAL_GENERATOR_FUNCTION": {
+                "matrices": {
+                    "c": [
+                        [
+                            -14.509982790293934,
+                            14.509982790293934,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            -41781.102439256516,
+                            41781.102439256516,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            -92.36221541717391,
+                            92.36221541717391,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            -224.3912368239182,
+                            224.3912368239182
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    ],
+                    "1": [
+                        [
+                            -0.0037451791858942873,
+                            0.0,
+                            0.0,
+                            0.0037451791858942873,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            5.377782895064834,
+                            -17.96691219064793,
+                            0.0,
+                            0.0,
+                            12.589129295583094,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            17.590752289923277,
+                            -17.626475210933464,
+                            0.0,
+                            0.0,
+                            0.035722921010185336
+                        ],
+                        [
+                            0.00013819954351105315,
+                            0.0,
+                            0.0,
+                            -0.00013819954351105315,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0014930861467075e-05,
+                            0.0,
+                            32.85865297156775,
+                            -32.85866298649861,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            0.0,
+                            99999.99878364742,
+                            0.0,
+                            18552.717044518373,
+                            -118552.71582816579
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+]

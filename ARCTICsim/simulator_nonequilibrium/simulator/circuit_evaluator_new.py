@@ -3,9 +3,9 @@ Author: Erik Kubaczka
 """
 import numpy as np
 import time
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit import GeneticLogicCircuit
-from ARCTICsim.simulator_nonequilibrium.simulator.scores import FunctionalScore, EnergyScore
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, CircuitStructure
+from simulator.circuit import GeneticLogicCircuit
+from simulator.scores import FunctionalScore, EnergyScore
+from simulator.circuit_utils import CircuitAssignment, CircuitStructure
 
 
 # ToDos

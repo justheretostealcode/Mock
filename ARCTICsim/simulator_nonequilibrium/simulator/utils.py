@@ -6,7 +6,7 @@ import json
 import sys
 from configparser import ConfigParser
 
-from ARCTICsim.simulator_nonequilibrium.simulator.libsim_coop import json_file
+from simulator.libsim_coop import json_file
 
 
 #####################################################################################################

@@ -2,6 +2,7 @@
 Author: Erik Kubaczka
 The code of Nicolai Engelmann from circuit_simulator_thermo.py was adapted to fit the needs of the new simulator.
 """
+
 import json
 import os
 import inspect
@@ -9,12 +10,11 @@ import os.path as op
 import shlex
 from argparse import ArgumentParser
 
+from simulator.circuit_evaluator_new import CircuitEvaluator
 
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit_evaluator_new import CircuitEvaluator
-
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitAssignment, load_structure
-from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import GateLibCollectionBased
-from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile, communication_wrapper, load_settings, type_dict
+from simulator.circuit_utils import CircuitAssignment, load_structure
+from simulator.gatelib import GateLibCollectionBased
+from simulator.utils import JsonFile, communication_wrapper, load_settings, type_dict
 
 here = op.dirname(op.abspath(inspect.getfile(inspect.currentframe())))
 version = '0.9'

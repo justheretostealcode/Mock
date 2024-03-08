@@ -5,9 +5,9 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator, CubicSpline
 from deprecated import deprecated
 
-from ARCTICsim.simulator_nonequilibrium.simulator.circuit_utils import CircuitStructure, CircuitAssignment
-from ARCTICsim.simulator_nonequilibrium.simulator.gatelib import Promoter, UTR, CodingSequence, GateLibCollectionBased
-from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
+from simulator.circuit_utils import CircuitStructure, CircuitAssignment
+from simulator.gatelib import Promoter, UTR, CodingSequence, GateLibCollectionBased
+from simulator.utils import JsonFile
 
 
 @deprecated("This class is to be replaced by GeneticLogicCircuit")

@@ -2,11 +2,11 @@ import cProfile
 
 import numpy as np
 
-from ARCTICsim.simulator_nonequilibrium.models.moment_model_new import RNAMomentModel, ProteinMomentModel, \
+from models.moment_model_new import RNAMomentModel, ProteinMomentModel, \
     CombinedMomentModel
-from ARCTICsim.simulator_nonequilibrium.models.promoter_model_new import PromoterModel
+from models.promoter_model_new import PromoterModel
 
-from ARCTICsim.simulator_nonequilibrium.simulator.utils import JsonFile
+from simulator.utils import JsonFile
 
 
 # Class to represent the gatelib

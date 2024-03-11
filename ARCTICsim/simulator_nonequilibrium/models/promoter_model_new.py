@@ -37,8 +37,9 @@ class PromoterModel(SteadyStateCTMC):
         statistics = super().__call__(in_val_dict=propagation_val_dict, sim_settings=sim_settings)
         results = dict(statistics)
 
-        results["average_promoter_activity"] = self.promoter_activity @ statistics["distribution"]
-        results["average_promoter_activity_per_state"] = self.promoter_activity * statistics["distribution"]
+        average_promoter_activity_per_state = self.promoter_activity * statistics["distribution"]
+        results["average_promoter_activity_per_state"] = average_promoter_activity_per_state
+        results["average_promoter_activity"] = np.sum(average_promoter_activity_per_state, axis=-1)
         results["energy_dissipation_rate"] = statistics["entropy_production_rate"]
         results["energy_p"] = statistics["entropy_production_rate"]
         results["promoter_activity_per_state"] = self.promoter_activity

@@ -72,10 +72,12 @@ class SteadyStateCTMC:
 
         # @cache_this   # Caching is not supported as it cannot handle dictionary inputs
 
-
     def __call__(self, in_val_dict, sim_settings, *args, **kwargs):
-        if in_val_dict != self._cur_in_val_dict:
-            self.propensity_matrix = self._evaluate_propensity_matrix(in_val_dict)
+        if self._cur_in_val_dict is None or np.any([True
+                                                    if len(in_val_dict[key]) != len(self._cur_in_val_dict[key])
+                                                    else in_val_dict[key] != self._cur_in_val_dict[key]
+                                                    for key in in_val_dict]):
+            self.propensity_matrix = self._evaluate_propensity_matrix(in_val_dict, sim_settings)
             self.distribution = self._evaluate_distribution()
             self.entropy_production_rate = self._entropy_production_rate()
             self._cur_in_val_dict = in_val_dict
@@ -86,29 +88,32 @@ class SteadyStateCTMC:
 
         return statistics
 
-
     # @cache_this
-    def _evaluate_propensity_matrix(self, in_val_dict):
+    def _evaluate_propensity_matrix(self, in_val_dict, sim_settings):
         # ToDo Adapt to linear combination of matrices scheme for efficiency reasons.
         # raise Exception("Implement Linear Combination Scheme for Propensity Matrix")
+
+        n_samples = sim_settings["n_samples_simulation"]
 
         # expressions = self.infinitesimal_generator_function["expressions"]
         matrices = self.infinitesimal_generator_function["matrices"]
 
-        propensity_mat = np.zeros((self.N_states, self.N_states))
+        propensity_mat = np.zeros((self.N_states, self.N_states, n_samples))
+
         for expression in matrices:
-            matrix = matrices[expression]
+            matrix = np.expand_dims(matrices[expression], -1)
             factor_ids = expression.split("*")
-            scalar = 1
+            scalar = np.ones(n_samples)
             for factor_id in factor_ids:
                 scalar *= in_val_dict[factor_id] if factor_id != "1" else 1
+
             propensity_mat += matrix * scalar
 
-        if any(np.sum(propensity_mat, axis=1) > 10 ** (-8)):
+        propensity_mat = propensity_mat.transpose((2, 0, 1))
+        if np.any(np.sum(propensity_mat, axis=-1) > 10 ** (-8)):
             raise Exception(
                 f"Propensity Matrix is not a stochastic matrix. Row sum Zero condition is not satisfied!\nin_val_dict: {in_val_dict}\nmatrices: {matrices}\npropensity_mat: {propensity_mat}\nRow Sums: {np.sum(propensity_mat, axis=1)}")
         return propensity_mat
-
 
     # @cache_this
     def _evaluate_distribution(self):
@@ -133,19 +138,22 @@ class SteadyStateCTMC:
             #   2. Derive the vector for the left null space (apply scp.linalg.null_space() to the transposed matrix)
             #   3. Normalize the derived vector to satisfy that all probabilities add up to one
 
-            propensity_matrix_transposed = np.transpose(K)
+            propensity_matrix_transposed = K.transpose((0, 2, 1))
 
             eigvals, eigvecs = np.linalg.eig(propensity_matrix_transposed)
             # Due to numerical imprecision it happens that the eigenvalue which should be zero is not actually zero.
-            eig_index = np.argmin(np.abs(eigvals))
-            state_weights = eigvecs[:, eig_index]
+            eig_index = np.argmin(np.abs(eigvals), axis=-1)
 
+            # ToDo Check the subsequent two equations
+            eigvecs_transposed = eigvecs.transpose((0, 2, 1))
+            state_weights = eigvecs_transposed[np.arange(eig_index.shape[0]), eig_index]
+
+            # state_weights = state_weights.squeeze(-2)
             # We have to take the absolute values as numerical precision can potentially be insufficient and yield negative weights.
             state_weights = np.abs(state_weights)
-        distribution = state_weights / np.sum(state_weights)
 
+        distribution = state_weights / np.expand_dims(np.sum(state_weights, -1), -1)
         return distribution
-
 
     # @cache_this
     def _entropy_production_rate(self):
@@ -164,27 +172,50 @@ class SteadyStateCTMC:
         distribution = self.distribution
         propensity_mat = self.propensity_matrix
 
+        n_samples = distribution.shape[0]
+
         # ToDo Check correctness of this matrice!
-        flux_mat = (distribution * propensity_mat.transpose()).transpose()
+        # flux_mat = (distribution[0] * propensity_mat[0].transpose()).transpose()
+        flux_mat = propensity_mat * np.expand_dims(distribution, -1)
+
+        upper_indices = np.triu_indices_from(flux_mat[0])
+        lower_indices = np.tril_indices_from(flux_mat[0])
+        # upper_vals = flux_mat[np.arange(n_samples), upper_indices]
+        # lower_vals = flux_mat[np.arange(n_samples), lower_indices]
+        # Prevent division by zero
+        # mask = lower_vals != 0
+        # upper_vals = upper_vals[mask]
+        # lower_vals = lower_vals[mask]
+
+        upper_vals = np.triu(flux_mat, k=1)
+        lower_vals = np.tril(flux_mat, k=-1)
+        lower_vals = lower_vals.transpose((0, 2, 1))
+        mask = lower_vals != 0
+        # (1 - np.tri(6, dtype=int)).flatten().repeat(n_samples).reshape(-1, n_samples).transpose().reshape(n_samples, 6,                                                                                                          -1)
+        upper_vals = upper_vals[mask].reshape(n_samples, -1)
+        lower_vals = lower_vals[mask].reshape(n_samples, -1)
+        # np.tile(1 - np.tri(6, dtype=int), 3).transpose().reshape(3, 6, -1)
+
+        entropy_production_rate_contributions = (upper_vals - lower_vals) * np.log(upper_vals / lower_vals)
+        entropy_production_rate = np.sum(entropy_production_rate_contributions, axis=-1)
 
         # Reimplement this in a more efficient way
 
-        entropy_production_rate = 0
-        # Can be simplified to n * (n-1)/2 calculations. The Factor 0.5 needs to be corrected also afterwards.
-        for iR in range(self.N_states):
-            for iC in range(self.N_states):
-                if propensity_mat[iR, iC] == 0 or propensity_mat[iC, iR] == 0:
-                    continue
-                if iC >= iR:
-                    continue
-                flux_diff = flux_mat[iR, iC] - flux_mat[iC, iR]
-                log_flux_diff = np.log(flux_mat[iR, iC] / flux_mat[iC, iR])
-                entropy_production_rate += flux_diff * log_flux_diff
-                pass
+        # entropy_production_rate = 0
+        #
+        # for iR in range(self.N_states):
+        #     for iC in range(self.N_states):
+        #         if propensity_mat[0, iR, iC] == 0 or propensity_mat[0, iC, iR] == 0:
+        #             continue
+        #         if iC >= iR:
+        #             continue
+        #         flux_diff = flux_mat[0, iR, iC] - flux_mat[0, iC, iR]
+        #         log_flux_diff = np.log(flux_mat[0, iR, iC] / flux_mat[0, iC, iR])
+        #         entropy_production_rate += flux_diff * log_flux_diff
+        #         pass
 
         # entropy_production_rate *= 0.5
         return entropy_production_rate
-
 
     def relaxation_time(self):
         propensity_mat = self.propensity_matrix
@@ -195,7 +226,6 @@ class SteadyStateCTMC:
         gamma_prime = eig_vals[-1] - eig_vals[-2]  # spectral gap is equal to largest minus second largest eigenvalue
         relaxation_time = 1 / gamma_prime
         return relaxation_time
-
 
     def mixing_time_bounds(self, eps):
         promoter_distribution = self.distribution

@@ -259,7 +259,6 @@ class SensorPromoter(Promoter):
 
         # This class misuses the field self.cognate_transcription_factors to represent the inducer it is sensitive to
 
-
     def _populate_model(self):
         model_info = self.model_info
 
@@ -284,10 +283,30 @@ class SensorPromoter(Promoter):
                                            per_state_promoter_activity=promoter_activity)
             model_LUT[float(input_val)] = promoter_model
 
+        look_up_func = lambda val: model_LUT[val]
+        look_up_func_vectorized = np.vectorize(look_up_func)
+
         def model(in_val_dict: dict, sim_settings: dict, *args, **kwargs):
-            cognate_inducer_concentration = float(in_val_dict["c"])
-            promoter_model = model_LUT[cognate_inducer_concentration]
-            result = promoter_model({"c": 0}, sim_settings=sim_settings, *args, **kwargs)
+            def look_up_func(val):
+                promoter_model = model_LUT[val]
+                n_samples = sim_settings["n_samples_simulation"]
+                sim_settings["n_samples_simulation"] = 1
+                result = promoter_model({"c": np.zeros(1)}, sim_settings=sim_settings, *args, **kwargs)
+                sim_settings["n_samples_simulation"] = n_samples
+                return result
+
+            cognate_inducer_concentration = np.array(in_val_dict["c"])
+            look_up_func_vectorized = np.vectorize(look_up_func)
+            results = look_up_func_vectorized(cognate_inducer_concentration)
+            result = {}
+
+            for key in results[0]:
+                if key == "promoter_activity_per_state":
+                    continue
+                accumulation = [elem[key] for elem in results]
+                result[key] = np.concatenate(accumulation, axis=0)
+
+            result["promoter_activity_per_state"] = np.array([results[0]["promoter_activity_per_state"]])
             return result
 
         return model

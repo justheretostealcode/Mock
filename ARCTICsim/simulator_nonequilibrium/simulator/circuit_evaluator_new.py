@@ -81,20 +81,28 @@ class CircuitEvaluator:
         start = time.time()
         for input_vals, output_val in truthtable.input_output_truthtable():
             input_vals_dict = dict(zip(input_ids, input_vals))
-            gate_output_vals = {id: np.empty(shape=(n_samples)) for id in structure.nodes}
-            energy_rates = np.empty(shape=(n_samples))
-            detailed_energy_rates = np.empty(shape=(n_samples, 3))
-            for iN in range(n_samples):
+            # gate_output_vals = {id: np.empty(shape=(n_samples)) for id in structure.nodes}
+            # energy_rates = np.empty(shape=(n_samples))
+            # detailed_energy_rates = np.empty(shape=(n_samples, 3))
+            # for iN in range(n_samples):
+            #
+            #     cur_gate_output_vals = circuit(input_vals_dict=input_vals_dict, sim_settings=sim_settings)
+            #     cur_energy_rate = circuit.energy_rate
+            #     cur_detailed_energy_rates = circuit.energy_rates
+            #
+            #     for id in cur_gate_output_vals:
+            #         gate_output_vals[id][iN] = cur_gate_output_vals[id]
+            #
+            #     energy_rates[iN] = cur_energy_rate
+            #     detailed_energy_rates[iN] = cur_detailed_energy_rates
 
-                cur_gate_output_vals = circuit(input_vals_dict=input_vals_dict, sim_settings=sim_settings)
-                cur_energy_rate = circuit.energy_rate
-                cur_detailed_energy_rates = circuit.energy_rates
+            cur_gate_output_vals = circuit(input_vals_dict=input_vals_dict, sim_settings=sim_settings)
+            cur_energy_rate = circuit.energy_rate
+            cur_detailed_energy_rates = circuit.energy_rates
 
-                for id in cur_gate_output_vals:
-                    gate_output_vals[id][iN] = cur_gate_output_vals[id]
-
-                energy_rates[iN] = cur_energy_rate
-                detailed_energy_rates[iN] = cur_detailed_energy_rates
+            gate_output_vals = cur_gate_output_vals
+            energy_rates = cur_energy_rate
+            detailed_energy_rates = cur_detailed_energy_rates
 
             cur_out_vals = []
             for out_id in output_ids:

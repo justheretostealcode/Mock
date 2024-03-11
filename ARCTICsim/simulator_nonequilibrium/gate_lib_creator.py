@@ -96,7 +96,7 @@ def get_sequence_entry(name, sequence=""):
     return sequence_entry
 
 
-def add_outputs(custom_lib, reporters, rates:dict):
+def add_outputs(custom_lib, reporters, rates: dict):
     transcription_rate = rates["transcription_rate"]
     translation_rate = rates["translation_rate"]
     rna_degradation_rate = rates["rna_degradation_rate"]
@@ -246,6 +246,7 @@ def match_promoter(response_characteristic: dict,
     # Case 2: Parameter estimation of an input sensor -> only the reporter gene is required. The input sensor's promoter is directly attached to it.
 
     def update_model(params):
+        # new_params = params
         new_params = 10 ** params
         new_params[:2] = params[:2]
         promoter.model.insert_params(new_params)
@@ -327,14 +328,14 @@ def match_promoter(response_characteristic: dict,
     #     deviation /= divisor
     #     return deviation
 
-    matching_modes = ["det", "samp"]
-    sample_counts = [1, 30]
+    # matching_modes = ["det", "samp"]
+    # sample_counts = [1, 100]
     matching_modes = ["det"]
     sample_counts = [1]
 
     best_fun = np.infty
     best_params = None
-    for iR in range(5):
+    for iR in range(3):
         initial_params = None
         for matching_mode, sample_count in zip(matching_modes, sample_counts):
             def model(plasmid_input_vals):
@@ -347,7 +348,15 @@ def match_promoter(response_characteristic: dict,
                     for gene in genes:
                         output_dict = gene(cell_state, sim_settings=sim_settings)
                     output_vals[iS] = cell_state[reporter_name]
-                return np.mean(output_vals), np.var(output_vals)  # + 0.1
+                    gene.gene_state
+
+                scaling_factor = gene.cds.model.scaling_factor
+                mean_prot = gene.gene_state["protein_mean"]
+                var_prot = gene.gene_state["protein_var"]
+                mean_out = mean_prot / scaling_factor
+                var_out = var_prot / scaling_factor ** 2
+                return mean_out, var_out
+                #return np.mean(output_vals), np.var(output_vals)  # + 0.1
 
             # The optimization routine adapts the rates in the infinitesimal generator and the promoter activity
 
@@ -372,7 +381,8 @@ def match_promoter(response_characteristic: dict,
 
             if initial_params is None:
                 initial_params = [y_on, y_off]
-                initial_params += list(np.exp(np.random.rand(14) * 2 - 1))
+                #initial_params += list(np.exp(np.random.rand(14) * 2 - 1))
+                initial_params += list(np.random.rand(14) * 2 - 1)
                 initial_params = np.array(initial_params)
                 new_params = initial_params
                 # initial_params[3] = 10
@@ -408,25 +418,28 @@ def match_promoter(response_characteristic: dict,
             # promoter.model.insert_params(new_params)
             matching_mode = "samp"
             sample_count = 100
+            distribution_losses = [error_func(new_params, training_data) for _ in range(10)]
+            print("Error for current estimate:", distribution_losses)
+
             Y_pred = [model({input_signal_name: x}) for x in X]
             Y_pred = np.array(Y_pred)
 
-            # plt.figure()
-            # ax = plt.gca()
-            # ax.plot(X, Y[:, 0], "--k", label="Mean")
-            # if Y.shape[1] == 2:
-            #     ax.fill_between(X,
-            #                     Y[:, 0] - np.sqrt(Y[:, 1]), Y[:, 0] + np.sqrt(Y[:, 1]),
-            #                     color="yellow", alpha=0.1)
-            #
-            # ax.plot(X, Y_pred[:, 0], label="Mean Pred")
-            # if Y_pred.shape[1] == 2:
-            #     ax.fill_between(X,
-            #                     Y_pred[:, 0] - np.sqrt(Y_pred[:, 1]), Y_pred[:, 0] + np.sqrt(Y_pred[:, 1]),
-            #                     color="blue", alpha=0.1)
-            # ax.set_xscale("log")
-            # ax.set_yscale("log")
-            # plt.show()
+            plt.figure()
+            ax = plt.gca()
+            ax.plot(X, Y[:, 0], "--k", label="Mean")
+            if Y.shape[1] == 2:
+                ax.fill_between(X,
+                                Y[:, 0] - np.sqrt(Y[:, 1]), Y[:, 0] + np.sqrt(Y[:, 1]),
+                                color="yellow", alpha=0.1)
+
+            ax.plot(X, Y_pred[:, 0], label="Mean Pred")
+            if Y_pred.shape[1] == 2:
+                ax.fill_between(X,
+                                Y_pred[:, 0] - np.sqrt(Y_pred[:, 1]), Y_pred[:, 0] + np.sqrt(Y_pred[:, 1]),
+                                color="blue", alpha=0.1)
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            plt.show()
 
         if fun < best_fun:
             best_fun = fun
@@ -460,7 +473,7 @@ def match_promoter(response_characteristic: dict,
     ax.set_yscale("log")
     dir_path = "ARCTICsim/simulator_nonequilibrium/data/gate_libs/figures/"
     plt.savefig(dir_path + gate_name + ".png", dpi=300)
-    # plt.show()
+    plt.show()
 
     model_info = promoter_entry["model_info"]
     model_info["PROMOTER_ACTIVITY"] = list(promoter.model.promoter_activity)
@@ -599,7 +612,6 @@ if __name__ == '__main__':
     l_p = translation_rate / protein_degradation_rate
     eu_to_rpu_scaling_factor = (l_m * l_p) ** (-1)
 
-
     cello_gates = cello_library_by_collection["gates"]
     custom_lib = []
 
@@ -663,7 +675,6 @@ if __name__ == '__main__':
         rna_length = len(utr_sequence_entry["sequence"]) + cds_length
         protein_length = cds_length / 3
 
-
         protein_entry = get_protein_entry(name=protein_name,
                                           sequence_ids=[seq["identifier"] for seq in protein_sequence_entries],
                                           transcription_rate=transcription_rate,
@@ -715,7 +726,6 @@ if __name__ == '__main__':
         pass
         pass
         # Write out everything to a json file
-
 
     custom_lib = {elem["identifier"]: elem for elem in custom_lib}
     custom_lib = list(custom_lib.values())

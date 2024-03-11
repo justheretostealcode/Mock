@@ -20,14 +20,17 @@ class RNAMomentModel:
         self.energy_per_nucleotide = energy_per_nucleotide
         self.energy_per_rna = energy_per_rna
         self.length = length
+        self.energy_per_rna = (self.energy_per_nucleotide * self.length + self.energy_per_rna)
 
     def __call__(self, promoter_output: dict, sim_settings: dict, *args, **kwargs) -> dict:
         rna_output = dict(promoter_output)
 
         propensity_matrix = promoter_output["propensity_matrix"]
         avg_promoter_activity = promoter_output["average_promoter_activity"]
-        avg_promoter_activity_per_state = np.array(promoter_output["average_promoter_activity_per_state"])
-        promoter_activity_per_state = np.array(promoter_output["promoter_activity_per_state"])
+        avg_promoter_activity_per_state = promoter_output["average_promoter_activity_per_state"]
+        promoter_activity_per_state = promoter_output["promoter_activity_per_state"]
+
+        n_samples = avg_promoter_activity.shape[0]
 
         l = self.transcription_rate / self.degradation_rate
 
@@ -39,23 +42,27 @@ class RNAMomentModel:
         """
         Deriving the variance of the RNA
         """
-        self.var = np.nan
+        self.var = np.nan * np.empty(shape=self.mean.shape)
         M_inv = None
         if "mode" in sim_settings and sim_settings["mode"] != "det":
-            M_inv = linalg.inv(self.degradation_rate * np.eye(len(propensity_matrix)) - propensity_matrix.transpose())
-            rna_promoter_state_correlation = self.transcription_rate * M_inv @ avg_promoter_activity_per_state.reshape(
-                -1, 1)
+            M_inv = np.linalg.inv(
+                self.degradation_rate * np.eye(*propensity_matrix.shape[1:]) - propensity_matrix.transpose((0, 2, 1)))
+            rna_promoter_state_correlation = M_inv @ np.expand_dims(avg_promoter_activity_per_state, axis=-1)
+            rna_promoter_state_correlation = self.transcription_rate * rna_promoter_state_correlation.squeeze(axis=-1)
             # Equation is checked
-            E_rna_squared = self.mean + l * promoter_activity_per_state.reshape(1, -1) @ rna_promoter_state_correlation
+            E_rna_squared = np.expand_dims(promoter_activity_per_state, axis=-2) @ np.expand_dims(
+                rna_promoter_state_correlation, axis=-1)
+            E_rna_squared = self.mean + l * E_rna_squared[:, 0, 0]  # Performs squeezing of axis 1 and 2
+
+
             self.var = E_rna_squared - self.mean ** 2
-            self.var = self.var.item()
+
         """
         Energy Considerations
         """
         rna_production_and_degradation_rate = self.degradation_rate * self.mean
-        self.mean_energy_dissipation_rate = rna_production_and_degradation_rate * (
-                self.energy_per_nucleotide * self.length
-                + self.energy_per_rna)
+
+        self.mean_energy_dissipation_rate = rna_production_and_degradation_rate * self.energy_per_rna
 
         rna_output["rna_mean"] = self.mean
         rna_output["rna_var"] = self.var
@@ -64,6 +71,7 @@ class RNAMomentModel:
         rna_output["rna_degradation_rate"] = self.degradation_rate
         rna_output["rna_mean_energy_dissipation_rate"] = self.mean_energy_dissipation_rate
         rna_output["energy_tx"] = self.mean_energy_dissipation_rate
+
         return rna_output
 
 
@@ -83,7 +91,13 @@ class ProteinMomentModel:
         self.energy_per_protein = energy_per_protein
         self.length = length
 
+        self.energy_per_protein = self.energy_per_amino_acid * self.length + self.energy_per_protein
+
     def __call__(self, rna_output: dict, sim_settings: dict, *args, **kwargs) -> dict:
+        mode = "det"
+        if "mode" in sim_settings:
+            mode = sim_settings["mode"]
+
         propensity_matrix = rna_output["propensity_matrix"]
         avg_promoter_activity_per_state = rna_output["average_promoter_activity_per_state"]
         promoter_activity_per_state = rna_output["promoter_activity_per_state"]
@@ -104,21 +118,20 @@ class ProteinMomentModel:
         Derivation of protein's variance
         """
 
-        self.var = np.nan
-        self.protein_rna_covariance = np.nan
+        self.var = np.nan * np.ones(shape=self.mean.shape)
+        self.protein_rna_covariance = np.nan * np.ones(shape=self.mean.shape)
         # raise Exception("Reimplement on the basis of E[n_m * n_p]")
 
-        if "mode" in sim_settings and sim_settings["mode"] != "det" and M_inv is not None:
-            M_inv_2 = linalg.inv(self.degradation_rate * np.eye(len(propensity_matrix)) - propensity_matrix.transpose())
+        if mode != "det" and M_inv is not None:
+            M_inv_2 = np.linalg.inv(
+                self.degradation_rate * np.eye(*propensity_matrix.shape[1:]) - propensity_matrix.transpose((0, 2, 1)))
 
             denominator = rna_degradation_rate + self.degradation_rate
 
-            promoter_activity_per_state = promoter_activity_per_state.reshape(1, -1)
-            avg_promoter_activity_per_state = avg_promoter_activity_per_state.reshape(-1, 1)
-            # modified_protein_promoter_correlation = promoter_activity_per_state \
-            #                                         @ (1 / rna_degradation_rate + M_inv_2) \
-            #                                         @ M_inv \
-            #                                         @ avg_promoter_activity_per_state
+            promoter_activity_per_state = np.expand_dims(promoter_activity_per_state,
+                                                         axis=-2)  # Transforms it into a matrix representing a row vector
+            avg_promoter_activity_per_state = np.expand_dims(avg_promoter_activity_per_state,
+                                                             axis=-1)  # Transforms it into a matrix representing a column vector
 
             # One could save a matrix multiplication by reusing a result from the RNAMomentModel
             # protein_promoter_correlation = self.translation_rate * transcription_rate * M_inv_2 @ M_inv \ @ avg_promoter_activity_per_state
@@ -127,7 +140,8 @@ class ProteinMomentModel:
             E_m_squared = rna_var + rna_mean ** 2
 
             E_m_p = self.translation_rate * E_m_squared
-            E_m_p += transcription_rate * promoter_activity_per_state @ protein_promoter_correlation
+            # [:, 0, 0] Squeezes axis -1 and -2
+            E_m_p += transcription_rate * (promoter_activity_per_state @ protein_promoter_correlation)[:, 0, 0]
             E_m_p = E_m_p / denominator
 
             E_p_squared = l * E_m_p + self.mean
@@ -143,15 +157,15 @@ class ProteinMomentModel:
             #                                + transcription_rate * promoter_activity_per_state @ protein_promoter_correlation) * denominator
             # self.protein_rna_covariance -= self.mean * rna_mean
 
-            self.var = self.var.item()
-            self.protein_rna_covariance = self.protein_rna_covariance.item()
+            self.var = self.var
+            self.protein_rna_covariance = self.protein_rna_covariance
 
         """
         Energy Considerations
         """
         protein_production_and_degradation_rate = self.degradation_rate * self.mean
-        self.mean_energy_dissipation_rate = protein_production_and_degradation_rate * (
-                self.energy_per_amino_acid * self.length + self.energy_per_protein)
+
+        self.mean_energy_dissipation_rate = protein_production_and_degradation_rate * self.energy_per_protein
 
         protein_output = dict(rna_output)
         protein_output["protein_mean"] = self.mean
@@ -173,7 +187,7 @@ class CombinedMomentModel:
 
         l_m = self.rna_model.transcription_rate / self.rna_model.degradation_rate
         l_p = self.protein_model.translation_rate / self.protein_model.degradation_rate
-        self.scaling_factor = l_m * l_p # Factor for converting RPU to output
+        self.scaling_factor = l_m * l_p  # Factor for converting RPU to output
         pass
 
     def __call__(self, promoter_output: dict, sim_settings: dict, *args, **kwargs) -> dict:

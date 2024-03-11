@@ -49,6 +49,7 @@ class Circuit:
         pass
 
     def __call__(self, input_vals_dict, sim_settings):
+
         assignment = self.assignment
         propagation_graph = self.propagation_graph
         # inputs_graph = self.inputs_graph
@@ -120,19 +121,20 @@ class GeneticLogicCircuit:
         pass
 
     def __call__(self, input_vals_dict, sim_settings):
+        mode = sim_settings["mode"]
+        n_samples = 1 if mode == "det" else sim_settings["n_samples"]
+        sim_settings["n_samples_simulation"] = n_samples
 
-        energy_rate = 0
-        energy_rates = np.zeros(3)
-
-        # ToDo translate input_vals_dict consisting of the boolean input value
-        # Input Vals to Gene Circuit are currently proteins
-        # These have to be the cognate TF's of the input promoters
+        # Translate input_vals_dict consisting of the boolean input value to
+        # input vals of the Gene Circuit, which are inducer concentrations
         gene_circuit_inputs = {}
         for input_id in input_vals_dict:
             input_mapping = self.input_mapping[input_id]
             inducer_name = input_mapping["inducer_name"]
             mapping = input_mapping["mapping"]
-            gene_circuit_inputs[inducer_name] = mapping[input_vals_dict[input_id]]
+            # Here, the scalar input vals are mapped to arrays of the inducer concentrations
+            gene_circuit_inputs[inducer_name] = np.ones(n_samples) * mapping[input_vals_dict[input_id]]
+
         # Perform the actual evaluation of the gene_circuit
         cell_state = self.gene_circuit(input_vals_dict=gene_circuit_inputs, sim_settings=sim_settings)
 
@@ -150,7 +152,7 @@ class GeneticLogicCircuit:
             # The output of the genetic gate is in RPU, the output of the gene is in gene expression units.
             # However, the ####_rpu entry refers to the RPU derived for the protein level outputted
             # As so, the prot_name_rpu of the cds accompanying the promoter on the gene is the required value
-            cur_promoter_activity = 0
+            cur_promoter_activity = np.zeros(n_samples)
             for gene in genes:
                 prot_name = gene.cds.name
                 cur_promoter_activity += cell_state[prot_name + "_rpu"]
@@ -163,7 +165,7 @@ class GeneticLogicCircuit:
             #     device = self.assignment(node_info=gate_info)
             #     gate_output_vals[gate_id] = cell_state[device.cds.name]
 
-            energy_per_gate[gate_id] = {key: 0 for key in ["promoter", "rna", "protein"]}
+            energy_per_gate[gate_id] = {key: np.zeros(n_samples) for key in ["promoter", "rna", "protein"]}
             for gene in genes:
                 energy_per_gate[gate_id]["promoter"] += gene.gene_state["energy"]["promoter"]
 
@@ -180,7 +182,7 @@ class GeneticLogicCircuit:
         # raise Exception("Output Node is currently Missing!!!")
         energy_consumption = self.gene_circuit.energy_consumption
         self.energy_rate = -cell_state["energy"]
-        self.energy_rates = [energy_consumption[key] for key in ["promoter", "rna", "protein"]]
+        self.energy_rates = np.array([energy_consumption[key] for key in ["promoter", "rna", "protein"]])
 
         return gate_output_vals
 
@@ -302,7 +304,6 @@ class GeneticLogicCircuit:
                 input_mapping[gate_id] = {"inducer_name": inducer_name,
                                           "mapping": device.promoter.bool_to_inducer_lut}
 
-
         self.input_mapping = input_mapping
         return gene_assignment
         # if not self.is_valid():
@@ -398,16 +399,18 @@ class GeneCircuit:
         # # connection_graph = structure.adjacency["out"]
         # propagation_graph = self.gene_propagation_graph
 
+        n_samples = sim_settings["n_samples_simulation"]
+
         # All quantities relevant for the genetic circuit evaluation are stored in this dict
         # Proteins
         # RNA
         # Small Molecules
-        cell_state = {"energy": 0}
+        cell_state = {"energy": np.zeros(n_samples)}
         cell_state.update(input_vals_dict)
-        energy_consumption = OrderedDict({"promoter": 0,
-                                          "rna": 0,
-                                          "protein": 0,
-                                          "overall": 0})
+        energy_consumption = OrderedDict({"promoter": np.zeros(n_samples),
+                                          "rna": np.zeros(n_samples),
+                                          "protein": np.zeros(n_samples),
+                                          "overall": np.zeros(n_samples)})
         # for input_model in self.input_models:
         #     # Updates cell state by inserting the respective TF amount into cell_state
         #     input_model(cell_state, sim_settings)
@@ -430,15 +433,7 @@ class GeneCircuit:
             #                      "rna": energy_rna,
             #                      "protein": energy_protein}}
             # """
-            # gate_output_vals[gate_id] = output_dict
-            #
-            # # Propagate device output to subsequent gates
-            # for subsidary in connection_graph[gate_id]:
-            #     gate_input_vals[subsidary].append(out_val)
-            #
-            # # if node_info.type == "LOGIC":
-            # energy_rate += device.energy_rate
-            # energy_rates += np.array(device.energy_rates)
+
         self.cell_state = cell_state
         self.energy_consumption = energy_consumption
         return cell_state
@@ -484,13 +479,15 @@ class Gene:
         mode = "det"
         if "mode" in sim_settings:
             mode = sim_settings["mode"]
-        interpolate = 0
-        if "interpolate" in sim_settings:
-            interpolate = sim_settings["interpolate"]
 
-        input_val_dict = {"c": np.sum([cell_state[molecule]
-                                       for molecule in cell_state
-                                       if molecule in self.promoter.cognate_transcription_factors])}
+        n_samples = sim_settings["n_samples_simulation"]
+        # interpolate = 0
+        # if "interpolate" in sim_settings:
+        #     interpolate = sim_settings["interpolate"]
+
+        input_val_dict = {"c": np.sum(np.array([cell_state[molecule]
+                                                for molecule in cell_state
+                                                if molecule in self.promoter.cognate_transcription_factors]), axis=0)}
         # input_val_dict = {"c": sum([cell_state[molecule + "_rpu"]
         #                             for molecule in cell_state
         #                             if molecule in self.promoter.cognate_transcription_factors])}
@@ -501,17 +498,18 @@ class Gene:
         # ToDo: Add support for LUT Promoter
         #  (Alternative -> Change LUT Promoter to normal Promoter and Realize Input by TF Lookup)
         #  This would be far more realistic
-        scaling_factor = self.cds.model.scaling_factor
-        if interpolate:
-            # In the approximate case, the actual response characteristic is approximated by interpolation
-            #
-            interpolation_output = self.perform_interpolation(input_val_dict, sim_settings=sim_settings)
-            model_outputs = interpolation_output
 
-        else:
-            promoter_output = self.promoter(input_val_dict, sim_settings)
-            cds_output = self.cds(promoter_output, sim_settings)
-            model_outputs = cds_output
+        scaling_factor = self.cds.model.scaling_factor
+        # if interpolate:
+        #     # In the approximate case, the actual response characteristic is approximated by interpolation
+        #     #
+        #     interpolation_output = self.perform_interpolation(input_val_dict, sim_settings=sim_settings)
+        #     model_outputs = interpolation_output
+        #
+        # else:
+        promoter_output = self.promoter(input_val_dict, sim_settings)
+        cds_output = self.cds(promoter_output, sim_settings)
+        model_outputs = cds_output
 
         # mean_M = model_outputs["rna_mean"]
         # var_M = model_outputs["rna_var"]
@@ -529,9 +527,9 @@ class Gene:
             sigma = np.sqrt(np.log(common_val))
             mu = np.log(mean_P ** 2 / np.sqrt(var_P + mean_P ** 2))
 
-            sample = np.random.lognormal(mu, sigma, 1)
+            sample = np.random.lognormal(mu, sigma)
 
-            protein_level = sample[0]
+            protein_level = sample
         elif mode == "det":
             protein_level = mean_P
         else:
@@ -548,8 +546,8 @@ class Gene:
         # Update cell's state
         prot_name = self.cds.name
         if prot_name not in cell_state:
-            cell_state[prot_name] = 0
-            cell_state[prot_name + "_rpu"] = 0
+            cell_state[prot_name] = np.zeros(n_samples)
+            cell_state[prot_name + "_rpu"] = np.zeros(n_samples)
         cell_state[prot_name] += protein_level
         cell_state[prot_name + "_rpu"] += protein_level * 1 / scaling_factor
 
@@ -558,6 +556,7 @@ class Gene:
 
         # Update own_state and return it
         self.gene_state = gene_state
+
         return gene_state
 
     def assign_parts(self, parts_assignment):
@@ -583,62 +582,64 @@ class Gene:
         # valid = valid and self.promoter is not None
         return valid
 
-    def init_interpolation(self) -> dict:
-        # raise Exception("Not ")
-        # return {}
-        input_vals = np.logspace(-4, 2, 100)  # ToDo Define adequate interval
-        input_vals_dicts = [{"c": val} for val in input_vals]
-
-        sim_settings = {"mode": "samp"}
-
-        interpolation_data = {func_id: np.empty(shape=len(input_vals_dicts)) for func_id in Gene.func_ids}
-        X = [None] * len(input_vals_dicts)
-        for iX, input_vals_dict in enumerate(input_vals_dicts):
-            promoter_output = self.promoter(input_vals_dict, sim_settings)
-            cds_output = self.cds(promoter_output, sim_settings)
-
-            for func_id in Gene.func_ids:
-                interpolation_data[func_id][iX] = cds_output[func_id]
-
-            X[iX] = self._in_vals_dict_to_array(input_vals_dict)
-
-        X = np.array(X)
-        X = X.transpose()
-        interpolators = {}
-        for func_id in Gene.func_ids:
-            Y = interpolation_data[func_id]
-            # interpolator = RegularGridInterpolator(X, Y, method="linear", bounds_error=True, fill_value=None)
-            interpolator = CubicSpline(X.squeeze(), Y)
-            # interpolation = interpolator(xi=[[0.5], [1]])
-            interpolators[func_id] = interpolator
-
-        self.initialized_interpolators = True
-
-        return interpolators
-
-    def perform_interpolation(self, input_vals_dict, sim_settings):
-        if not self.initialized_interpolators:
-            return None
-
-        in_vals = self._in_vals_dict_to_array(input_vals_dict)
-
-        interpolation_output = {}
-        for func_id in Gene.func_ids:
-            try:
-                # interpolation_output[func_id] = self.interpolators[func_id]([in_vals])[0]
-                interpolation_output[func_id] = self.interpolators[func_id](in_vals)
-            except:
-                interpolation_output[func_id] = 1111
-
-        return interpolation_output
+    # def init_interpolation(self) -> dict:
+    #     # raise Exception("Not ")
+    #     # return {}
+    #     input_vals = np.logspace(-4, 2, 100)  # ToDo Define adequate interval
+    #     input_vals_dicts = [{"c": val} for val in input_vals]
+    #
+    #     sim_settings = {"mode": "samp"}
+    #
+    #     interpolation_data = {func_id: np.empty(shape=len(input_vals_dicts)) for func_id in Gene.func_ids}
+    #     X = [None] * len(input_vals_dicts)
+    #     for iX, input_vals_dict in enumerate(input_vals_dicts):
+    #         promoter_output = self.promoter(input_vals_dict, sim_settings)
+    #         cds_output = self.cds(promoter_output, sim_settings)
+    #
+    #         for func_id in Gene.func_ids:
+    #             interpolation_data[func_id][iX] = cds_output[func_id]
+    #
+    #         X[iX] = self._in_vals_dict_to_array(input_vals_dict)
+    #
+    #     X = np.array(X)
+    #     X = X.transpose()
+    #     interpolators = {}
+    #     for func_id in Gene.func_ids:
+    #         Y = interpolation_data[func_id]
+    #         # interpolator = RegularGridInterpolator(X, Y, method="linear", bounds_error=True, fill_value=None)
+    #         interpolator = CubicSpline(X.squeeze(), Y)
+    #         # interpolation = interpolator(xi=[[0.5], [1]])
+    #         interpolators[func_id] = interpolator
+    #
+    #     self.initialized_interpolators = True
+    #
+    #     return interpolators
+    #
+    # def perform_interpolation(self, input_vals_dict, sim_settings):
+    #     if not self.initialized_interpolators:
+    #         return None
+    #
+    #     in_vals = self._in_vals_dict_to_array(input_vals_dict)
+    #
+    #     interpolation_output = {}
+    #     for func_id in Gene.func_ids:
+    #         try:
+    #             # interpolation_output[func_id] = self.interpolators[func_id]([in_vals])[0]
+    #             interpolation_output[func_id] = self.interpolators[func_id](in_vals)
+    #         except:
+    #             interpolation_output[func_id] = 1111
+    #
+    #     return interpolation_output
 
 
 if __name__ == '__main__':
     json_structure = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/structures/structure_01110101.json")
     json_structure = JsonFile(
         path="ARCTICsim/simulator_nonequilibrium/data/structures/11111000_structure_0.json")  # Features an implicit OR
-    json_gatelib = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_yeast.json")
-    json_gatelib = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_draft.json")
+    # json_gatelib = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_yeast.json")
+    # json_gatelib = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_draft.json")
+    json_gatelib = JsonFile(
+        path="ARCTICsim/simulator_nonequilibrium/data/gate_libs/gate_lib_yeast_generated_mean_fit.json")
     # gate_lib = GateLib(json_gatelib)
     gate_lib = GateLibCollectionBased(json_file=json_gatelib)
 
@@ -649,8 +650,9 @@ if __name__ == '__main__':
     # assignment_json = '{"a":"input_3","b":"input_1","c":"input_2","NOT_0":"H1_HlyIIR","NOT_2":"S2_SrpR","NOT_4":"B3_BM3R1","NOR2_1":"L1_LitR","NOR2_3":"P2_PhlF","O":"output_1"}'
     assignment = None
     # json_assignment = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/assignments/assignment_01110101.json")
+    # json_assignment = JsonFile(path="ARCTICsim/simulator_nonequilibrium/data/assignments/dummy_assignment_11111000_structure_0.json")
     json_assignment = JsonFile(
-        path="ARCTICsim/simulator_nonequilibrium/data/assignments/dummy_assignment_11111000_structure_0.json")
+        path="ARCTICsim/simulator_nonequilibrium/data/assignments/test_assignment_11111000_structure_0.json")
     assignment = CircuitAssignment(json_assignment, gate_lib=gate_lib)
     assignment(genetic_logic_circuit.structure.node_infos["a"])
 
@@ -658,8 +660,12 @@ if __name__ == '__main__':
     # circuit = Circuit(structure)
     # circuit.set_assignment(assignment)
     # print(circuit.propagation_graph)
-
+    genetic_logic_circuit.genes
     # input_vals = {"input_1": 10 ** 9, "input_2": 10 ** 3, "input_3": 10 ** 8}
+    test_gene = genetic_logic_circuit.genes_by_associated_promoter["NOT_1"][0]
+    cell_state = {"energy": 0, "CI": np.ones(2) * 1.1 * 10 ** 5}
+    test_gene(cell_state=cell_state,
+              sim_settings={"mode": "samp", "n_samples": 2, "n_samples_simulation": 2})
     input_vals = {"a": 0, "b": 1, "c": 0}
     # output_vals = circuit(input_vals_dict=input_vals, sim_settings={})
     output_vals = genetic_logic_circuit(input_vals_dict=input_vals, sim_settings={"mode": "det", "interpolate": False})

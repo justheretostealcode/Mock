@@ -6,6 +6,5 @@
   "NOR2_6": "device_P1_CI",
   "NOR2_7": "device_P2_CI",
   "NOR2_8": "device_P1_IcaR",
-  "NOR2_3": "device_P1_LexA",
   "OUTPUT_OR2_9": "device_YFP"
 }

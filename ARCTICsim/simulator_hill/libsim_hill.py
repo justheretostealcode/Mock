@@ -388,21 +388,22 @@ class nor_circuit:
         # g_idx creates a dict of indices associated with the specific gates
         # tf_idx creates a dict of index tuples associated with the specific tf's
         #self.g_idx = dict(zip([e['name'] for e in self.lib.c['gates']], list(range(len(self.lib.c['gates'])))))
-        self.dev_idx = dict(zip([e['name'] for e in self.lib.c['devices']], list(range(len(self.lib.c['devices'])))))
-        self.tf_idx = dict({e['name']: tuple() for e in self.lib.c['transcription_factors']})
+        self.dev_idx = dict(zip([k for k in self.lib.c['devices'].keys()], list(range(len(self.lib.c['devices'].keys())))))
+        self.tf_idx = dict({k: tuple() for k in self.lib.c['transcription_factors'].keys()})
         #self.dev_idx = dict({e['name']: None for e in self.lib.c['devices']})
-        self.g_idx = dict({e['name']: tuple() for e in self.lib.c['gates']})
-        for gate in self.lib.c['gates']:
+        self.g_idx = dict({k: tuple() for k in self.lib.c['gates'].keys()})
+        for gate_name, gate_spec in self.lib.c['gates'].items():
             # Assert that there is only one gate per device
             #self.dev_idx[dev['name']] = tuple(int(self.g_idx[gate['name']]) for gate in self.lib.c['gates'] if dev['name'] in gate['associated_devices'])
-            self.g_idx[gate['name']] = tuple(int(self.dev_idx[dev_name]) for dev_name in gate['associated_devices'])
-        for tf in self.lib.c['transcription_factors']:
-            self.tf_idx[tf['name']] = tuple(int(self.dev_idx[dev_name]) for dev_name in tf['associated_devices'])
+            self.g_idx[gate_name] = tuple(int(self.dev_idx[dev_name]) for dev_name in gate_spec['associated_devices'])
+        for tf_name, tf_spec in self.lib.c['transcription_factors'].items():
+            self.tf_idx[tf_name] = tuple(int(self.dev_idx[dev_name]) for dev_name in tf_spec['associated_devices'])
 
         # get parameters for all possible gates
         self.parameters = list([None for _ in range(len(self.dev_idx))])
-        for gate in self.lib.c['gates']:
-            self.parameters[self.g_idx[gate['name']][0]] = gate['parameters']
+        for gate_name, gate_spec in self.lib.c['gates'].items():
+            if 'parameters' in gate_spec.keys():
+                self.parameters[self.g_idx[gate_name][0]] = gate_spec['parameters']
 
         # create now a total order of all locally available gates
         node_list = list(self.structure.nodes)
@@ -424,9 +425,9 @@ class nor_circuit:
             #print('node/device: ' + hl(str(k)) + '/' + hl(str(v)) + ', node idx = ' + hl(str(self.node_idx[k])) + ', device idx = ' + hl(str(self.dev_idx[v])))
             self.g_p[self.node_idx[k]] = self.dev_idx[v]
             self.p_g[self.dev_idx[v]] = self.node_idx[k]
-            if v.startswith('output'):  # implicit or / reporter TF
+            if "OUTPUT_BUFFER" in self.lib.c['devices'][v]['functions']:  # implicit or / reporter TF
                 self.gates[self.node_idx[k]] = _implicit_or_gate(k, v, self.parameters[self.dev_idx[v]])
-            elif v.startswith('input'):  # an input
+            elif "INPUT" in self.lib.c['devices'][v]['functions']:  # an input
                 self.gates[self.node_idx[k]] = _base_gate(k, v)
             else:  # assigned NOR gate
                 self.gates[self.node_idx[k]] = _nor_gate(k, v, self.parameters[self.dev_idx[v]])
@@ -605,13 +606,16 @@ class circuit_assignment:
         self.devices = set(self.map_dtog.keys())
         self.gates = set(self.map_dtog.values())
 
+# changed library import function in this version
 class library:
     # represents a connected gate lib
     def __init__(self, jstr):
         self.c = dict()
         libstr = json.loads(jstr)
         for entry in libstr:
-            self.c[entry['class']] = entry['members']
+            self.c[entry['class']] = dict()
+            for member in entry['members']:
+                self.c[entry['class']][member['name']] = {k: member[k] for k in member.keys() - {'name'}}
     # return the JSON representation of this lib
     def __str__(self):
         content = list()

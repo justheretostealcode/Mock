@@ -77,7 +77,7 @@ def check_load_and_create(input, file, cluss):
 def real_from_logic_input_matrix(linputs, library, circuit):
     n_ins = len(linputs[0])
     on_off = ['off', 'on']
-    real_inputs = [[0.0034, 2.8], [0.0013, 4.4], [0.0082, 2.5]]
+    real_inputs = [[0.002, 2.5], [0.003, 1.8], [0.011, 1.3]]
     inputs = np.zeros([len(linputs), n_ins])
     for n in range(len(linputs)):
         for m in range(n_ins):

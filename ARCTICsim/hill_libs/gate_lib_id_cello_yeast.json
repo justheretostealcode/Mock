@@ -1,11 +1,20 @@
 [
   {
     "class": "info",
-    "members": {
-      "host_name": "yeast",
-      "lib_id": "cello_yeast",
-      "creation_date": "2024-03-12 18:21:41.723722"
-    }
+    "members": [
+      {
+        "name": "host_name",
+        "value:": "yeast"
+      },
+      {
+        "name": "lib_id",
+        "value:": "cello_yeast"
+      },
+      {
+        "name": "creation_date",
+        "value:": "2024-03-12 18:21:41.723722"
+      }
+    ]
   },
   {
     "class": "transcription_factors",
@@ -17,7 +26,7 @@
           100.0
         ],
         "associated_devices": [
-          "P1_PhlF"
+          "device_P1_PhlF"
         ]
       },
       {
@@ -27,7 +36,7 @@
           100.0
         ],
         "associated_devices": [
-          "P1_BM3R1"
+          "device_P1_BM3R1"
         ]
       },
       {
@@ -37,8 +46,8 @@
           100.0
         ],
         "associated_devices": [
-          "P1_CI",
-          "P2_CI"
+          "device_P1_CI",
+          "device_P2_CI"
         ]
       },
       {
@@ -48,8 +57,8 @@
           100.0
         ],
         "associated_devices": [
-          "P1_LexA",
-          "P2_LexA"
+          "device_P1_LexA",
+          "device_P2_LexA"
         ]
       },
       {
@@ -59,8 +68,8 @@
           100.0
         ],
         "associated_devices": [
-          "P1_CI434",
-          "P2_CI434"
+          "device_P1_CI434",
+          "device_P2_CI434"
         ]
       },
       {
@@ -70,7 +79,7 @@
           100.0
         ],
         "associated_devices": [
-          "P1_HKCI"
+          "device_P1_HKCI"
         ]
       },
       {
@@ -80,7 +89,7 @@
           100.0
         ],
         "associated_devices": [
-          "P1_PsrA"
+          "device_P1_PsrA"
         ]
       },
       {
@@ -90,37 +99,37 @@
           100.0
         ],
         "associated_devices": [
-          "P1_IcaR"
+          "device_P1_IcaR"
         ]
       },
       {
-        "name": "Tac",
+        "name": "aTc",
         "typical": [
           0.1,
           100.0
         ],
         "associated_devices": [
-          "input_1"
+          "device_aTc"
         ]
       },
       {
-        "name": "Tet",
+        "name": "xyl",
         "typical": [
           0.1,
           100.0
         ],
         "associated_devices": [
-          "input_2"
+          "device_xyl"
         ]
       },
       {
-        "name": "BAD",
+        "name": "IPTG",
         "typical": [
           0.1,
           100.0
         ],
         "associated_devices": [
-          "input_3"
+          "device_IPTG"
         ]
       },
       {
@@ -130,7 +139,7 @@
           100.0
         ],
         "associated_devices": [
-          "output_1"
+          "device_YFP"
         ]
       }
     ]
@@ -141,7 +150,7 @@
       {
         "name": "P1_PhlF",
         "associated_devices": [
-          "P1_PhlF"
+          "device_P1_PhlF"
         ],
         "parameters": {
           "y_max": 3.21,
@@ -153,7 +162,7 @@
       {
         "name": "P1_BM3R1",
         "associated_devices": [
-          "P1_BM3R1"
+          "device_P1_BM3R1"
         ],
         "parameters": {
           "y_max": 5.07,
@@ -165,7 +174,7 @@
       {
         "name": "P1_QacR",
         "associated_devices": [
-          "P1_QacR"
+          "device_P1_QacR"
         ],
         "parameters": {
           "y_max": 2.24,
@@ -177,7 +186,7 @@
       {
         "name": "P1_CI",
         "associated_devices": [
-          "P1_CI"
+          "device_P1_CI"
         ],
         "parameters": {
           "y_max": 2.25,
@@ -189,7 +198,7 @@
       {
         "name": "P2_CI",
         "associated_devices": [
-          "P2_CI"
+          "device_P2_CI"
         ],
         "parameters": {
           "y_max": 3.82,
@@ -201,7 +210,7 @@
       {
         "name": "P1_LexA",
         "associated_devices": [
-          "P1_LexA"
+          "device_P1_LexA"
         ],
         "parameters": {
           "y_max": 1.46,
@@ -213,7 +222,7 @@
       {
         "name": "P2_LexA",
         "associated_devices": [
-          "P2_LexA"
+          "device_P2_LexA"
         ],
         "parameters": {
           "y_max": 2.23,
@@ -225,7 +234,7 @@
       {
         "name": "P1_CI434",
         "associated_devices": [
-          "P1_CI434"
+          "device_P1_CI434"
         ],
         "parameters": {
           "y_max": 3.57,
@@ -237,7 +246,7 @@
       {
         "name": "P2_CI434",
         "associated_devices": [
-          "P2_CI434"
+          "device_P2_CI434"
         ],
         "parameters": {
           "y_max": 2.22,
@@ -249,7 +258,7 @@
       {
         "name": "P1_HKCI",
         "associated_devices": [
-          "P1_HKCI"
+          "device_P1_HKCI"
         ],
         "parameters": {
           "y_max": 2.18,
@@ -261,7 +270,7 @@
       {
         "name": "P1_PsrA",
         "associated_devices": [
-          "P1_PsrA"
+          "device_P1_PsrA"
         ],
         "parameters": {
           "y_max": 2.62,
@@ -273,7 +282,7 @@
       {
         "name": "P1_IcaR",
         "associated_devices": [
-          "P1_IcaR"
+          "device_P1_IcaR"
         ],
         "parameters": {
           "y_max": 2.65,
@@ -285,7 +294,7 @@
       {
         "name": "OR_YFP",
         "associated_devices": [
-          "output_1"
+          "device_YFP"
         ]
       }
     ]
@@ -294,109 +303,109 @@
     "class": "devices",
     "members": [
       {
-        "name": "P1_PhlF",
+        "name": "device_P1_PhlF",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P1_BM3R1",
+        "name": "device_P1_BM3R1",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P1_QacR",
+        "name": "device_P1_QacR",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P1_CI",
+        "name": "device_P1_CI",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P2_CI",
+        "name": "device_P2_CI",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P1_LexA",
+        "name": "device_P1_LexA",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P2_LexA",
+        "name": "device_P2_LexA",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P1_CI434",
+        "name": "device_P1_CI434",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P2_CI434",
+        "name": "device_P2_CI434",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P1_HKCI",
+        "name": "device_P1_HKCI",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P1_PsrA",
+        "name": "device_P1_PsrA",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "P1_IcaR",
+        "name": "device_P1_IcaR",
         "functions": [
           "NOT",
           "NOR2"
         ]
       },
       {
-        "name": "input_1",
+        "name": "device_aTc",
         "functions": [
           "INPUT"
         ]
       },
       {
-        "name": "input_2",
+        "name": "device_xyl",
         "functions": [
           "INPUT"
         ]
       },
       {
-        "name": "input_3",
+        "name": "device_IPTG",
         "functions": [
           "INPUT"
         ]
       },
       {
-        "name": "output_1",
+        "name": "device_YFP",
         "functions": [
           "OUTPUT_BUFFER",
           "OUTPUT_OR2"

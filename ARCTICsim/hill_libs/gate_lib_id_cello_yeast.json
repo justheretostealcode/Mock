@@ -30,13 +30,13 @@
         ]
       },
       {
-        "name": "BM3R1",
+        "name": "BM3RI",
         "typical": [
           0.1,
           100.0
         ],
         "associated_devices": [
-          "device_P1_BM3R1"
+          "device_P1_BM3RI"
         ]
       },
       {
@@ -160,9 +160,9 @@
         }
       },
       {
-        "name": "P1_BM3R1",
+        "name": "P1_BM3RI",
         "associated_devices": [
-          "device_P1_BM3R1"
+          "device_P1_BM3RI"
         ],
         "parameters": {
           "y_max": 5.07,
@@ -310,7 +310,7 @@
         ]
       },
       {
-        "name": "device_P1_BM3R1",
+        "name": "device_P1_BM3RI",
         "functions": [
           "NOT",
           "NOR2"

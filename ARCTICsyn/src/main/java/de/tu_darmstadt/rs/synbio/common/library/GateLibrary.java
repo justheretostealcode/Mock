@@ -279,8 +279,13 @@ public class GateLibrary {
 
                 JsonNode inflectionPoint = content.get(i).get("technology_mapping").get("inflection_point");
 
-                promoters.putIfAbsent(content.get(i).get("identifier").textValue(),
-                        new InflectionPoint(inflectionPoint.get("x_m").asDouble(), inflectionPoint.get("y_m").asDouble(), inflectionPoint.get("d_y_m").asDouble()));
+                if (inflectionPoint == null) {
+                    promoters.putIfAbsent(content.get(i).get("identifier").textValue(),
+                            new InflectionPoint(0.0, 0.0, 0.0));
+                } else {
+                    promoters.putIfAbsent(content.get(i).get("identifier").textValue(),
+                            new InflectionPoint(inflectionPoint.get("x_m").asDouble(), inflectionPoint.get("y_m").asDouble(), inflectionPoint.get("d_y_m").asDouble()));
+                }
 
             }
         }

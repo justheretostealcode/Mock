@@ -108,7 +108,7 @@ class CircuitEvaluator:
             # print(gate_output_vals)
             pass
         end = time.time()
-        print(f"Duration: {end - start}")
+        #print(f"Duration: {end - start}")
 
         circuit_output_vals = np.array(circuit_output_vals)
         circuit_energy_rates = np.array(circuit_energy_rates)

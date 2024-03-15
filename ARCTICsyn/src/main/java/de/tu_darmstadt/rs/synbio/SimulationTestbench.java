@@ -201,7 +201,7 @@ public class SimulationTestbench {
                     if (result != null) {
 
                         if (result.getStructure() != null && result.getAssignment() != null) {
-                            logger.info(child.getName() + "," + result.getScore() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + mapper.writeValueAsString(result.getAssignment().getIdentifierMap()));
+                            logger.info(child.getName() + "," + result.getScore() + "," + result.getToxicity() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + mapper.writeValueAsString(result.getAssignment().getIdentifierMap()));
                         /*AssignmentCounter counter = new AssignmentCounter(structure, gateLib, mapConfig, simConfig);
                         long maxAssignments = counter.assign().getNeededSimulations();
                         logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");*/

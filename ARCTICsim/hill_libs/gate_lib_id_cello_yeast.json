@@ -1,0 +1,416 @@
+[
+  {
+    "class": "info",
+    "members": [
+      {
+        "name": "host_name",
+        "value:": "yeast"
+      },
+      {
+        "name": "lib_id",
+        "value:": "cello_yeast"
+      },
+      {
+        "name": "creation_date",
+        "value:": "2024-03-12 18:21:41.723722"
+      }
+    ]
+  },
+  {
+    "class": "transcription_factors",
+    "members": [
+      {
+        "name": "PhlF",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_P1_PhlF"
+        ]
+      },
+      {
+        "name": "BM3RI",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_P1_BM3RI"
+        ]
+      },
+      {
+        "name": "CI",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_P1_CI",
+          "device_P2_CI"
+        ]
+      },
+      {
+        "name": "LexA",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_P1_LexA",
+          "device_P2_LexA"
+        ]
+      },
+      {
+        "name": "CI434",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_P1_CI434",
+          "device_P2_CI434"
+        ]
+      },
+      {
+        "name": "HKCI",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_P1_HKCI"
+        ]
+      },
+      {
+        "name": "PsrA",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_P1_PsrA"
+        ]
+      },
+      {
+        "name": "IcaR",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_P1_IcaR"
+        ]
+      },
+      {
+        "name": "aTc",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_aTc"
+        ]
+      },
+      {
+        "name": "xyl",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_xyl"
+        ]
+      },
+      {
+        "name": "IPTG",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_IPTG"
+        ]
+      },
+      {
+        "name": "YFP",
+        "typical": [
+          0.1,
+          100.0
+        ],
+        "associated_devices": [
+          "device_YFP"
+        ]
+      }
+    ]
+  },
+  {
+    "class": "gates",
+    "members": [
+      {
+        "name": "P1_PhlF",
+        "associated_devices": [
+          "device_P1_PhlF"
+        ],
+        "parameters": {
+          "y_max": 3.21,
+          "y_min": 0.006,
+          "K": 0.211,
+          "n": 3.57
+        }
+      },
+      {
+        "name": "P1_BM3RI",
+        "associated_devices": [
+          "device_P1_BM3RI"
+        ],
+        "parameters": {
+          "y_max": 5.07,
+          "y_min": 0.004,
+          "K": 0.134,
+          "n": 3.15
+        }
+      },
+      {
+        "name": "P1_QacR",
+        "associated_devices": [
+          "device_P1_QacR"
+        ],
+        "parameters": {
+          "y_max": 2.24,
+          "y_min": 0.002,
+          "K": 0.19,
+          "n": 3.36
+        }
+      },
+      {
+        "name": "P1_CI",
+        "associated_devices": [
+          "device_P1_CI"
+        ],
+        "parameters": {
+          "y_max": 2.25,
+          "y_min": 0.015,
+          "K": 0.0705,
+          "n": 2.06
+        }
+      },
+      {
+        "name": "P2_CI",
+        "associated_devices": [
+          "device_P2_CI"
+        ],
+        "parameters": {
+          "y_max": 3.82,
+          "y_min": 0.02,
+          "K": 0.164,
+          "n": 3.08
+        }
+      },
+      {
+        "name": "P1_LexA",
+        "associated_devices": [
+          "device_P1_LexA"
+        ],
+        "parameters": {
+          "y_max": 1.46,
+          "y_min": 0.002,
+          "K": 0.123,
+          "n": 2.94
+        }
+      },
+      {
+        "name": "P2_LexA",
+        "associated_devices": [
+          "device_P2_LexA"
+        ],
+        "parameters": {
+          "y_max": 2.23,
+          "y_min": 0.011,
+          "K": 0.286,
+          "n": 3.82
+        }
+      },
+      {
+        "name": "P1_CI434",
+        "associated_devices": [
+          "device_P1_CI434"
+        ],
+        "parameters": {
+          "y_max": 3.57,
+          "y_min": 0.02,
+          "K": 0.283,
+          "n": 3.86
+        }
+      },
+      {
+        "name": "P2_CI434",
+        "associated_devices": [
+          "device_P2_CI434"
+        ],
+        "parameters": {
+          "y_max": 2.22,
+          "y_min": 0.016,
+          "K": 0.303,
+          "n": 3.92
+        }
+      },
+      {
+        "name": "P1_HKCI",
+        "associated_devices": [
+          "device_P1_HKCI"
+        ],
+        "parameters": {
+          "y_max": 2.18,
+          "y_min": 0.02,
+          "K": 0.222,
+          "n": 2.97
+        }
+      },
+      {
+        "name": "P1_PsrA",
+        "associated_devices": [
+          "device_P1_PsrA"
+        ],
+        "parameters": {
+          "y_max": 2.62,
+          "y_min": 0.012,
+          "K": 0.355,
+          "n": 4.46
+        }
+      },
+      {
+        "name": "P1_IcaR",
+        "associated_devices": [
+          "device_P1_IcaR"
+        ],
+        "parameters": {
+          "y_max": 2.65,
+          "y_min": 0.003,
+          "K": 0.136,
+          "n": 2.72
+        }
+      },
+      {
+        "name": "OR_YFP",
+        "associated_devices": [
+          "device_YFP"
+        ]
+      }
+    ]
+  },
+  {
+    "class": "devices",
+    "members": [
+      {
+        "name": "device_P1_PhlF",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P1_BM3RI",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P1_QacR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P1_CI",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P2_CI",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P1_LexA",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P2_LexA",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P1_CI434",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P2_CI434",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P1_HKCI",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P1_PsrA",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_P1_IcaR",
+        "functions": [
+          "NOT",
+          "NOR2"
+        ]
+      },
+      {
+        "name": "device_aTc",
+        "functions": [
+          "INPUT"
+        ]
+      },
+      {
+        "name": "device_xyl",
+        "functions": [
+          "INPUT"
+        ]
+      },
+      {
+        "name": "device_IPTG",
+        "functions": [
+          "INPUT"
+        ]
+      },
+      {
+        "name": "device_YFP",
+        "functions": [
+          "OUTPUT_BUFFER",
+          "OUTPUT_OR2"
+        ]
+      }
+    ]
+  }
+]

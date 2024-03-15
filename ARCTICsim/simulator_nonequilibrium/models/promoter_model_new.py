@@ -16,7 +16,7 @@ class PromoterModel(SteadyStateCTMC):
                  input_scaling_factor,
                  infinitesimal_generator_function,
                  per_state_promoter_activity):
-        super().__init__(num_states, infinitesimal_generator_function)
+        super().__init__(num_states, infinitesimal_generator_function, n_params=num_trainable_parameters - 2)
 
         self.num_trainable_parameters = num_trainable_parameters
         self.input_scaling_factor = input_scaling_factor
@@ -37,8 +37,9 @@ class PromoterModel(SteadyStateCTMC):
         statistics = super().__call__(in_val_dict=propagation_val_dict, sim_settings=sim_settings)
         results = dict(statistics)
 
-        results["average_promoter_activity"] = self.promoter_activity @ statistics["distribution"]
-        results["average_promoter_activity_per_state"] = self.promoter_activity * statistics["distribution"]
+        average_promoter_activity_per_state = self.promoter_activity * statistics["distribution"]
+        results["average_promoter_activity_per_state"] = average_promoter_activity_per_state
+        results["average_promoter_activity"] = np.sum(average_promoter_activity_per_state, axis=-1)
         results["energy_dissipation_rate"] = statistics["entropy_production_rate"]
         results["energy_p"] = statistics["entropy_production_rate"]
         results["promoter_activity_per_state"] = self.promoter_activity
@@ -46,7 +47,7 @@ class PromoterModel(SteadyStateCTMC):
         return results
 
     def insert_params(self, new_params):
-        if len(new_params) != self.num_trainable_parameters:  # ToDo Update num trainable params in the gate lib
+        if len(new_params) != self.num_trainable_parameters:
             raise Exception(
                 f"The number of provided parameters does not match the number of available parameters ({len(new_params)} provided vs. {(self.num_trainable_parameters)} available)")
 

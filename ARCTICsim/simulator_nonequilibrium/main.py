@@ -2,7 +2,7 @@
 Author: Erik Kubaczka
 The code of Nicolai Engelmann from circuit_simulator_thermo.py was adapted to fit the needs of the new simulator.
 """
-
+import cProfile
 import json
 import os
 import inspect
@@ -27,7 +27,8 @@ def sim_run(lineargs, json_str=None):
     sim_settings = {}
     sim_settings.update(settings)
     sim_settings.pop("structure")
-    sim_settings_update = {k: v for k, v in vars(argp.parse_args(shlex.split(args, posix=False))).items() if v is not None}
+    sim_settings_update = {k: v for k, v in vars(argp.parse_args(shlex.split(args, posix=False))).items() if
+                           v is not None}
     sim_settings.update(sim_settings_update)
     assignment_string = sim_settings["assignment"]
 
@@ -45,11 +46,15 @@ def sim_run(lineargs, json_str=None):
     if "structure" in sim_settings:
         structure = load_structure(sim_settings)
         evaluator.set_structure(structure)
-    
-    #cur_profiler = profiler.start_profiler()
-    result = evaluator.score_assignment(assignment=assignment, sim_settings=sim_settings)
-    #profiler.stop_profiler(cur_profiler, suffix = "_circuit_evaluator")
 
+    # profiler = cProfile.Profile()
+    # profiler.enable()
+
+    result = evaluator.score_assignment(assignment=assignment, sim_settings=sim_settings)
+
+    # profiler.disable()
+    # profiler.dump_stats("Simulation_Profile.prof")
+    # profiler.print_stats()
 
     if "structure" in sim_settings:
         evaluator.set_structure(old_structure)
@@ -60,7 +65,6 @@ def sim_run(lineargs, json_str=None):
 # start -a {"a":1}
 # start -a={"a":"input_3","b":"input_1","c":"input_2","NOT_0":"P1_PsrA","NOT_2":"P1_IcaR","NOT_4":"P1_PhlF","NOR2_1":"P1_QacR","NOR2_3":"P1_HKCI","O":"output_1"}
 # start -a={"a":"input_3","b":"input_1","c":"input_2","NOT_0":"P1_PhlF","NOT_2":"P1_IcaR","NOT_4":"P1_PsrA","NOR2_1":"P1_QacR","NOR2_3":"P1_HKCI","O":"output_1"}
-
 
 
 def sim_exit(lineargs):
@@ -145,7 +149,6 @@ if __name__ == "__main__":
         # read in the next line and split it into command and arguments
         line_cmd, *line_args = tuple(map(str.strip, cli_io.readline().split(' ', 1)))
 
-        # ToDo Execute command
         func = command_dict[line_cmd][0]
 
         result = func(line_args)

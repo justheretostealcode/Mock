@@ -56,8 +56,11 @@ class CircuitEvaluator:
         self.DEBUG_LEVEL = settings["verbosity"]
 
     def score_assignment(self, assignment: CircuitAssignment, sim_settings: dict):
+        if "verbosity" in sim_settings:
+            self.DEBUG_LEVEL = sim_settings["verbosity"]
+
         if self.DEBUG_LEVEL >= 1:
-            print("sim_settings are currently ignored")
+            pass
 
         circuit = self.circuit
 
@@ -113,6 +116,13 @@ class CircuitEvaluator:
             circuit_energy_rates.append(energy_rates)
             detailed_circuit_energy_rates.append(detailed_energy_rates)
 
+            if self.DEBUG_LEVEL > 0:
+                print(f"\nInput Combination {input_vals_dict} -> Logic Val {output_val}")
+                for node_id in self.structure.node_infos:
+                    node_info = self.structure.node_infos[node_id]
+                    print(f"{node_id} ({node_info.type}): {cur_gate_output_vals[node_id]}")
+                pass
+
             # print(gate_output_vals)
             pass
         end = time.time()
@@ -136,7 +146,7 @@ class CircuitEvaluator:
 
         energy_score = self.energy_score(circuit_energy_rates)
 
-        detailed_energy_score = {key: self.energy_score(detailed_circuit_energy_rates[:, :, iX]) for iX, key in
+        detailed_energy_score = {key: self.energy_score(detailed_circuit_energy_rates[:, iX, :]) for iX, key in
                                  enumerate(["e_p", "e_tx", "e_tl"])}
 
         scores = {"functional_score": functional_scores,

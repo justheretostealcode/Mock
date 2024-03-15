@@ -154,8 +154,9 @@ class GeneticLogicCircuit:
             # As so, the prot_name_rpu of the cds accompanying the promoter on the gene is the required value
             cur_promoter_activity = np.zeros(n_samples)
             for gene in genes:
-                prot_name = gene.cds.name
-                cur_promoter_activity += cell_state[prot_name + "_rpu"]
+                # prot_name = gene.cds.name
+                # cur_promoter_activity += cell_state[prot_name + "_rpu"]
+                cur_promoter_activity =  gene.gene_state["average_promoter_activity"]
             gate_output_vals[gate_id] = cur_promoter_activity
             # if len(genes) > 0:
             #     cur_promoter_activity = genes[0].gene_state["average_promoter_activity"]
@@ -530,6 +531,8 @@ class Gene:
             sample = np.random.lognormal(mu, sigma)
 
             protein_level = sample
+        elif mode == "det-var":
+            protein_level = mean_P
         elif mode == "det":
             protein_level = mean_P
         else:

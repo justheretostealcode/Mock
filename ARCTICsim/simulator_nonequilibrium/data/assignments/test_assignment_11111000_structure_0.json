@@ -2,9 +2,9 @@
   "a": "device_aTc",
   "b": "device_xyl",
   "c": "device_IPTG",
-  "NOT_1": "device_P1_CI",
-  "NOR2_6": "device_P1_CI",
-  "NOR2_7": "device_P2_CI",
-  "NOR2_8": "device_P1_IcaR",
+  "NOT_1": "device_P1_BM3RI",
+  "NOR2_6": "device_P1_HKCI",
+  "NOR2_7": "device_P1_QacR",
+  "NOR2_8": "device_P1_LexA",
   "OUTPUT_OR2_9": "device_YFP"
 }

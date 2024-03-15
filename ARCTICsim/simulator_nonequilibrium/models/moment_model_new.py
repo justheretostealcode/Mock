@@ -23,6 +23,10 @@ class RNAMomentModel:
         self.energy_per_rna = (self.energy_per_nucleotide * self.length + self.energy_per_rna)
 
     def __call__(self, promoter_output: dict, sim_settings: dict, *args, **kwargs) -> dict:
+        mode = "det"
+        if "mode" in sim_settings:
+            mode = sim_settings["mode"]
+
         rna_output = dict(promoter_output)
 
         propensity_matrix = promoter_output["propensity_matrix"]
@@ -44,7 +48,7 @@ class RNAMomentModel:
         """
         self.var = np.nan * np.empty(shape=self.mean.shape)
         M_inv = None
-        if "mode" in sim_settings and sim_settings["mode"] != "det":
+        if mode != "det":
             M_inv = np.linalg.inv(
                 self.degradation_rate * np.eye(*propensity_matrix.shape[1:]) - propensity_matrix.transpose((0, 2, 1)))
             rna_promoter_state_correlation = M_inv @ np.expand_dims(avg_promoter_activity_per_state, axis=-1)
@@ -53,7 +57,6 @@ class RNAMomentModel:
             E_rna_squared = np.expand_dims(promoter_activity_per_state, axis=-2) @ np.expand_dims(
                 rna_promoter_state_correlation, axis=-1)
             E_rna_squared = self.mean + l * E_rna_squared[:, 0, 0]  # Performs squeezing of axis 1 and 2
-
 
             self.var = E_rna_squared - self.mean ** 2
 

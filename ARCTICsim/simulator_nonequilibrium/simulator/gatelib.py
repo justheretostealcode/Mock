@@ -2,8 +2,7 @@ import cProfile
 
 import numpy as np
 
-from models.moment_model_new import RNAMomentModel, ProteinMomentModel, \
-    CombinedMomentModel
+from models.moment_model_new import RNAMomentModel, ProteinMomentModel, CombinedMomentModel
 from models.promoter_model_new import PromoterModel
 
 from simulator.utils import JsonFile
@@ -114,8 +113,6 @@ class GateLibCollectionBased:
             self.objects_by_id[object.id] = object
             self.objects_by_collection[collection_type].append(object)
             self.objects_by_class[class_var].append(object)
-
-            # ToDo Populate Entries
 
         # self.gates = []
         # for gate_entry in json_file.data:
@@ -268,6 +265,8 @@ class SensorPromoter(Promoter):
         # Model Info provides a table providing the mapping of inducer concentration to RPU
 
         LUT = model_info["LUT"]
+        val_LUT = {float(val): LUT[val] for val in LUT}
+        values = np.array(list(val_LUT.items()))
 
         model_LUT = {}
         for input_val in LUT:
@@ -286,7 +285,14 @@ class SensorPromoter(Promoter):
         look_up_func = lambda val: model_LUT[val]
         look_up_func_vectorized = np.vectorize(look_up_func)
 
-        def model(in_val_dict: dict, sim_settings: dict, *args, **kwargs):
+        # Setup linear interpolation
+        diffs = np.diff(values, axis=0)
+        steepnes = diffs[:, 1] / diffs[:, 0]
+        offset = values[:-1, 1] - steepnes * values[:-1, 0]
+
+        def model_old(in_val_dict: dict, sim_settings: dict, *args, **kwargs):
+            # Terribly slow despite the use of vectorize
+            # Requires up to 0.6 s for 1000 particle simulation which is around 56 % of the total time
             def look_up_func(val):
                 promoter_model = model_LUT[val]
                 n_samples = sim_settings["n_samples_simulation"]
@@ -298,6 +304,63 @@ class SensorPromoter(Promoter):
             cognate_inducer_concentration = np.array(in_val_dict["c"])
             look_up_func_vectorized = np.vectorize(look_up_func)
             results = look_up_func_vectorized(cognate_inducer_concentration)
+            result = {}
+
+            for key in results[0]:
+                if key == "promoter_activity_per_state":
+                    continue
+                accumulation = [elem[key] for elem in results]
+                result[key] = np.concatenate(accumulation, axis=0)
+
+            result["promoter_activity_per_state"] = np.array([results[0]["promoter_activity_per_state"]])
+            return result
+
+        zero_array = np.array([0])
+
+        def get_promoter_info(val):
+
+            promoter_info = {"distribution": np.array([[1]]),
+                             "propensity_matrix": np.array([[[0]]]),
+                             "entropy_production_rate": zero_array,
+                             "average_promoter_activity_per_state": np.array([[val]]),
+                             "average_promoter_activity": np.array([val]),
+                             "energy_dissipation_rate": zero_array,
+                             "energy_p": zero_array,
+                             "promoter_activity_per_state": np.array([val])}
+            return promoter_info
+
+        def model(in_val_dict: dict, sim_settings: dict, *args, **kwargs):
+            def look_up_func(val):
+                promoter_model = model_LUT[val]
+                n_samples = sim_settings["n_samples_simulation"]
+                sim_settings["n_samples_simulation"] = 1
+                result = promoter_model({"c": np.zeros(1)}, sim_settings=sim_settings, *args, **kwargs)
+                sim_settings["n_samples_simulation"] = n_samples
+                return result
+
+            quick_mode = "quick" in sim_settings and sim_settings["quick"]
+
+            # Perform Interpolation
+            cognate_inducer_concentration = np.array(in_val_dict["c"])
+            cognate_inducer_concentration = np.expand_dims(cognate_inducer_concentration, -1)
+            if quick_mode:
+                interpolations = steepnes * cognate_inducer_concentration[:1] + offset
+                indicator_function_1 = cognate_inducer_concentration[:1] >= values[:, 0]
+                # indicator_function_1 = np.expand_dims(indicator_function_1, -1)
+            else:
+                interpolations = steepnes * cognate_inducer_concentration + offset
+                indicator_function_1 = cognate_inducer_concentration >= values[:, 0]
+
+                # indicator_function_2 = cognate_inducer_concentration <= values[:, 0]
+            indicator_function = np.argmax(indicator_function_1, axis=1)
+            interpolation_result = interpolations[np.arange(interpolations.shape[0]), indicator_function]
+
+            if quick_mode:
+                promoter_info = get_promoter_info(interpolation_result[0])
+                results = [dict(promoter_info) for _ in range(cognate_inducer_concentration.shape[0])]
+            else:
+                results = [get_promoter_info(val) for val in interpolation_result]
+
             result = {}
 
             for key in results[0]:

@@ -315,28 +315,21 @@ class SensorPromoter(Promoter):
             result["promoter_activity_per_state"] = np.array([results[0]["promoter_activity_per_state"]])
             return result
 
-        zero_array = np.array([0])
+
 
         def get_promoter_info(val):
 
             promoter_info = {"distribution": np.array([[1]]),
                              "propensity_matrix": np.array([[[0]]]),
-                             "entropy_production_rate": zero_array,
+                             "entropy_production_rate":  np.array([0]),
                              "average_promoter_activity_per_state": np.array([[val]]),
                              "average_promoter_activity": np.array([val]),
-                             "energy_dissipation_rate": zero_array,
-                             "energy_p": zero_array,
+                             "energy_dissipation_rate":  np.array([0]),
+                             "energy_p":  np.array([0]),
                              "promoter_activity_per_state": np.array([val])}
             return promoter_info
 
         def model(in_val_dict: dict, sim_settings: dict, *args, **kwargs):
-            def look_up_func(val):
-                promoter_model = model_LUT[val]
-                n_samples = sim_settings["n_samples_simulation"]
-                sim_settings["n_samples_simulation"] = 1
-                result = promoter_model({"c": np.zeros(1)}, sim_settings=sim_settings, *args, **kwargs)
-                sim_settings["n_samples_simulation"] = n_samples
-                return result
 
             quick_mode = "quick" in sim_settings and sim_settings["quick"]
 
@@ -345,19 +338,20 @@ class SensorPromoter(Promoter):
             cognate_inducer_concentration = np.expand_dims(cognate_inducer_concentration, -1)
             if quick_mode:
                 interpolations = steepnes * cognate_inducer_concentration[:1] + offset
-                indicator_function_1 = cognate_inducer_concentration[:1] >= values[:, 0]
+                # indicator_function_1 = cognate_inducer_concentration[:1] >= values[:, 0]
                 # indicator_function_1 = np.expand_dims(indicator_function_1, -1)
+                indicator_function_2 = cognate_inducer_concentration[:1] <= values[:, 0]
             else:
                 interpolations = steepnes * cognate_inducer_concentration + offset
-                indicator_function_1 = cognate_inducer_concentration >= values[:, 0]
+                # indicator_function_1 = cognate_inducer_concentration >= values[:, 0]
+                indicator_function_2 = cognate_inducer_concentration <= values[:, 0]
 
-                # indicator_function_2 = cognate_inducer_concentration <= values[:, 0]
-            indicator_function = np.argmax(indicator_function_1, axis=1)
+            indicator_function = np.argmax(indicator_function_2, axis=1)
             interpolation_result = interpolations[np.arange(interpolations.shape[0]), indicator_function]
 
             if quick_mode:
                 promoter_info = get_promoter_info(interpolation_result[0])
-                results = [dict(promoter_info) for _ in range(cognate_inducer_concentration.shape[0])]
+                results = [promoter_info] * cognate_inducer_concentration.shape[0]
             else:
                 results = [get_promoter_info(val) for val in interpolation_result]
 

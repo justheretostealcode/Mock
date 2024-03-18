@@ -496,7 +496,8 @@ def match_promoter(response_characteristic: dict,
     # matching_modes = ["det", "det-var"]
     # sample_counts = [1, 1]
     # ToDo There ist a difference in the outcome between "det" and "det-var" despite the variance being ignored by custom_weights currently
-    matching_modes = ["det-var"]
+    # matching_modes = ["det-var"]
+    matching_modes = ["det"]
     sample_counts = [1]
     max_fev_per_params = [1200]
     eval_sample_count = 1000

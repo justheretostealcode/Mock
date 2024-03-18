@@ -24,6 +24,8 @@ class PromoterModel(SteadyStateCTMC):
         self.promoter_state_class = np.array(per_state_promoter_activity)
         self.promoter_activity = np.array(per_state_promoter_activity)
 
+        self.c_val = 10 ** (-6) #  A choice of 10**(-4) would be numerically more stable
+
     def __call__(self, in_val_dict: dict, sim_settings: dict, *args, **kwargs) -> dict:
         """
         :param in_val:
@@ -32,7 +34,12 @@ class PromoterModel(SteadyStateCTMC):
         :return:
         """
 
-        propagation_val_dict = {key: in_val_dict[key] * self.input_scaling_factor for key in in_val_dict}
+        propagation_val_dict = {} # {key: in_val_dict[key] * self.input_scaling_factor for key in in_val_dict}
+
+        for key in in_val_dict:
+            new_vals = in_val_dict[key] * self.input_scaling_factor
+            new_vals[new_vals < self.c_val] = self.c_val
+            propagation_val_dict[key] = new_vals
 
         statistics = super().__call__(in_val_dict=propagation_val_dict, sim_settings=sim_settings)
         results = dict(statistics)

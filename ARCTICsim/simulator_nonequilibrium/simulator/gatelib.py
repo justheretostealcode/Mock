@@ -175,7 +175,8 @@ class GateLibEntry:
                 f"Mismatch in collection (Trying to instantiate {self.collection_identifier} with an entry of collection {self.collection})")
 
     def __str__(self):
-        return f"{type(self)} {self.id}"
+        #return f"{self.collection_identifier} {self.id}"
+        return f"{self.id}"
 
 
 class GateLibModelEntry(GateLibEntry):
@@ -268,52 +269,52 @@ class SensorPromoter(Promoter):
         val_LUT = {float(val): LUT[val] for val in LUT}
         values = np.array(list(val_LUT.items()))
 
-        model_LUT = {}
-        for input_val in LUT:
-            num_states = 1
-            num_trainable_parameters = 0
-            promoter_activity = [LUT[input_val]]
-            infinitesimal_generator_function = {"matrices": {"1": [[0]]}}
-            input_scaling_factor = 1
-            promoter_model = PromoterModel(num_states,
-                                           num_trainable_parameters,
-                                           input_scaling_factor=input_scaling_factor,
-                                           infinitesimal_generator_function=infinitesimal_generator_function,
-                                           per_state_promoter_activity=promoter_activity)
-            model_LUT[float(input_val)] = promoter_model
+        # model_LUT = {}
+        # for input_val in LUT:
+        #     num_states = 1
+        #     num_trainable_parameters = 0
+        #     promoter_activity = [LUT[input_val]]
+        #     infinitesimal_generator_function = {"matrices": {"1": [[0]]}}
+        #     input_scaling_factor = 1
+        #     promoter_model = PromoterModel(num_states,
+        #                                    num_trainable_parameters,
+        #                                    input_scaling_factor=input_scaling_factor,
+        #                                    infinitesimal_generator_function=infinitesimal_generator_function,
+        #                                    per_state_promoter_activity=promoter_activity)
+        #     model_LUT[float(input_val)] = promoter_model
 
-        look_up_func = lambda val: model_LUT[val]
-        look_up_func_vectorized = np.vectorize(look_up_func)
+        # look_up_func = lambda val: model_LUT[val]
+        # look_up_func_vectorized = np.vectorize(look_up_func)
 
         # Setup linear interpolation
         diffs = np.diff(values, axis=0)
         steepnes = diffs[:, 1] / diffs[:, 0]
         offset = values[:-1, 1] - steepnes * values[:-1, 0]
 
-        def model_old(in_val_dict: dict, sim_settings: dict, *args, **kwargs):
-            # Terribly slow despite the use of vectorize
-            # Requires up to 0.6 s for 1000 particle simulation which is around 56 % of the total time
-            def look_up_func(val):
-                promoter_model = model_LUT[val]
-                n_samples = sim_settings["n_samples_simulation"]
-                sim_settings["n_samples_simulation"] = 1
-                result = promoter_model({"c": np.zeros(1)}, sim_settings=sim_settings, *args, **kwargs)
-                sim_settings["n_samples_simulation"] = n_samples
-                return result
-
-            cognate_inducer_concentration = np.array(in_val_dict["c"])
-            look_up_func_vectorized = np.vectorize(look_up_func)
-            results = look_up_func_vectorized(cognate_inducer_concentration)
-            result = {}
-
-            for key in results[0]:
-                if key == "promoter_activity_per_state":
-                    continue
-                accumulation = [elem[key] for elem in results]
-                result[key] = np.concatenate(accumulation, axis=0)
-
-            result["promoter_activity_per_state"] = np.array([results[0]["promoter_activity_per_state"]])
-            return result
+        # def model_old(in_val_dict: dict, sim_settings: dict, *args, **kwargs):
+        #     # Terribly slow despite the use of vectorize
+        #     # Requires up to 0.6 s for 1000 particle simulation which is around 56 % of the total time
+        #     def look_up_func(val):
+        #         promoter_model = model_LUT[val]
+        #         n_samples = sim_settings["n_samples_simulation"]
+        #         sim_settings["n_samples_simulation"] = 1
+        #         result = promoter_model({"c": np.zeros(1)}, sim_settings=sim_settings, *args, **kwargs)
+        #         sim_settings["n_samples_simulation"] = n_samples
+        #         return result
+        #
+        #     cognate_inducer_concentration = np.array(in_val_dict["c"])
+        #     look_up_func_vectorized = np.vectorize(look_up_func)
+        #     results = look_up_func_vectorized(cognate_inducer_concentration)
+        #     result = {}
+        #
+        #     for key in results[0]:
+        #         if key == "promoter_activity_per_state":
+        #             continue
+        #         accumulation = [elem[key] for elem in results]
+        #         result[key] = np.concatenate(accumulation, axis=0)
+        #
+        #     result["promoter_activity_per_state"] = np.array([results[0]["promoter_activity_per_state"]])
+        #     return result
 
 
 

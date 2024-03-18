@@ -30,16 +30,22 @@ class SteadyStateCTMC:
     def update_infinitesimal_generator_function(self, new_function: dict):
         self.infinitesimal_generator_function = new_function
 
-        self.infinitesimal_generator_function["matrices"] = {key: np.array(new_function["matrices"][key])
-                                                             for key in new_function["matrices"]}
+        matrices = {key: np.array(new_function["matrices"][key])
+                    for key in new_function["matrices"]}
+        self.infinitesimal_generator_function["matrices"] = matrices
 
+        self.mask = np.sum([matrices[key] for key in matrices], 0) != 0
+        self.mask_strictly_upper = np.array(self.mask)
+        self.mask_strictly_upper[np.tril_indices_from(self.mask, k=0)] = 0
+        self.mask_strictly_lower = np.array(self.mask)
+        self.mask_strictly_lower[np.triu_indices_from(self.mask, k=0)] = 0
         clear_cache()
 
     def insert_rates(self, new_rates):
         if len(new_rates) != self.n_params:
             raise Exception(
                 f"insert_rates currently only supports the six state two binding site promoter model with {self.n_params} rate constants.")
-        if self.n_params == 14:
+        if self.N_states == 6 and self.n_params == 14:
             k_01, k_03, k_10, k_12, k_14, k_21, k_25, k_30, k_34, k_41, k_43, k_45, k_52, k_54 = new_rates
             matrices = {"c":
                             [[-(k_01), k_01, 0, 0, 0, 0],
@@ -56,7 +62,7 @@ class SteadyStateCTMC:
                              [0, k_41, 0, k_43, -(k_41 + k_43), 0],
                              [0, 0, k_52, 0, k_54, -(k_52 + k_54)]]
                         }
-        elif self.n_params == 20:
+        elif self.N_states == 8 and self.n_params == 20:
             k_01, k_04, k_10, k_12, k_15, k_21, k_23, k_26, k_32, k_37, k_40, k_45, k_51, k_54, k_56, k_62, k_65, k_67, k_73, k_76 = new_rates
 
             matrices = {"c": [[-(k_01), k_01, 0, 0, 0, 0, 0, 0],
@@ -195,7 +201,6 @@ class SteadyStateCTMC:
             # We have to take the absolute values as numerical precision can potentially be insufficient and yield negative weights.
             state_weights = np.abs(state_weights)
 
-
         distribution = state_weights / np.expand_dims(np.sum(state_weights, -1), -1)
 
         return distribution
@@ -220,16 +225,21 @@ class SteadyStateCTMC:
         n_samples = distribution.shape[0]
 
         flux_mat = propensity_mat * np.expand_dims(distribution, -1)
+        upper_vals = flux_mat
+        lower_vals = flux_mat
+#        upper_vals = np.triu(flux_mat, k=1)
+#        lower_vals = np.tril(flux_mat, k=-1)
+#        lower_vals = lower_vals.transpose((0, 2, 1))
+        # mask = lower_vals > 10**(-10)
+#        mask = self.mask
+        mask_strictly_upper = np.transpose(np.tile(np.expand_dims(self.mask_strictly_upper, -1), n_samples), (2, 0, 1))
+        mask_strictly_lower = np.transpose(np.tile(np.expand_dims(self.mask_strictly_lower, -1), n_samples), (2, 0, 1))
 
-        upper_vals = np.triu(flux_mat, k=1)
-        lower_vals = np.tril(flux_mat, k=-1)
-        lower_vals = lower_vals.transpose((0, 2, 1))
-        mask = lower_vals != 0
-
-        upper_vals = upper_vals[mask].reshape(n_samples, -1)
-        lower_vals = lower_vals[mask].reshape(n_samples, -1)
+        upper_vals = upper_vals[mask_strictly_upper].reshape(n_samples, -1)
+        lower_vals = lower_vals[mask_strictly_lower].reshape(n_samples, -1)
 
         entropy_production_rate_contributions = (upper_vals - lower_vals) * np.log(upper_vals / lower_vals)
+        entropy_production_rate_contributions[np.isnan(entropy_production_rate_contributions)] = 0
         entropy_production_rate = np.sum(entropy_production_rate_contributions, axis=-1)
 
         # Reimplement this in a more efficient way

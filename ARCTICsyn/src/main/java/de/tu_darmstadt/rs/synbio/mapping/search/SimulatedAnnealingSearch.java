@@ -44,9 +44,9 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         MULTI
     }
 
-    private double lowerScore = 0.0;
-    private double upperEnergy = Double.POSITIVE_INFINITY;
-    private final Objective objective = Objective.SCORE_ONLY;
+    private double lowerScore = 200.0;
+    private double upperEnergy = 65000;//Double.POSITIVE_INFINITY;
+    private final Objective objective = Objective.ENERGY;
 
     private double energyScaler;
 
@@ -132,9 +132,9 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         double temperature = getInitialTemperature(simulator);
         double coolingFactor;
 
-        int movesPerTemp = (int) Math.pow(problemSize, 0.5);
+        int movesPerTemp = 2 * (int) Math.pow(problemSize, 0.5);
 
-        while(acceptanceRate >= 0.3) {
+        while(acceptanceRate >= 0.25) {
 
             neighbor = getNeighbor(current, radius);
 
@@ -195,8 +195,9 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
         }
 
-        MappingResult result = new MappingResult(structure, current, simulator.simulate(current));
-        logger.info(upperEnergy + ", " + result.getScore() + ", " + simulator.getEnergy());
+        MappingResult result = new MappingResult(structure, current, simulator.simulate(current), simulator.getEnergy());
+
+        //logger.info(upperEnergy + ", " + result.getScore() + ", " + simulator.getEnergy());
         //logger.info(result.getScore() + ", " + simulator.getEnergy());
          result.setNeededSimulations(simCount);
         simulator.shutdown();

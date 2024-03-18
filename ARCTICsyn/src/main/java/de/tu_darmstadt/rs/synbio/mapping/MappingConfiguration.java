@@ -96,7 +96,7 @@ public class MappingConfiguration {
             if (!compatibilityLibrary.exists())
                 logger.info("Compatibility library file " + compatibilityLibrary.getAbsolutePath() + " does not exist. Assuming full compatibility.");
         } else {
-            logger.info("No compatibility library given. Assuming full compatibility.");
+            //logger.info("No compatibility library given. Assuming full compatibility.");
         }
 
         switch (props.getProperty("SEARCH_ALGORITHM")) {

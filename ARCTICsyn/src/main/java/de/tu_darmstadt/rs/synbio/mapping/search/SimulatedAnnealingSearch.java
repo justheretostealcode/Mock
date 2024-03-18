@@ -44,9 +44,9 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         MULTI
     }
 
-    private double lowerScore = 100.0;
+    private double lowerScore = 200.0;
     private double upperEnergy = 65000;//Double.POSITIVE_INFINITY;
-    private final Objective objective = Objective.SCORE;
+    private final Objective objective = Objective.ENERGY;
 
     private double energyScaler;
 

@@ -111,6 +111,7 @@ public class SimulatorInterfaceEnergy {
 
                 if (!simProcess.isAlive()) {
                     logger.error("Simulator exited during simulation: " + getError());
+                    logger.error("Assignment:"  + assignmentStr);
                     shutdown();
                     return 0.0;
                 }

@@ -32,7 +32,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
     }
 
     private static final boolean printTrajectory = false;
-    private static final boolean useRadius = false;
+    private static final boolean useRadius = true;
 
     private double maxDistance = 0.0;
     private double minDistance = Double.MAX_VALUE;
@@ -211,7 +211,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
     private double getInitialTemperature(SimulatorInterfaceEnergy simulator) {
 
-        int numSamples = 1000;
+        int numSamples = 10;
 
         double[] scoreSample = new double[numSamples];
         double[] energySample = new double[numSamples];

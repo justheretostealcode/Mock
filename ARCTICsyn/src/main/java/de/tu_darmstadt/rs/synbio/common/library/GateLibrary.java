@@ -255,7 +255,6 @@ public class GateLibrary {
             this.y_m = y_m;
             this.d_y_m = d_y_m;
         }
-
     }
 
     private void loadEnergyLibrary(File libraryFile) {
@@ -286,7 +285,6 @@ public class GateLibrary {
                     promoters.putIfAbsent(content.get(i).get("identifier").textValue(),
                             new InflectionPoint(inflectionPoint.get("x_m").asDouble(), inflectionPoint.get("y_m").asDouble(), inflectionPoint.get("d_y_m").asDouble()));
                 }
-
             }
         }
 

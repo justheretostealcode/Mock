@@ -33,7 +33,7 @@ public class ExhaustiveSearch extends AssignmentSearchAlgorithm {
         int maxThreads = Runtime.getRuntime().availableProcessors() - 1;
         int availableProcessors = simConfig.getSimLimitThreadsNum() != 0 ? Math.min(simConfig.getSimLimitThreadsNum(), maxThreads) : maxThreads;
 
-        //logger.info("Simulating \"" + structure.getIdentifier() + "\" (up to " + assigner.getNumTotalPermutations() + " assignments) with " + availableProcessors + " threads");
+        logger.info("Simulating \"" + structure.getIdentifier() + "\" (up to " + assigner.getNumTotalPermutations() + " assignments) with " + availableProcessors + " threads");
 
         for (int i = 0; i < availableProcessors; i ++) {
             workers.add(new ExhaustiveSearchWorker(assigner, structure, mapConfig, simConfig, gateLib, fixedInputs));

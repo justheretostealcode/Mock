@@ -468,8 +468,11 @@ def match_promoter(response_characteristic: dict,
             sim_settings={"mode": "samp", "n_samples_simulation": n_vals})
         average_promoter_activity = output_dict["average_promoter_activity"]
         diffs = np.diff(np.log(average_promoter_activity))
-
         monotonicity_loss = np.sum(np.abs(diffs[diffs > 0]))
+
+        # genes
+
+
         error = loss + 0.1 * monotonicity_loss
         return error
 
@@ -511,12 +514,16 @@ def match_promoter(response_characteristic: dict,
     # sample_counts = [1, 1]
 
     if True:
+        matching_modes = ["det", "det-var"]
+        sample_counts = [1, 1]  # "det-var" only requires a single sample
+
         matching_modes = ["det-var"]
         sample_counts = [1]  # "det-var" only requires a single sample
     else:
         matching_modes = ["samp"]
         sample_counts = [200]
-    max_fev_per_params = [1200]  # 1200
+    max_fev_per_params = [100, 500]  # 1200
+    max_fev_per_params = [500]  # 1200
     eval_sample_count = 1000  # 1000
     num_trials = 10  # 10
 
@@ -526,7 +533,26 @@ def match_promoter(response_characteristic: dict,
     best_params = None
 
     for iR in range(num_trials):
+        mask_mean = [label == "mean" for label in labels]
+        Y_mean = [y[mask_mean] for y in Y]
+        y_on = np.max(Y_mean)
+        y_off = np.min(Y_mean)
+
+        # y_on, y_off, k_01, k_04, k_10, k_12, k_15, k_21, k_23, k_26, k_32, k_37, k_40, k_45, k_51, k_54, k_56, k_62, k_65, k_67, k_73, k_76
+
         initial_params = None
+
+        initial_params = [y_on, y_off]
+        initial_params += list(np.random.rand(num_params - 2) * 2 - 1)
+        initial_params[3] = 2  # k_04
+        initial_params[12] = -2  # k_40
+        initial_params[6] = 1  # k_15
+        initial_params[14] = -1  # k_51
+        initial_params[9] = -1  # k_26
+        initial_params[17] = 1  # k_62
+        initial_params[11] = -2  # k_37
+        initial_params[20] = 2  # k_73
+
         ####################################
         # Perform multiple sequential optimization steps which are combined  #
         ####################################
@@ -536,10 +562,7 @@ def match_promoter(response_characteristic: dict,
             ####################################
             # Setup Parameter Matching Context #
             ####################################
-            mask_mean = [label == "mean" for label in labels]
-            Y_mean = [y[mask_mean] for y in Y]
-            y_on = np.max(Y_mean)
-            y_off = np.min(Y_mean)
+
             # y_on = ref_params[0]
             # y_off = ref_params[1]
 
@@ -552,6 +575,7 @@ def match_promoter(response_characteristic: dict,
 
             # bounds = [(y_on, y_on), (y_off, y_off)] + [[-5, 5] for _ in range(14)]
             # bounds = [(y_on, y_on), (y_off * 0.5, y_off)] + [[-5, 5] for _ in range(14)]
+            bounds = [(y_on, y_on * 2), (y_off * 0.5, y_off)] + [[-5, 5] for _ in range(num_params - 2)]
             bounds = [(y_on, y_on * 2), (y_off * 0.5, y_off)] + [[-5, 5] for _ in range(num_params - 2)]
             # training_data = [np.array([X[0], X[-1]]), np.array([Y[0], Y[-1]])]
             training_data = {"X": X,
@@ -669,9 +693,10 @@ def match_promoter(response_characteristic: dict,
     ax.set_yscale("log")
     # ax.set_xlim((10 ** (-2), 10 ** (-1)))
     # ax.set_ylim((10 ** (0), 10 ** (1)))
-    dir_path = "ARCTICsim/simulator_nonequilibrium/data/gate_libs/figures/"
+    dir_path = "data/gate_libs/figures/"
     plt.savefig(dir_path + gate_name + ".png", dpi=600)
     # plt.show()
+    plt.close()
 
     ####################
     # Curve evaluation #
@@ -721,7 +746,7 @@ def match_promoter(response_characteristic: dict,
                         color="blue", alpha=0.1)
     ax.set_xscale("log")
     ax.set_yscale("log")
-    dir_path = "ARCTICsim/simulator_nonequilibrium/data/gate_libs/figures/"
+    dir_path = "data/gate_libs/figures/"
     # ax.set_xlim((10 ** (-3), 10 ** (2)))
     # ax.set_ylim((10 ** (-3), 10 ** (2)))
     plt.savefig(dir_path + gate_name + "_rpu.png", dpi=600)
@@ -812,7 +837,7 @@ End of Paper data
 if __name__ == '__main__':
     # The cello for yeast library can be downloaded in
     # the Supplementary Information section of https://www.nature.com/articles/s41564-020-0757-2#additional-information
-    cello_library_path = "ARCTICsim/simulator_nonequilibrium/data/reference_data/yeast/SC1C1G1T1.UCF.json"
+    cello_library_path = "data/reference_data/yeast/SC1C1G1T1.UCF.json"
     cello_library_json = JsonFile(path=cello_library_path)
     cello_library = cello_library_json.data
     collections = set([elem["collection"] for elem in cello_library])
@@ -1010,6 +1035,6 @@ if __name__ == '__main__':
     custom_lib = {elem["identifier"]: elem for elem in custom_lib}
     custom_lib = list(custom_lib.values())
 
-    output_dir = "ARCTICsim/simulator_nonequilibrium/data/gate_libs/"
+    output_dir = "data/gate_libs/"
     with open(output_dir + "gate_lib_yeast_generated.json", "w") as file:
         json.dump(custom_lib, file, indent=4)

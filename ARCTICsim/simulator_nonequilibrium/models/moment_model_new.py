@@ -49,8 +49,8 @@ class RNAMomentModel:
         self.var = np.nan * np.empty(shape=self.mean.shape)
         M_inv = None
         if mode != "det":
-            M_inv = np.linalg.inv(
-                self.degradation_rate * np.eye(*propensity_matrix.shape[1:]) - propensity_matrix.transpose((0, 2, 1)))
+            M = self.degradation_rate * np.eye(*propensity_matrix.shape[1:]) - propensity_matrix.transpose((0, 2, 1))
+            M_inv = np.linalg.inv(M)
             rna_promoter_state_correlation = M_inv @ np.expand_dims(avg_promoter_activity_per_state, axis=-1)
             rna_promoter_state_correlation = self.transcription_rate * rna_promoter_state_correlation.squeeze(axis=-1)
             # Equation is checked

@@ -179,7 +179,7 @@ class CircuitEvaluator:
             critical_indexes[out_id] = {0: critical_index_off, 1: critical_index_on}
 
             if self.DEBUG_LEVEL >= 2:
-
+                print("Extreme Vals:", np.median(cur_entry[0][critical_index_off]),np.median(cur_entry[1][critical_index_on]) )
                 fig, axes = plt.subplots(nrows=len(truthtable.truthtable), sharex=True, sharey=False)
                 for iE, elem in enumerate(circuit_output_vals):
                     ax = axes[iE]

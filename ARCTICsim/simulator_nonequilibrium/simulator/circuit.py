@@ -162,7 +162,8 @@ class GeneticLogicCircuit:
                 # The current value isn't the actual promoter activity but the rescaled protein level
                 cur_promoter_activity += gene.gene_state["protein_level"] / gene.cds.model.scaling_factor
 
-            gate_output_vals[gate_id] = cur_promoter_activity / len(genes)
+            num_genes = len(genes)
+            gate_output_vals[gate_id] = cur_promoter_activity / num_genes if num_genes > 1 else cur_promoter_activity
             # if len(genes) > 0:
             #     cur_promoter_activity = genes[0].gene_state["average_promoter_activity"]
             #     gate_output_vals[gate_id] = cur_promoter_activity

@@ -50,9 +50,11 @@ class RNAMomentModel:
         M_inv = None
         if mode != "det":
             M = self.degradation_rate * np.eye(*propensity_matrix.shape[1:]) - propensity_matrix.transpose((0, 2, 1))
-            M_inv = np.linalg.inv(M)
-            rna_promoter_state_correlation = M_inv @ np.expand_dims(avg_promoter_activity_per_state, axis=-1)
-            rna_promoter_state_correlation = self.transcription_rate * rna_promoter_state_correlation.squeeze(axis=-1)
+            # M_inv = np.linalg.inv(M)
+            # rna_promoter_state_correlation_legacy = M_inv @ np.expand_dims(avg_promoter_activity_per_state, axis=-1)
+            # rna_promoter_state_correlation_legacy = self.transcription_rate * rna_promoter_state_correlation_legacy.squeeze(axis=-1)
+            rna_promoter_state_correlation = np.linalg.solve(M, avg_promoter_activity_per_state)
+            rna_promoter_state_correlation = self.transcription_rate * rna_promoter_state_correlation
             # Equation is checked
             E_rna_squared = np.expand_dims(promoter_activity_per_state, axis=-2) @ np.expand_dims(
                 rna_promoter_state_correlation, axis=-1)
@@ -69,7 +71,7 @@ class RNAMomentModel:
 
         rna_output["rna_mean"] = self.mean
         rna_output["rna_var"] = self.var
-        rna_output["M_inv"] = M_inv
+        rna_output["M"] = M
         rna_output["transcription_rate"] = self.transcription_rate
         rna_output["rna_degradation_rate"] = self.degradation_rate
         rna_output["rna_mean_energy_dissipation_rate"] = self.mean_energy_dissipation_rate
@@ -106,7 +108,7 @@ class ProteinMomentModel:
         promoter_activity_per_state = rna_output["promoter_activity_per_state"]
         transcription_rate = rna_output["transcription_rate"]
         rna_degradation_rate = rna_output["rna_degradation_rate"]
-        M_inv = rna_output["M_inv"]
+        M = rna_output["M"]
         rna_mean = rna_output["rna_mean"]
         rna_var = rna_output["rna_var"]
 
@@ -125,26 +127,30 @@ class ProteinMomentModel:
         self.protein_rna_covariance = np.nan * np.ones(shape=self.mean.shape)
         # raise Exception("Reimplement on the basis of E[n_m * n_p]")
 
-        if mode != "det" and M_inv is not None:
-            M_inv_2 = np.linalg.inv(
-                self.degradation_rate * np.eye(*propensity_matrix.shape[1:]) - propensity_matrix.transpose((0, 2, 1)))
+        if mode != "det" and M is not None:
+            # M_inv = np.linalg.inv(M)
+            M_2 = self.degradation_rate * np.eye(*propensity_matrix.shape[1:]) - propensity_matrix.transpose((0, 2, 1))
+            # M_inv_2 = np.linalg.inv(M_2)
 
             denominator = rna_degradation_rate + self.degradation_rate
 
-            promoter_activity_per_state = np.expand_dims(promoter_activity_per_state,
-                                                         axis=-2)  # Transforms it into a matrix representing a row vector
-            avg_promoter_activity_per_state = np.expand_dims(avg_promoter_activity_per_state,
-                                                             axis=-1)  # Transforms it into a matrix representing a column vector
+            # Transforms it into a matrix representing a row vector
+            # promoter_activity_per_state_legacy = np.expand_dims(promoter_activity_per_state, axis=-2)
+            # Transforms it into a matrix representing a column vector
+            # avg_promoter_activity_per_state_legacy = np.expand_dims(avg_promoter_activity_per_state, axis=-1)
 
             # One could save a matrix multiplication by reusing a result from the RNAMomentModel
             # protein_promoter_correlation = self.translation_rate * transcription_rate * M_inv_2 @ M_inv \ @ avg_promoter_activity_per_state
-            protein_promoter_correlation = self.translation_rate * transcription_rate * M_inv_2 @ M_inv @ avg_promoter_activity_per_state
-
+            # protein_promoter_correlation_legacy = self.translation_rate * transcription_rate * M_inv_2 @ M_inv @ avg_promoter_activity_per_state_legacy
+            protein_promoter_correlation = np.linalg.solve(M @ M_2, self.translation_rate * transcription_rate * avg_promoter_activity_per_state)
             E_m_squared = rna_var + rna_mean ** 2
 
+            E_m_p_legacy = self.translation_rate * E_m_squared
             E_m_p = self.translation_rate * E_m_squared
             # [:, 0, 0] Squeezes axis -1 and -2
-            E_m_p += transcription_rate * (promoter_activity_per_state @ protein_promoter_correlation)[:, 0, 0]
+            # E_m_p_legacy += transcription_rate * (promoter_activity_per_state_legacy @ protein_promoter_correlation_legacy)[:, 0, 0]
+            E_m_p += transcription_rate * (np.expand_dims(promoter_activity_per_state, axis=-2) @ np.expand_dims(protein_promoter_correlation, axis=-1))[:, 0, 0]
+            # E_m_p_legacy = E_m_p_legacy / denominator
             E_m_p = E_m_p / denominator
 
             E_p_squared = l * E_m_p + self.mean

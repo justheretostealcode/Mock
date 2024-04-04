@@ -413,7 +413,7 @@ class circuit_structure:
             self.nodes = self.inputs | self.gates | self.outputs
             self.gate_truthtables = dict()
             for k, v in circ['gate_truthtables'].items():
-                self.gate_truthtables[k] = np.array(list(map(int, v)))
+                self.gate_truthtables[k] = np.flip(np.array(list(map(int, v))))
             self.internal_edges = set()
             self.outgoing_edges = set()
             self.adjacency = {'in': dict_from_list(self.nodes, set()), 'out': dict_from_list(self.nodes, set())}

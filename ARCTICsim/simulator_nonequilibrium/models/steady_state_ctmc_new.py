@@ -225,18 +225,21 @@ class SteadyStateCTMC:
         n_samples = distribution.shape[0]
 
         flux_mat = propensity_mat * np.expand_dims(distribution, -1)
-        upper_vals = flux_mat
-        lower_vals = flux_mat
+        flux_mat_transposed = flux_mat.transpose((0, 2, 1))
+        # upper_vals = flux_mat
+        # lower_vals = flux_mat
 #        upper_vals = np.triu(flux_mat, k=1)
 #        lower_vals = np.tril(flux_mat, k=-1)
 #        lower_vals = lower_vals.transpose((0, 2, 1))
-        # mask = lower_vals > 10**(-10)
+#        mask = lower_vals > 10**(-10)
 #        mask = self.mask
         mask_strictly_upper = np.transpose(np.tile(np.expand_dims(self.mask_strictly_upper, -1), n_samples), (2, 0, 1))
-        mask_strictly_lower = np.transpose(np.tile(np.expand_dims(self.mask_strictly_lower, -1), n_samples), (2, 0, 1))
+        # mask_strictly_lower = np.transpose(np.tile(np.expand_dims(self.mask_strictly_lower, -1), n_samples), (2, 0, 1))
 
-        upper_vals = upper_vals[mask_strictly_upper].reshape(n_samples, -1)
-        lower_vals = lower_vals[mask_strictly_lower].reshape(n_samples, -1)
+        upper_vals = flux_mat[mask_strictly_upper].reshape(n_samples, -1)
+        lower_vals = flux_mat_transposed[mask_strictly_upper].reshape(n_samples, -1)
+
+
 
         entropy_production_rate_contributions = (upper_vals - lower_vals) * np.log(upper_vals / lower_vals)
         entropy_production_rate_contributions[np.isnan(entropy_production_rate_contributions)] = 0

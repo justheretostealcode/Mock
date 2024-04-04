@@ -417,7 +417,6 @@ def match_promoter(response_characteristic: dict,
         return loss.item()
 
     def error_func(params, training_data):
-
         X = training_data["X"]
         Y = training_data["Y"]
         n_samples = training_data["n_samples_simulation"]
@@ -457,7 +456,22 @@ def match_promoter(response_characteristic: dict,
         loss = loss_func(Y, Y_pred, custom_weights=custom_weights)
         # deviation = deviation_func(params)
         # loss = deviation
-        return loss
+
+        ######################
+        # Score Monotonicity #
+        ######################
+        # cognate_tf = promoter_gate.cognate_transcription_factors[0]
+
+        n_vals = 50
+        output_dict = promoter_gate(
+            in_vals={"c": np.logspace(-4, 2, n_vals) / promoter_gate.model.input_scaling_factor},
+            sim_settings={"mode": "samp", "n_samples_simulation": n_vals})
+        average_promoter_activity = output_dict["average_promoter_activity"]
+        diffs = np.diff(np.log(average_promoter_activity))
+
+        monotonicity_loss = np.sum(np.abs(diffs[diffs > 0]))
+        error = loss + 0.1 * monotonicity_loss
+        return error
 
     #
     # ref_params = [3.589279542832028, 0.003109276598567825, 479.0328585600103, 5.579281617098493e-11,
@@ -495,13 +509,16 @@ def match_promoter(response_characteristic: dict,
     # sample_counts = [1, 100]
     # matching_modes = ["det", "det-var"]
     # sample_counts = [1, 1]
-    # ToDo There ist a difference in the outcome between "det" and "det-var" despite the variance being ignored by custom_weights currently
-    # matching_modes = ["det-var"]
-    matching_modes = ["det"]
-    sample_counts = [1]
-    max_fev_per_params = [1200]
-    eval_sample_count = 1000
-    num_trials = 10
+
+    if True:
+        matching_modes = ["det-var"]
+        sample_counts = [1]  # "det-var" only requires a single sample
+    else:
+        matching_modes = ["samp"]
+        sample_counts = [200]
+    max_fev_per_params = [1200]  # 1200
+    eval_sample_count = 1000  # 1000
+    num_trials = 10  # 10
 
     num_params = promoter_gate.model.num_trainable_parameters
 
@@ -896,7 +913,9 @@ if __name__ == '__main__':
     # Create the parameters for the actual gates
     for iG, cello_gate in enumerate(cello_gates):
         # if iG >= 1:
-        #     break
+        #    break
+        # if cello_gate["name"] != "P1_IcaR":
+        #     continue
 
         gate_name = cello_gate["name"]
         structure = cello_structures_by_name[cello_gate["structure"]]

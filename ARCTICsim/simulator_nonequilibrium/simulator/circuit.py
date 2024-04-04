@@ -108,6 +108,7 @@ class GeneticLogicCircuit:
         self.assignment = None
         self.input_mapping = None
 
+        self.cell_state = None
         self.energy_rate = np.nan
         self.energy_rates = None
         # Derives gene circuit's structure from genetic gate circuit's structure
@@ -117,6 +118,7 @@ class GeneticLogicCircuit:
         self.gene_circuit = GeneCircuit(genes=genes,
                                         gene_propagation_graph=gene_propagation_graph,
                                         settings=settings)
+
 
         pass
 
@@ -156,8 +158,11 @@ class GeneticLogicCircuit:
             for gene in genes:
                 # prot_name = gene.cds.name
                 # cur_promoter_activity += cell_state[prot_name + "_rpu"]
-                cur_promoter_activity =  gene.gene_state["average_promoter_activity"]
-            gate_output_vals[gate_id] = cur_promoter_activity
+                # cur_promoter_activity += gene.gene_state["average_promoter_activity"]
+                # The current value isn't the actual promoter activity but the rescaled protein level
+                cur_promoter_activity += gene.gene_state["protein_level"] / gene.cds.model.scaling_factor
+
+            gate_output_vals[gate_id] = cur_promoter_activity / len(genes)
             # if len(genes) > 0:
             #     cur_promoter_activity = genes[0].gene_state["average_promoter_activity"]
             #     gate_output_vals[gate_id] = cur_promoter_activity
@@ -184,7 +189,7 @@ class GeneticLogicCircuit:
         energy_consumption = self.gene_circuit.energy_consumption
         self.energy_rate = -cell_state["energy"]
         self.energy_rates = np.array([energy_consumption[key] for key in ["promoter", "rna", "protein"]])
-
+        self.cell_state = cell_state
         return gate_output_vals
 
     # def generate_graph(self):

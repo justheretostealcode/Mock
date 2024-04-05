@@ -36,6 +36,8 @@ public class SimulatorInterfaceEnergy {
     private final ObjectMapper mapper = new ObjectMapper();
     private double energy;
 
+    private Circuit currentCicuit;
+
     public SimulatorInterfaceEnergy(SimulationConfiguration config, GateLibrary gateLibrary) {
         pythonBinary = config.getPythonBinary();
         simulatorPath = config.getSimPath();
@@ -46,6 +48,8 @@ public class SimulatorInterfaceEnergy {
     }
 
     public boolean initSimulation(Circuit circuit) { //TODO: handle return value
+
+        currentCicuit = circuit;
 
         if (simProcess!= null && simProcess.isAlive())
             simProcess.destroy();
@@ -112,6 +116,7 @@ public class SimulatorInterfaceEnergy {
                 if (!simProcess.isAlive()) {
                     logger.error("Simulator exited during simulation: " + getError());
                     logger.error("Assignment:"  + assignmentStr);
+                    logger.error("Structure: " + currentCicuit.getIdentifier());
                     shutdown();
                     return 0.0;
                 }

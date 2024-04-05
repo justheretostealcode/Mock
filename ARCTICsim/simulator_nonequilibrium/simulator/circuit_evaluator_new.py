@@ -167,6 +167,8 @@ class CircuitEvaluator:
         for iO, out_id in enumerate(circuit_output_vals_dict):
             cur_entry = circuit_output_vals_dict[out_id]
             functional_score = np.infty
+            critical_index_off = -1
+            critical_index_on = -1
             for iOn, dataON in enumerate(cur_entry[1]):
                 for iOff, dataOFF in enumerate(cur_entry[0]):
                     cur_score = self.functional_score(dataON=dataON, dataOFF=dataOFF)

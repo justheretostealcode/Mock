@@ -531,6 +531,7 @@ class Gene:
         if mode == "samp":
             # The function value is sampled from the distribution
             common_val = var_P / (mean_P ** 2) + 1
+            common_val[common_val < 0] = 0
             sigma = np.sqrt(np.log(common_val))
             mu = np.log(mean_P ** 2 / np.sqrt(var_P + mean_P ** 2))
 

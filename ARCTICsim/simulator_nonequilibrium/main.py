@@ -48,13 +48,13 @@ def sim_run(lineargs, json_str=None):
         structure = load_structure(sim_settings)
         evaluator.set_structure(structure)
 
-    profiler = cProfile.Profile()
-    profiler.enable()
+    # profiler = cProfile.Profile()
+    # profiler.enable()
 
     result = evaluator.score_assignment(assignment=assignment, sim_settings=sim_settings)
 
-    profiler.disable()
-    profiler.dump_stats("Simulation_Profile.prof")
+    # profiler.disable()
+    # profiler.dump_stats("Simulation_Profile.prof")
     # profiler.print_stats()
 
     if "structure" in sim_settings:

@@ -41,10 +41,18 @@ class FunctionalScore:
             score = sign * ot.wasserstein_1d(np.log(dataON), np.log(dataOFF), p=settings["wasserstein_p"])
             score = np.exp(score)
         elif ("ws-log-exp-asym" == DIST):
-            score = (0.5 * (np.log(median_on) - np.log(median_off))
-                     + (np.sum(np.log(dataON[dataON < median_on]))
-                        - np.sum(np.log(dataOFF[dataOFF > median_off]))) / len(dataON))
+            if len(dataON) == 1:
+                score = np.log(median_on) - np.log(median_off)
+            else:
+                score = (0.5 * (np.log(median_on) - np.log(median_off))
+                         + (np.sum(np.log(dataON[dataON < median_on]))
+                            - np.sum(np.log(dataOFF[dataOFF > median_off]))) / len(dataON))
             score = np.exp(score)
+
+        elif "mean" == DIST:
+            score = np.mean(dataON) / np.mean(dataOFF)
+        elif "median" == DIST:
+            score = np.median(dataON) / np.median(dataOFF)
         else:
             score = -9999  # (np.mean(dataON) - np.mean(dataOFF)) ** 2    # Error Code if no appropriate score is used
         return score

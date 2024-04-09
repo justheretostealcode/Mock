@@ -47,7 +47,7 @@ class RNAMomentModel:
         Deriving the variance of the RNA
         """
         self.var = np.nan * np.empty(shape=self.mean.shape)
-        M_inv = None
+        M = None
         if mode != "det":
             M = self.degradation_rate * np.eye(*propensity_matrix.shape[1:]) - propensity_matrix.transpose((0, 2, 1))
             # M_inv = np.linalg.inv(M)

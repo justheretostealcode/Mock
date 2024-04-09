@@ -140,13 +140,15 @@ class CircuitEvaluator:
                     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=False, squeeze=False)
                     for iR in range(nrows):
                         for iC in range(ncols):
-                            ax = axes[iR, iC]
-                            node_id = node_ids[iR * ncols + iC]
-                            cur_vals = gate_output_vals[node_id]
-                            bool_val = structure.gate_truthtables[node_id][iIndex]
-                            ax.hist(cur_vals, bins=bins, density=False, color="red" if bool_val == 0 else "blue")
-                            ax.set_title(f"{node_id} ({bool_val})")
-                            ax.set_xscale("log")
+                            cur_index = iR * ncols + iC
+                            if cur_index < len(node_ids):
+                                ax = axes[iR, iC]
+                                node_id = node_ids[cur_index]
+                                cur_vals = gate_output_vals[node_id]
+                                bool_val = structure.gate_truthtables[node_id][iIndex]
+                                ax.hist(cur_vals, bins=bins, density=False, color="red" if bool_val == 0 else "blue")
+                                ax.set_title(f"{node_id} ({bool_val})")
+                                ax.set_xscale("log")
 
                     plt.suptitle(f"{input_vals} -> {output_val}")
                     plt.tight_layout()

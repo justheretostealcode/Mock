@@ -514,8 +514,8 @@ def match_promoter(response_characteristic: dict,
     # sample_counts = [1, 1]
 
     if True:
-        matching_modes = ["det", "det-var"]
-        sample_counts = [1, 1]  # "det-var" only requires a single sample
+        # matching_modes = ["det", "det-var"]
+        # sample_counts = [1, 1]  # "det-var" only requires a single sample
 
         matching_modes = ["det-var"]
         sample_counts = [1]  # "det-var" only requires a single sample

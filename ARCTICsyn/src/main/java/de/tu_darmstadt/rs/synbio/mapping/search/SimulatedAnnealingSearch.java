@@ -46,7 +46,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
     private double lowerScore = 200.0;
     private double upperEnergy = 65000;//Double.POSITIVE_INFINITY;
-    private final Objective objective = Objective.ENERGY;
+    private final Objective objective = Objective.SCORE;
 
     private double energyScaler;
 
@@ -132,7 +132,9 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         double temperature = getInitialTemperature(simulator);
         double coolingFactor;
 
-        int movesPerTemp = 2 * (int) Math.pow(problemSize, 0.5);
+        int movesPerTemp = 1 * (int) Math.pow(problemSize, 0.5);
+
+        //logger.info("moves per temp: " + movesPerTemp);
 
         while(acceptanceRate >= 0.25) {
 
@@ -195,11 +197,11 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
             }
         }
 
-        MappingResult result = new MappingResult(structure, current, simulator.simulate(current), simulator.getEnergy());
+        MappingResult result = new MappingResult(structure, current, currentScore, currentEnergy);
 
         //logger.info(upperEnergy + ", " + result.getScore() + ", " + simulator.getEnergy());
         //logger.info(result.getScore() + ", " + simulator.getEnergy());
-         result.setNeededSimulations(simCount);
+        result.setNeededSimulations(simCount);
         simulator.shutdown();
         return result;
     }
@@ -211,7 +213,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
     private double getInitialTemperature(SimulatorInterfaceEnergy simulator) {
 
-        int numSamples = 10;
+        int numSamples = 100;
 
         double[] scoreSample = new double[numSamples];
         double[] energySample = new double[numSamples];
@@ -224,6 +226,8 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
 
             scoreSample[i] = simulator.simulate(ass);
             energySample[i] = simulator.getEnergy();
+
+            //logger.info("score: " + scoreSample[i] + ", energy: " + energySample[i]);
         }
 
         minScoreSample = Arrays.stream(scoreSample).min().getAsDouble();
@@ -248,6 +252,8 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm {
         }
 
         energyScaler = Arrays.stream(scoreSample).average().orElse(Double.NaN) / Arrays.stream(energySample).average().orElse(Double.NaN);
+
+        //logger.info("start temp: " + sDev*20);
 
         return sDev * 20;
     }

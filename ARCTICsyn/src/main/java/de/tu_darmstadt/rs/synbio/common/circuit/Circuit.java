@@ -311,6 +311,43 @@ public class Circuit extends DirectedAcyclicGraph<Gate, Wire> implements Compara
         return depth - 1;
     }
 
+    public int getBooleanActivity() {
+
+        Map<Gate, TruthTable> tts = getGateTruthTables();
+
+        int activity = 0;
+
+        for (Map.Entry<Gate, TruthTable> entry : tts.entrySet()) {
+
+            Gate gate = entry.getKey();
+            TruthTable tt = entry.getValue();
+
+            switch (gate.getLogicType()) {
+                case OUTPUT_BUFFER:
+                case OUTPUT_OR2:
+                    /* count 1s for output gates */
+                    activity += tt.getBitSet().cardinality();
+                    break;
+                case INPUT:
+                    /* count inputs as always 1 (constitutive expression) */
+                    activity += tt.getLength();
+                    break;
+                case NOR2:
+                    /* count incoming 1s (leading to TF expression) */
+                    for (Wire wire : incomingEdgesOf(gate)) {
+                        Gate sourceGate = getEdgeSource(wire);
+                        activity += tts.get(sourceGate).getBitSet().cardinality();
+                    }
+                    break;
+                default:
+                    /* count 0s for NOT gates */
+                    activity += tt.getLength() - tt.getBitSet().cardinality();
+            }
+        }
+
+        return activity;
+    }
+
     /**
      * Estimates the circuit complexity based on the size and the used gates.
      * Gates with n inputs are weighted with n.

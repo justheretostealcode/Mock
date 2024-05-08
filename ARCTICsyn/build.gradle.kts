@@ -51,6 +51,11 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
 
     implementation("com.github.dpaukov:combinatoricslib3:3.3.0")
+
+    implementation("org.apache.commons:commons-collections4:4.4")
+    implementation("org.jfree:org.jfree.svg:5.0.5");
+
+    implementation("com.google.ortools:ortools-java:9.9.3963")
 }
 
 application {

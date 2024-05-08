@@ -11,12 +11,6 @@ import org.logicng.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.ortools.Loader;
-import com.google.ortools.linearsolver.MPConstraint;
-import com.google.ortools.linearsolver.MPObjective;
-import com.google.ortools.linearsolver.MPSolver;
-import com.google.ortools.linearsolver.MPVariable;
-
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
@@ -94,11 +88,11 @@ public class CircuitVisualizer {
 
         /* gate rows */
 
-        Map<Gate, Integer> gateRows = getGateRows(gateLevels, connections, depth);
+        Map<Gate, Integer> gateYValues = getYValues(gateLevels, connections, depth);
 
         /* optimize y values of gates for straighter connections */
 
-          int height = gateRows.entrySet().stream().max(Map.Entry.comparingByValue()).get().getValue();
+          int height = gateYValues.entrySet().stream().max(Map.Entry.comparingByValue()).get().getValue() / tileHeight;
 //        Loader.loadNativeLibraries();
 //        MPSolver solver = MPSolver.createSolver("GLOP");
 //
@@ -182,7 +176,7 @@ public class CircuitVisualizer {
                     .findAny();
 
             if (secondConnection.isPresent()) {
-                if (gateRows.get(sourceGate1) > gateRows.get(secondConnection.get().first())) {
+                if (gateYValues.get(sourceGate1) > gateYValues.get(secondConnection.get().first())) {
                     portAssignment.put(connection, 1);
                     portAssignment.put(secondConnection.get(), 0);
                 } else {
@@ -194,26 +188,55 @@ public class CircuitVisualizer {
             }
         }
 
+        Map<Pair<Gate, Gate>, Integer> beneficialMidpoints = new HashMap<>();
 
         for (Pair<Gate, Gate> connection : connections) {
 
             Gate sourceGate = connection.first();
             Gate targetGate = connection.second();
 
-            double sourceY = gateRows.get(sourceGate) * tileHeight + getOutputOffset(sourceGate.getLogicType()).getY();
+            double sourceY = gateYValues.get(sourceGate) + getOutputOffset(sourceGate.getLogicType()).getY();
             double sourceX = (depth - 1 - gateLevels.get(sourceGate)) * tileWidth + getOutputOffset(sourceGate.getLogicType()).getX();
 
-            double targetY = gateRows.get(targetGate) * tileHeight + getInputOffset(targetGate.getLogicType(), portAssignment.get(connection)).getY();
+            double targetY = gateYValues.get(targetGate) + getInputOffset(targetGate.getLogicType(), portAssignment.get(connection)).getY();
             double targetX = (depth - 1 - gateLevels.get(targetGate)) * tileWidth + getInputOffset(targetGate.getLogicType(), portAssignment.get(connection)).getX();
 
             connectionLines.putIfAbsent(sourceGate, new HashMap<>());
             connectionLines.get(sourceGate).putIfAbsent(targetGate, new ArrayList<>());
 
+
+            /*Integer sourceYFreeUntil = gateLevels.get(targetGate);
+            Integer targetYFreeUntil = gateLevels.get(sourceGate);
+
+            if (gateLevels.get(sourceGate) - gateLevels.get(targetGate) > 1) {
+                for (int l = gateLevels.get(sourceGate) - 1; l > gateLevels.get(targetGate); l --) {
+
+                    int finalL = l;
+                    List<Gate> gatesOnLevel = gateLevels.entrySet().stream()
+                            .filter(e -> e.getValue() == finalL)
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toList());
+
+                    for (Gate gate : gatesOnLevel) {
+                        int y = gateYValues.get(gate);
+
+                        if (sourceYFreeUntil == gateLevels.get(targetGate) && (sourceY >= y && sourceY <= y + tileHeight))
+                            sourceYFreeUntil = l + 1;
+
+                        if (targetY >= y && targetY <= y + tileHeight)
+                            targetYFreeUntil = l - 1;
+                    }
+                }
+            }
+
+            beneficialMidpoints.put(connection, depth - 1 - targetYFreeUntil * tileWidth);*/
+
             if (sourceY == targetY) {
                 Line2D.Double directLine = new Line2D.Double(sourceX, sourceY, targetX, targetY);
                 connectionLines.get(sourceGate).get(targetGate).add(directLine);
             } else {
-                double midpointX = (sourceX + targetX) / 2;
+
+                double midpointX = sourceX;//(sourceX + targetX) / 2;
 
                 Line2D.Double startLine = new Line2D.Double(sourceX, sourceY, midpointX, sourceY);
                 Line2D.Double midLine = new Line2D.Double(midpointX, sourceY, midpointX, targetY);
@@ -234,16 +257,16 @@ public class CircuitVisualizer {
 
             switch (gate.getLogicType()) {
                 case INPUT:
-                    InputGate.add(image, (depth - gateLevels.get(gate) - 1) * tileWidth, gateRows.get(gate) * tileHeight, gate.getIdentifier());
+                    InputGate.add(image, (depth - gateLevels.get(gate) - 1) * tileWidth, gateYValues.get(gate), gate.getIdentifier());
                     break;
                 case NOT:
-                    NotGate.add(image, (depth - gateLevels.get(gate) - 1) * tileWidth, gateRows.get(gate) * tileHeight, assignment.get(gate));
+                    NotGate.add(image, (depth - gateLevels.get(gate) - 1) * tileWidth, gateYValues.get(gate), assignment.get(gate));
                     break;
                 case NOR2:
-                    OrNorGate.add(image, (depth - gateLevels.get(gate) - 1) * tileWidth, gateRows.get(gate) * tileHeight, assignment.get(gate), true);
+                    OrNorGate.add(image, (depth - gateLevels.get(gate) - 1) * tileWidth, gateYValues.get(gate), assignment.get(gate), true);
                     break;
                 case OUTPUT_OR2:
-                    OrNorGate.add(image, (depth - gateLevels.get(gate) - 1) * tileWidth, gateRows.get(gate) * tileHeight, assignment.get(gate), false);
+                    OrNorGate.add(image, (depth - gateLevels.get(gate) - 1) * tileWidth, gateYValues.get(gate), assignment.get(gate), false);
                     break;
                 case OUTPUT_BUFFER:
                     break;
@@ -428,9 +451,9 @@ public class CircuitVisualizer {
 
     }
 
-    private Map<Gate, Integer> getGateRows(Map<Gate, Integer> gateLevels, List<Pair<Gate, Gate>> connections, int depth) {
+    private Map<Gate, Integer> getYValues(Map<Gate, Integer> gateLevels, List<Pair<Gate, Gate>> connections, int depth) {
 
-        Map<Gate, Integer> gateRows = new HashMap<>();
+        Map<Gate, Integer> yValues = new HashMap<>();
 
         /* naive approach: simply fill rows */
 
@@ -447,7 +470,7 @@ public class CircuitVisualizer {
             int row = 0;
 
             for (Gate gate : gates) {
-                gateRows.put(gate, row);
+                yValues.put(gate, row * tileHeight);
                 row++;
             }
 
@@ -455,18 +478,16 @@ public class CircuitVisualizer {
                 height = row;
         }
 
-        logger.info("original crosspoints: " + numberOfCrosspoints(gateLevels, gateRows, connections));
-        logger.info("original y-offset: " + yOffset(gateLevels, gateRows, connections));
+        logger.info("original crosspoints: " + numberOfCrosspoints(gateLevels, yValues, connections));
 
         /* greedy approach to minimize crosspoints */
 
         Map<Integer, List<Gate>> bestOrders = new HashMap<>();
 
-        for (int iteration = 0; iteration <= 4; iteration++) {
+        for (int iteration = 0; iteration < 5; iteration++) {
             for (int level = depth - 1; level >= 0; level--) {
 
-                int originalCrosspoints = numberOfCrosspoints(gateLevels, gateRows, connections);
-                double originalYOffset = yOffset(gateLevels, gateRows, connections);
+                int originalCrosspoints = numberOfCrosspoints(gateLevels, yValues, connections);
 
                 int finalLevel = level;
                 List<Gate> gates = gateLevels.entrySet().stream()
@@ -484,7 +505,6 @@ public class CircuitVisualizer {
                         new org.apache.commons.collections4.iterators.PermutationIterator<>(gates);
 
                 int minimumCrosspoints = originalCrosspoints;
-                double minimumYOffset = originalYOffset;
 
                 while (iterator.hasNext()) {
 
@@ -494,17 +514,15 @@ public class CircuitVisualizer {
                     for (Gate gate : gates) {
 
                         if (gate.getLogicType() != LogicType.EMPTY)
-                            gateRows.put(gate, row);
+                            yValues.put(gate, row * tileHeight);
 
                         row++;
                     }
 
-                    int crosspoints = numberOfCrosspoints(gateLevels, gateRows, connections);
-                    double yOffset = yOffset(gateLevels, gateRows, connections);
+                    int crosspoints = numberOfCrosspoints(gateLevels, yValues, connections);
 
-                    if (crosspoints < minimumCrosspoints || (yOffset < minimumYOffset && crosspoints <= minimumCrosspoints)) {
+                    if (crosspoints < minimumCrosspoints) {
                         minimumCrosspoints = crosspoints;
-                        minimumYOffset = yOffset;
                         bestOrders.put(level, new ArrayList<>(gates));
                     }
 
@@ -516,35 +534,83 @@ public class CircuitVisualizer {
                 for (Gate gate : bestOrders.get(level)) {
 
                     if (gate.getLogicType() != LogicType.EMPTY)
-                        gateRows.put(gate, row);
+                        yValues.put(gate, row * tileHeight);
 
                     row++;
                 }
             }
         }
 
-        logger.info("minimized crosspoints: " + numberOfCrosspoints(gateLevels, gateRows, connections));
-        logger.info("minimized y-offset: " + yOffset(gateLevels, gateRows, connections));
+        /* greedy approach to minimize y offset */
 
-        return gateRows;
+        for (int iteration = 0; iteration < 5; iteration ++) {
+            for (int level = 0; level < depth - 1; level ++) {
+
+                int finalLevel = level;
+                List<Gate> gates = gateLevels.entrySet().stream()
+                        .filter(e -> e.getValue() == finalLevel)
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+
+                for (Gate gate : gates) {
+
+                    List<Integer> levelYValues = gates.stream()
+                            .map(yValues::get)
+                            .sorted(Comparator.naturalOrder())
+                            .collect(Collectors.toList());
+
+                    int gateIndex = levelYValues.indexOf(yValues.get(gate));
+
+                    int lower;
+
+                    if (gateIndex > 0)
+                        lower = levelYValues.get(gateIndex - 1);
+                    else
+                        lower = -100;
+
+                    int upper;
+
+                    if (gateIndex < levelYValues.size() - 1)
+                        upper = levelYValues.get(gateIndex + 1);
+                    else
+                        upper = (height - 1) * tileHeight;
+
+                    int originalY = yValues.get(gate);
+                    int yOffset = gateYOffset(gate, yValues, connections);
+
+                    int newYValue = originalY + (yOffset / 2);
+                    newYValue = Math.min(newYValue, upper - tileHeight);
+                    newYValue = Math.max(newYValue, lower + tileHeight);
+
+                    yValues.put(gate, newYValue);
+                }
+            }
+        }
+
+        logger.info("minimized crosspoints: " + numberOfCrosspoints(gateLevels, yValues, connections));
+
+        return yValues;
     }
 
-    private double yOffset(Map<Gate, Integer> gateLevels, Map<Gate, Integer> gateRows, List<Pair<Gate, Gate>> connections) {
+    private int gateYOffset(Gate gate, Map<Gate, Integer> gateYValues, List<Pair<Gate, Gate>> connections) {
 
-        double yOffset = 0.0;
+        int yOffset = 0;
 
         for (Pair<Gate, Gate> connection : connections) {
 
-            Gate startGate = connection.first();
-            Gate endGate = connection.second();
+            if (connection.second().equals(gate)) {
 
-            yOffset += Math.abs(gateRows.get(startGate) - gateRows.get(endGate));
+                Gate startGate = connection.first();
+                Gate endGate = connection.second();
+
+                yOffset += gateYValues.get(startGate) - gateYValues.get(endGate);
+            }
         }
 
         return yOffset;
     }
 
-    private int numberOfCrosspoints(Map<Gate, Integer> gateLevels, Map<Gate, Integer> gateRows, List<Pair<Gate, Gate>> connections) {
+    private int numberOfCrosspoints(Map<Gate, Integer> gateLevels, Map<Gate, Integer> yValues, List<Pair<Gate, Gate>> connections) {
 
         int crosspoints = 0;
 
@@ -555,19 +621,18 @@ public class CircuitVisualizer {
             Gate startGate1 = connections.get(i).first();
             Gate endGate1 = connections.get(i).second();
 
-            if (Objects.equals(gateRows.get(startGate1), gateRows.get(endGate1))) {
+            //if (yValues.get(startGate1) + tileHeight >= yValues.get(endGate1) && yValues.get(startGate1) - tileHeight <= yValues.get(endGate1)) {
 
                 int startLevel = gateLevels.get(startGate1);
                 int endLevel = gateLevels.get(endGate1);
 
-                int row = gateRows.get(startGate1);
-
-                crosspoints += (int) gateRows.entrySet().stream().filter(e -> e.getValue() == row)
+                crosspoints += (int) yValues.entrySet().stream()
+                        .filter(e -> e.getValue() > yValues.get(startGate1) - tileHeight && e.getValue() < yValues.get(endGate1) + tileHeight)
                         .map(Map.Entry::getKey)
                         .map(gateLevels::get)
                         .filter(l -> (l < startLevel || l > endLevel))
                         .count();
-            }
+            //}
 
 
             for (int j = i + 1; j < connections.size(); j++) {
@@ -577,8 +642,8 @@ public class CircuitVisualizer {
 
                 /* ignore unmapped gates */
 
-                if (!gateRows.containsKey(startGate1) || !gateRows.containsKey(startGate2)
-                        || !gateRows.containsKey(endGate1) || !gateRows.containsKey(endGate2))
+                if (!yValues.containsKey(startGate1) || !yValues.containsKey(startGate2)
+                        || !yValues.containsKey(endGate1) || !yValues.containsKey(endGate2))
                     continue;
 
                 /* connections use (partly) the same levels (excl. endpoints) */
@@ -588,9 +653,9 @@ public class CircuitVisualizer {
 
                 /* connections cross */
 
-                if (gateRows.get(startGate1) > gateRows.get(startGate2) && gateRows.get(endGate1) < gateRows.get(endGate2))
+                if (yValues.get(startGate1) > yValues.get(startGate2) && yValues.get(endGate1) < yValues.get(endGate2))
                     crosspoints++;
-                else if (gateRows.get(startGate1) < gateRows.get(startGate2) && gateRows.get(endGate1) > gateRows.get(endGate2))
+                else if (yValues.get(startGate1) < yValues.get(startGate2) && yValues.get(endGate1) > yValues.get(endGate2))
                     crosspoints++;
             }
         }

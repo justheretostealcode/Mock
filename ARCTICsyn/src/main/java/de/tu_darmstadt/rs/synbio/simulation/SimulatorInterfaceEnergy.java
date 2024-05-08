@@ -91,9 +91,10 @@ public class SimulatorInterfaceEnergy {
             return false;
         }
     }
+
     public Double simulate(Assignment assignment) {
 
-        double score = 0.0;
+        double score = -1.0;
 
         try {
 
@@ -129,8 +130,10 @@ public class SimulatorInterfaceEnergy {
             try {
                 result = mapper.readTree(output);
             } catch (Exception e) {
-                e.printStackTrace();
-                return 0.0;
+                //e.printStackTrace();
+                //logger.error("Assignment:"  + assignmentStr);
+                //logger.error("Structure: " + currentCicuit.getIdentifier());
+                return -1.0;
             }
 
             score = result.get("functional_score").iterator().next().asDouble();
@@ -142,6 +145,21 @@ public class SimulatorInterfaceEnergy {
         }
 
         return score;
+    }
+
+    public Double simulateWithRetry(Assignment assignment) {
+
+        double score = simulate(assignment);
+
+        if (score == -1.0) {
+            //logger.error("Retrying simulation.");
+            score = simulate(assignment);
+        }
+
+        if (score == -1.0)
+            return 0.0;
+        else
+            return score;
     }
 
     private void setEnergy(double energy) {

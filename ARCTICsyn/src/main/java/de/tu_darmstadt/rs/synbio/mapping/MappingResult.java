@@ -8,10 +8,13 @@ public class MappingResult implements Comparable<MappingResult> {
     private final Assignment assignment;
     private final double score;
 
-    private double toxicity;
+    private double secondaryScore;
 
     private long neededSimulations = 0;
     private long minimumBranchAndBoundSimulations = -1;
+
+    private double upperEnergyConstraint;
+    private double lowerScoreConstraint;
 
     public MappingResult(Circuit structure, Assignment assignment, double score) {
         this.structure = structure;
@@ -19,9 +22,18 @@ public class MappingResult implements Comparable<MappingResult> {
         this.score = score;
     }
 
-    public MappingResult(Circuit structure, Assignment assignment, double score, double toxicity) {
+    public MappingResult(Circuit structure, Assignment assignment, double score, double secondaryScore) {
         this(structure, assignment, score);
-        this.toxicity = toxicity;
+        this.secondaryScore = secondaryScore;
+    }
+
+    public MappingResult(Circuit structure, Assignment assignment, double score, double secondaryScore,
+                         double upperEnergyConstraint, double lowerScoreConstraint) {
+
+        this(structure, assignment, score, secondaryScore);
+
+        this.upperEnergyConstraint = upperEnergyConstraint;
+        this.lowerScoreConstraint = lowerScoreConstraint;
     }
 
     public double getScore() {
@@ -36,8 +48,14 @@ public class MappingResult implements Comparable<MappingResult> {
         return assignment;
     }
 
-    public double getToxicity() {
-        return toxicity;
+    public double getSecondaryScore() {
+        return secondaryScore;
+    }
+
+    public double getUpperEnergyConstraint() { return upperEnergyConstraint; }
+
+    public double getLowerScoreConstraint() {
+        return lowerScoreConstraint;
     }
 
     public void setNeededSimulations(long sims) {

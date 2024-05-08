@@ -100,8 +100,6 @@ public class SimulationTestbench {
 
         GateLibrary gateLib = new GateLibrary(library, mapConfig.getCompatibilityLibrary(), GateLibrary.Type.ENERGY, proxWeights);
 
-        //CompatibilityChecker checker = new CompatibilityChecker(gateLib);
-
         ObjectMapper mapper = new ObjectMapper();
 
         File inputPath = new File(cmd.getOptionValue("inputPath"));
@@ -165,15 +163,6 @@ public class SimulationTestbench {
                     structure.setIdentifier(child.getName().replace(".json", ""));
                 }
 
-                /*int numOnes = 0;
-
-                for (JsonNode gtt : node.get("gate_truthtables")) {
-                    numOnes += gtt.asText().chars().filter(ch -> ch == '1').count();
-                }
-
-                logger.info(numOnes + "");
-                continue;*/
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -186,48 +175,50 @@ public class SimulationTestbench {
                     e.printStackTrace();
                 }
 
-                AssignmentCompiler compiler = new AssignmentCompiler(structure, gateLib);
+                SimulatedAnnealingSearch annealer = new SimulatedAnnealingSearch(structure, gateLib, mapConfig, simConfig);
+                annealer.pareto(20);
 
-                for (int i = 0; i < numRepetitions; i++) {
-
-                    AssignmentSearchAlgorithm search = mapConfig.getSearchAlgorithm(structure, gateLib, simConfig);
-
-                    long start = System.nanoTime(); // Added for measuring the execution time.
-
-                    MappingResult result = search.assign();
-
-                    long duration = System.nanoTime() - start;
-
-                    if (result != null) {
-
-                        if (result.getStructure() != null && result.getAssignment() != null) {
-                            logger.info(child.getName() + "," + result.getScore() + "," + result.getToxicity() + "," + result.getStructure().getWeight() + "," + result.getNeededSimulations() + "," + duration + "," + mapper.writeValueAsString(result.getAssignment().getIdentifierMap()));
-                        /*AssignmentCounter counter = new AssignmentCounter(structure, gateLib, mapConfig, simConfig);
-                        long maxAssignments = counter.assign().getNeededSimulations();
-                        logger.info("Simulations: " + (double) result.getNeededSimulations()/maxAssignments*100 + "% (of " + maxAssignments + ")");*/
-
-                            //result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
-                            //        "result_" + child.getName() + ".dot"), result.getAssignment());
-
-                            result.getStructure().saveGml(new File(outputDir, child.getName() + ".gml"), result.getAssignment());
-
-                            try {
-                                out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getNeededSimulations() + "," + duration + "," + result.getScore() + "\n");
-                                out.flush();
-                                mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outputDir, "assignment_" + child.getName() + ".json"), compiler.compile(result.getAssignment()));
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-
-                            if (mapConfig.getStatistics()) {
-                                SearchStatsLogger logger = new SearchStatsLogger(structure, mapConfig, simConfig);
-                                logger.setResult(result);
-                                logger.setDuration(duration);
-                                logger.save("testbench_statistics/statistics_" + structure.getIdentifier() + "_" + mapConfig.toString().hashCode() + "_" + i + "_" + System.currentTimeMillis() + ".json");
-                            }
-                        }
-                    }
-                }
+//                AssignmentCompiler compiler = new AssignmentCompiler(structure, gateLib);
+//
+//                for (int i = 0; i < numRepetitions; i++) {
+//
+//                    AssignmentSearchAlgorithm search = mapConfig.getSearchAlgorithm(structure, gateLib, simConfig);
+//
+//                    long start = System.nanoTime(); // Added for measuring the execution time.
+//
+//                    MappingResult result = search.assign();
+//
+//                    //logger.info(structure.getIdentifier() + "," + structure.getBooleanActivity());
+//
+//                    long duration = System.nanoTime() - start;
+//
+//                    if (result != null) {
+//
+//                        if (result.getStructure() != null && result.getAssignment() != null) {
+//                            logger.info(child.getName() + "," + result.getScore() + "," + result.getSecondaryScore() + "," + result.getStructure().getWeight() + "," + result.getStructure().getBooleanActivity() + "," + result.getNeededSimulations() + "," + duration + "," + mapper.writeValueAsString(result.getAssignment().getIdentifierMap()));
+//
+//                            //result.getStructure().print(new File(inputPath.isDirectory() ? inputPath : inputPath.getParentFile(),
+//                            //        "result_" + child.getName() + ".dot"), result.getAssignment());
+//
+//                            result.getStructure().saveGml(new File(outputDir, child.getName() + ".gml"), result.getAssignment());
+//
+//                            try {
+//                                out.print("," + result.getStructure().getNumberLogicGates() + "," + result.getNeededSimulations() + "," + duration + "," + result.getScore() + "\n");
+//                                out.flush();
+//                                mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outputDir, "assignment_" + child.getName() + ".json"), compiler.compile(result.getAssignment()));
+//                            } catch (Exception e) {
+//                                e.printStackTrace();
+//                            }
+//
+//                            if (mapConfig.getStatistics()) {
+//                                SearchStatsLogger logger = new SearchStatsLogger(structure, mapConfig, simConfig);
+//                                logger.setResult(result);
+//                                logger.setDuration(duration);
+//                                logger.save("testbench_statistics/statistics_" + structure.getIdentifier() + "_" + mapConfig.toString().hashCode() + "_" + i + "_" + System.currentTimeMillis() + ".json");
+//                            }
+//                        }
+//                    }
+//                }
             }
         }
 

@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="jfree.svg" type="repository">
+    <properties maven-id="org.jfree:org.jfree.svg:5.0.5" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/jfree/org.jfree.svg/5.0.5/org.jfree.svg-5.0.5.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

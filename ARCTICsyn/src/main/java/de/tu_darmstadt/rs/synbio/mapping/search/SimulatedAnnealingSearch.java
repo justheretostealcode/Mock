@@ -59,14 +59,16 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm  {
     }
 
     private double lowerScore = 200.0;
-    private double upperEnergy = 65000;//Double.POSITIVE_INFINITY;
-    private Objective objective = Objective.MULTI;
+    private Double upperEnergy;//Double.POSITIVE_INFINITY; currently adaptive criterion -> reset at beginning of annealing
+    private Objective objective = Objective.SCORE;
 
     private Double initialTemperature;
 
     private double energyScaler;
 
     public void pareto(int steps) {
+
+        logger.info("pareto run for " + structure.getIdentifier() + " with " + steps + " steps");
 
         SimulatorInterfaceEnergy simulator = new SimulatorInterfaceEnergy(simConfig, gateLib);
         simulator.initSimulation(structure);
@@ -94,7 +96,6 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm  {
         List<MappingResult> paretoResults = new ArrayList<>();
         ObjectMapper mapper = new ObjectMapper();
 
-        logger.info("pareto run for " + structure.getIdentifier() + " with " + steps + " steps:");
         logger.info("upper energy, functional, energy, assignment");
 
         for (Future<MappingResult> result : results) {
@@ -158,6 +159,10 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm  {
         double bestScore = 0;
         double bestEnergy = Double.MAX_VALUE;
         Assignment best = null;
+
+        if (upperEnergy == null) {
+            upperEnergy = (double) (structure.getLogicGates().size() * 20000);
+        }
 
         problemSize = exhaustiveAssigner.getNumTotalPermutations();
 
@@ -281,7 +286,7 @@ public class SimulatedAnnealingSearch extends AssignmentSearchAlgorithm  {
 
     private double getInitialTemperature(SimulatorInterfaceEnergy simulator) {
 
-        int numSamples = 100;
+        int numSamples = 1000;
 
         double[] scoreSample = new double[numSamples];
         double[] energySample = new double[numSamples];

@@ -14,7 +14,10 @@ def fib(start: int) -> float:
         return 0
     if start == 1:
         return 1
-    return fib(start-1) + fib(start-2)
+    return fib(start-1) + fib(start-2) 
+
+def mock():
+    return 0
 
 if __name__ == "__main__":
     print("Hello world")
